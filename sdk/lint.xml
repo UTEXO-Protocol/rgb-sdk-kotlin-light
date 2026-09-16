@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+      UniFFI reflectively probes java.lang.ref.Cleaner before this guarded
+      implementation can be instantiated, and falls back to JNA Cleaner on
+      Android below API 33. Scope the NewApi suppression to generated code.
+    -->
+    <issue id="NewApi">
+        <ignore path="src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt" />
+    </issue>
+</lint>
