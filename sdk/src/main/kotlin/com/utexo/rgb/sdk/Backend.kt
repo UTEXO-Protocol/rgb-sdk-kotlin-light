@@ -24,6 +24,18 @@ public annotation class WalletInfrastructureApi
  */
 @WalletInfrastructureApi
 public interface WalletBackend {
+    /**
+     * Performs deterministic, side-effect-free readiness checks before the
+     * coordinator creates or advances durable work toward a backend write.
+     *
+     * Implementations must not perform network I/O or mutate backend state.
+     * This hook is not invoked for terminal replay or status-only recovery of
+     * a checkpoint that is already SUBMITTING. Backend decorators must
+     * explicitly forward it to their wrapped backend. Truthful local expiry
+     * terminalization also occurs before this readiness gate.
+     */
+    public suspend fun preflightOperation(operation: OperationKind): Unit
+
     public suspend fun initialize(request: BackendInitializeRequest): BackendSession
 
     public suspend fun registerWallet(request: RegisterWalletRequest): Unit

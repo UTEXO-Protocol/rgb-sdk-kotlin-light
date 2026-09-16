@@ -1,7 +1,10 @@
 package com.utexo.rgb.sdk
 
-import java.util.ArrayDeque
+import com.utexo.rgb.sdk.internal.EpochSecondsSource
+import com.utexo.rgb.sdk.internal.OperationCoordinator
+import com.utexo.rgb.sdk.internal.RequestHasher
 import java.lang.reflect.Modifier
+import java.util.ArrayDeque
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -29,6 +32,7 @@ internal class RgbLightningNodeGatewayBackendTest {
             allowInsecureLocalDevelopment = true,
         )
         assertEquals("http://127.0.0.1:8480", local.baseUrl)
+        assertFalse(local.allowUnverifiedPsbtProfile)
         assertFalse(local.toString().contains(TEST_TOKEN))
         assertTrue(local.toString().contains("[REDACTED]"))
         assertFailsWith<SdkException.Unsupported> {
@@ -38,6 +42,176 @@ internal class RgbLightningNodeGatewayBackendTest {
                 bearerToken = TEST_TOKEN,
             )
         }
+    }
+
+    @Test
+    fun `unverified PSBT profile is default off before journal and transport`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(
+            interceptor = transport,
+            allowUnverifiedPsbtProfile = false,
+        )
+        val journal = InMemoryOperationJournal()
+        val context = BackendContext(
+            session = BackendSession("inactive-session", 1, Network.SIGNET),
+            walletId = TEST_WALLET_ID,
+            network = Network.SIGNET,
+        )
+        val coordinator = OperationCoordinator(
+            configuration = gatewayWalletConfiguration(),
+            backend = backend,
+            journal = journal,
+            now = EpochSecondsSource { TEST_NOW },
+        )
+
+        assertFailsWith<SdkException.PolicyRejected> {
+            coordinator.sendBtc(
+                context,
+                FakeSigningEngine(),
+                sendBtcRequest().copy(feeRate = FeeRate.satPerVbyte(101.0)),
+            )
+        }
+        val error = assertFailsWith<SdkException.Unsupported> {
+            coordinator.sendBtc(context, FakeSigningEngine(), sendBtcRequest())
+        }
+        assertEquals(
+            "sendBtc requires an explicitly enabled, unverified gateway PSBT profile",
+            error.details["feature"],
+        )
+        assertEquals(null, journal.load(TEST_WALLET_ID, TEST_IDEMPOTENCY_KEY))
+        assertTrue(transport.requests.isEmpty())
+
+        assertFailsWith<SdkException.Unsupported> {
+            backend.prepareSendBtc(
+                PrepareSendBtcRequest(operationContext(context), sendBtcRequest()),
+            )
+        }
+        assertFailsWith<SdkException.Unsupported> {
+            backend.submitSignedTransaction(
+                signedSubmission(
+                    context,
+                    OperationId.of("123e4567-e89b-42d3-a456-426614174000"),
+                    TEST_PSBT_BASE64,
+                ),
+            )
+        }
+        assertTrue(transport.requests.isEmpty())
+    }
+
+    @Test
+    fun `disabled profile leaves recovered signed checkpoint unchanged`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val journal = InMemoryOperationJournal()
+        val request = sendBtcRequest().copy(
+            idempotencyKey = IdempotencyKey.of("signed-profile-off"),
+        )
+        val checkpoint = persistedSendCheckpoint(request, OperationPhase.SIGNED)
+        journal.save(checkpoint)
+        val coordinator = OperationCoordinator(
+            configuration = gatewayWalletConfiguration(),
+            backend = backend,
+            journal = journal,
+            now = EpochSecondsSource { TEST_NOW },
+        )
+
+        assertFailsWith<SdkException.Unsupported> {
+            coordinator.sendBtc(inactiveContext(), FakeSigningEngine(), request)
+        }
+        assertEquals(
+            OperationPhase.SIGNED,
+            journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase,
+        )
+        assertTrue(transport.requests.isEmpty())
+    }
+
+    @Test
+    fun `disabled profile still replays a terminal send checkpoint`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val journal = InMemoryOperationJournal()
+        val request = sendBtcRequest()
+        val checkpoint = persistedSendCheckpoint(request, OperationPhase.TERMINAL)
+        journal.save(checkpoint)
+        val coordinator = OperationCoordinator(
+            configuration = gatewayWalletConfiguration(
+                maximumFeeRate = FeeRate.satPerVbyte(1.0),
+            ),
+            backend = backend,
+            journal = journal,
+            now = EpochSecondsSource { TEST_NOW },
+        )
+
+        assertEquals(
+            TEST_TXID,
+            coordinator.sendBtc(inactiveContext(), FakeSigningEngine(), request),
+        )
+        assertEquals(OperationPhase.TERMINAL, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+        assertTrue(transport.requests.isEmpty())
+    }
+
+    @Test
+    fun `expired signed checkpoint terminalizes before disabled-profile gate`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val journal = InMemoryOperationJournal()
+        val request = sendBtcRequest().copy(
+            idempotencyKey = IdempotencyKey.of("expired-signed-profile-off"),
+        )
+        val checkpoint = persistedSendCheckpoint(
+            request = request,
+            phase = OperationPhase.SIGNED,
+            expiresAt = UnixSeconds.of(TEST_NOW),
+        )
+        journal.save(checkpoint)
+        val coordinator = OperationCoordinator(
+            configuration = gatewayWalletConfiguration(
+                maximumFeeRate = FeeRate.satPerVbyte(1.0),
+            ),
+            backend = backend,
+            journal = journal,
+            now = EpochSecondsSource { TEST_NOW },
+        )
+
+        val error = assertFailsWith<SdkException.OperationExpired> {
+            coordinator.sendBtc(inactiveContext(), FakeSigningEngine(), request)
+        }
+        assertEquals(checkpoint.operationId, error.operationId)
+        assertEquals(
+            OperationPhase.TERMINAL,
+            journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase,
+        )
+        assertTrue(transport.requests.isEmpty())
+    }
+
+    @Test
+    fun `disabled profile reconciles submitting without another write`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val journal = InMemoryOperationJournal()
+        val request = sendBtcRequest().copy(
+            idempotencyKey = IdempotencyKey.of("submitting-profile-off"),
+        )
+        val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING)
+        journal.save(checkpoint)
+        val coordinator = OperationCoordinator(
+            configuration = gatewayWalletConfiguration(
+                maximumFeeRate = FeeRate.satPerVbyte(1.0),
+            ),
+            backend = backend,
+            journal = journal,
+            now = EpochSecondsSource { TEST_NOW },
+        )
+
+        val error = assertFailsWith<SdkException.OperationAmbiguous> {
+            coordinator.sendBtc(inactiveContext(), FakeSigningEngine(), request)
+        }
+        assertEquals(checkpoint.operationId, error.operationId)
+        assertEquals(
+            OperationPhase.SUBMITTING,
+            journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase,
+        )
+        assertTrue(transport.requests.isEmpty())
     }
 
     @Test
@@ -707,6 +881,61 @@ internal class RgbLightningNodeGatewayBackendTest {
             requestHash = RequestHash.ofLowercaseHex("0".repeat(64)),
         )
 
+    private fun inactiveContext(): BackendContext = BackendContext(
+        session = BackendSession("inactive-session", 1, Network.SIGNET),
+        walletId = TEST_WALLET_ID,
+        network = Network.SIGNET,
+    )
+
+    private fun gatewayWalletConfiguration(
+        maximumFeeRate: FeeRate = FeeRate.satPerVbyte(100.0),
+    ): WalletConfiguration = WalletConfiguration(
+        walletId = TEST_WALLET_ID,
+        network = Network.SIGNET,
+        signingPolicy = LocalSigningPolicy(maximumFeeRate = maximumFeeRate),
+    )
+
+    private fun persistedSendCheckpoint(
+        request: SendBtcRequest,
+        phase: OperationPhase,
+        expiresAt: UnixSeconds = UnixSeconds.of(TEST_NOW + 1_000L),
+    ): OperationCheckpoint {
+        require(
+            phase == OperationPhase.SIGNED ||
+                phase == OperationPhase.SUBMITTING ||
+                phase == OperationPhase.TERMINAL,
+        )
+        val requestHash = RequestHasher.sendBtc(Network.SIGNET, request)
+        val operationId = OperationId.of("123e4567-e89b-42d3-a456-426614174000")
+        val prepared = PreparedTransaction(
+            operationId = operationId,
+            idempotencyKey = request.idempotencyKey,
+            requestHash = requestHash,
+            network = Network.SIGNET,
+            operation = OperationKind.SEND_BTC,
+            psbtBase64 = TEST_PSBT_BASE64,
+            expiresAt = expiresAt,
+        )
+        val signed = SignedOperationPayload(TEST_PSBT_BASE64, testValidation())
+        return OperationCheckpoint(
+            walletId = TEST_WALLET_ID,
+            idempotencyKey = request.idempotencyKey,
+            requestHash = requestHash,
+            operationKind = OperationKind.SEND_BTC,
+            phase = phase,
+            operationId = operationId,
+            preparedTransaction = prepared,
+            signedPayload = signed,
+            terminalOutcome = if (phase == OperationPhase.TERMINAL) {
+                OperationTerminalOutcome.Succeeded(
+                    BackendOperationResult.SendBtc(operationId, TEST_TXID),
+                )
+            } else {
+                null
+            },
+        )
+    }
+
     private fun sendBtcRequest(skipSync: Boolean = false): SendBtcRequest = SendBtcRequest(
         address = TEST_GATEWAY_ADDRESS,
         amount = Satoshis.of(25_000),
@@ -726,8 +955,13 @@ internal class RgbLightningNodeGatewayBackendTest {
         validation = testValidation(),
     )
 
-    private fun testBackend(interceptor: Interceptor): RgbLightningNodeGatewayBackend {
-        val configuration = gatewayConfiguration()
+    private fun testBackend(
+        interceptor: Interceptor,
+        allowUnverifiedPsbtProfile: Boolean = true,
+    ): RgbLightningNodeGatewayBackend {
+        val configuration = gatewayConfiguration(
+            allowUnverifiedPsbtProfile = allowUnverifiedPsbtProfile,
+        )
         val client = OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .followRedirects(false)
@@ -747,11 +981,13 @@ internal class RgbLightningNodeGatewayBackendTest {
     private fun gatewayConfiguration(
         baseUrl: String = "https://gateway.example",
         allowInsecureLocalDevelopment: Boolean = false,
+        allowUnverifiedPsbtProfile: Boolean = false,
     ): RgbLightningNodeGatewayConfiguration = RgbLightningNodeGatewayConfiguration(
         baseUrl = baseUrl,
         expectedNetwork = Network.SIGNET,
         bearerToken = TEST_TOKEN,
         allowInsecureLocalDevelopment = allowInsecureLocalDevelopment,
+        allowUnverifiedPsbtProfile = allowUnverifiedPsbtProfile,
     )
 
     private fun gatewayIdentity(): WalletIdentity = WalletIdentity(

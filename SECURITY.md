@@ -41,6 +41,27 @@ transaction version/locktime/sequence, sighash type, duplicate inputs, dust,
 absolute fee, fee rate, output count, and unknown/proprietary fields before it
 creates any signature.
 
+Every `sendBtc` input must resolve to the vanilla BIP86 external or change
+account. The Kotlin policy mapper cannot opt into colored inputs, and the Rust
+signer independently rejects them even if a future caller or binding attempts
+to weaken that policy.
+
+"Vanilla" here proves the input key's derivation account, not that the referenced
+UTXO is free of RGB allocations. Proving allocation-free status requires
+authoritative RGB state evidence that this lightweight signer does not currently
+receive or validate. Production send-BTC therefore remains blocked until the
+gateway contract supplies reviewable evidence for that requirement.
+
+The PR #174 prepare/complete mapping is disabled by default. Its explicit
+`allowUnverifiedPsbtProfile` opt-in is for development interoperability only
+until canonical backend fixtures, the exact PSBT profile, and idempotency
+semantics are frozen. The gate runs before new or nonterminal journal
+advancement and is rechecked immediately before both gateway write requests.
+An already-expired prepared/signed checkpoint may be truthfully terminalized
+before that gate. Terminal replay and status-only SUBMITTING recovery remain
+available with the gate off; neither path prepares or submits another
+transaction.
+
 Backend preparation is never authorization. Echoed server intent is compared
 to a canonical hash produced from the original Kotlin request.
 

@@ -75,7 +75,10 @@ public class UTEXOWallet internal constructor(
         epochSecondsSource = EpochSecondsSource { System.currentTimeMillis() / 1_000L },
     )
 
-    /** Effective local capabilities. Signing capabilities become true only after unlock. */
+    /**
+     * Effective local capabilities. Signing capabilities become true only
+     * after unlock and do not imply that a backend route is production-ready.
+     */
     public val capabilities: WalletCapabilities
         get() = reportedCapabilities
 

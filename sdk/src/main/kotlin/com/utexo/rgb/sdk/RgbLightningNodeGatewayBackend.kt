@@ -50,6 +50,14 @@ public class RgbLightningNodeGatewayConfiguration(
     public val maximumPreparationTtlSeconds: Long = 3_600L,
     /** Enables HTTP only for loopback and the Android emulator host alias. */
     public val allowInsecureLocalDevelopment: Boolean = false,
+    /**
+     * Enables the provisional PR #174 send-BTC prepare/complete mapping.
+     *
+     * Keep this false in production until UTEXO freezes the exact PSBT profile,
+     * publishes canonical fixtures, and resolves gateway idempotency semantics.
+     * Read-only gateway operations do not require this opt-in.
+     */
+    public val allowUnverifiedPsbtProfile: Boolean = false,
 ) {
     public val baseUrl: String
 
@@ -116,7 +124,9 @@ public class RgbLightningNodeGatewayConfiguration(
 
     override fun toString(): String =
         "RgbLightningNodeGatewayConfiguration(baseUrl=$baseUrl, " +
-            "expectedNetwork=${expectedNetwork.wireValue}, bearerToken=[REDACTED])"
+            "expectedNetwork=${expectedNetwork.wireValue}, bearerToken=[REDACTED], " +
+            "allowInsecureLocalDevelopment=$allowInsecureLocalDevelopment, " +
+            "allowUnverifiedPsbtProfile=$allowUnverifiedPsbtProfile)"
 
     @JvmSynthetic
     internal fun resolvedBaseUrl(): HttpUrl = httpBaseUrl
@@ -152,7 +162,9 @@ public class RgbLightningNodeGatewayConfiguration(
  *
  * The current adapter enables only response shapes that map without inventing
  * missing data: initialization, xpub registration, BTC/asset balances, and
- * BTC send prepare/complete. Address, UTXO, transfer, receive, sync/refresh,
+ * BTC send prepare/complete only when
+ * [RgbLightningNodeGatewayConfiguration.allowUnverifiedPsbtProfile] is
+ * explicitly enabled. Address, UTXO, transfer, receive, sync/refresh,
  * issuance, RGB send, and create-UTXO calls retain the
  * fail-closed defaults on [WalletBackend]. The gateway currently has no
  * operation-status route, so [getOperation] also fails closed.
@@ -179,6 +191,15 @@ public class RgbLightningNodeGatewayBackend private constructor(
         newHttpClient(configuration),
         System::currentTimeMillis,
     )
+
+    public override suspend fun preflightOperation(operation: OperationKind): Unit {
+        when (operation) {
+            OperationKind.SEND_BTC -> requireUnverifiedPsbtProfileEnabled()
+            else -> throw SdkException.Unsupported(
+                "PR #174 gateway ${operation.wireValue}",
+            )
+        }
+    }
 
     override suspend fun initialize(request: BackendInitializeRequest): BackendSession {
         if (request.network != configuration.expectedNetwork) {
@@ -363,6 +384,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
     }
 
     override suspend fun prepareSendBtc(request: PrepareSendBtcRequest): PreparedTransaction {
+        requireUnverifiedPsbtProfileEnabled()
         requireOperationContext(request.context)
         if (request.request.skipSync) {
             throw SdkException.Unsupported("PR #174 gateway sendBtc skipSync")
@@ -378,7 +400,10 @@ public class RgbLightningNodeGatewayBackend private constructor(
             path = "/v1/onchain/send-btc/prepare",
             expectedStatusCode = 201,
             body = requestBody,
-            idempotencyKey = stagedIdempotencyKey(request.context.idempotencyKey, "prepare"),
+            idempotencyKey = provisionalStagedIdempotencyKey(
+                request.context.idempotencyKey,
+                "prepare",
+            ),
             logicalIdempotencyKey = request.context.idempotencyKey,
         )
         response.body.requireKeys(
@@ -430,6 +455,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
     override suspend fun submitSignedTransaction(
         request: SignedTransactionSubmission,
     ): BackendOperationResult {
+        requireUnverifiedPsbtProfileEnabled()
         requireOperationContext(request.context)
         requireCanonicalBase64(
             value = request.signedPsbtBase64,
@@ -451,7 +477,10 @@ public class RgbLightningNodeGatewayBackend private constructor(
             path = "/v1/onchain/send-btc/complete",
             expectedStatusCode = 200,
             body = body,
-            idempotencyKey = stagedIdempotencyKey(request.context.idempotencyKey, "complete"),
+            idempotencyKey = provisionalStagedIdempotencyKey(
+                request.context.idempotencyKey,
+                "complete",
+            ),
             logicalIdempotencyKey = request.context.idempotencyKey,
             operationId = request.operationId,
         )
@@ -769,12 +798,23 @@ public class RgbLightningNodeGatewayBackend private constructor(
         else -> "The gateway rejected the request"
     }
 
-    private fun stagedIdempotencyKey(key: IdempotencyKey, stage: String): String {
+    /** Prevents journal mutation and HTTP when the provisional profile is not opted into. */
+    private fun requireUnverifiedPsbtProfileEnabled(): Unit {
+        if (!configuration.allowUnverifiedPsbtProfile) {
+            throw SdkException.Unsupported(UNVERIFIED_PSBT_PROFILE_FEATURE)
+        }
+    }
+
+    /**
+     * Temporary wire mapping only. The public logical key remains authoritative;
+     * this derivation must not be treated as a frozen backend contract.
+     */
+    private fun provisionalStagedIdempotencyKey(key: IdempotencyKey, stage: String): String {
         if (stage != "prepare" && stage != "complete") {
             throw SdkException.InternalInvariantViolation("invalid gateway idempotency stage")
         }
         val digest = MessageDigest.getInstance("SHA-256")
-        listOf(GATEWAY_IDEMPOTENCY_DOMAIN, stage, key.value).forEach { field ->
+        listOf(PROVISIONAL_IDEMPOTENCY_DOMAIN, stage, key.value).forEach { field ->
             val bytes = field.toByteArray(Charsets.UTF_8)
             digest.update(ByteBuffer.allocate(Int.SIZE_BYTES).putInt(bytes.size).array())
             digest.update(bytes)
@@ -847,7 +887,9 @@ public class RgbLightningNodeGatewayBackend private constructor(
 
     private companion object {
         val GATEWAY_API_VERSION: Int = 1
-        val GATEWAY_IDEMPOTENCY_DOMAIN: String = "utexo.gateway.idempotency.v1"
+        val PROVISIONAL_IDEMPOTENCY_DOMAIN: String = "utexo.gateway.idempotency.v1"
+        val UNVERIFIED_PSBT_PROFILE_FEATURE: String =
+            "sendBtc requires an explicitly enabled, unverified gateway PSBT profile"
         val USER_AGENT: String = "rgb-sdk-kotlin-light/0.1"
         val JSON_MEDIA_TYPE_VALUE: String = "application/json"
         val GATEWAY_REQUEST_BODY_LIMIT_BYTES: Int = 64 * 1_024

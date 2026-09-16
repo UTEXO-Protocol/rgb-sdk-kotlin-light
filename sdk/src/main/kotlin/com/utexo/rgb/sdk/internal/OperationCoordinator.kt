@@ -44,28 +44,37 @@ internal class OperationCoordinator(
         signer: LocalSigningEngine,
         request: SendBtcRequest,
     ): TransactionId {
-        requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
         val hash = RequestHasher.sendBtc(configuration.network, request)
         val operationContext = OperationRequestContext(
             backend = backendContext,
             idempotencyKey = request.idempotencyKey,
             requestHash = hash,
         )
-        val current = loadOrCreate(
+        val existing = loadValidated(
             request.idempotencyKey,
             hash,
             OperationKind.SEND_BTC,
         )
-        if (current.phase == OperationPhase.TERMINAL) {
-            return requireSendBtcResult(requireTerminalResult(current)).txid
+        if (existing?.phase == OperationPhase.TERMINAL) {
+            return requireSendBtcResult(requireTerminalResult(existing)).txid
         }
-        if (current.phase == OperationPhase.SUBMITTING) {
-            return requireSendBtcResult(recoverSubmitting(operationContext, current)).txid
+        if (existing?.phase == OperationPhase.SUBMITTING) {
+            return requireSendBtcResult(recoverSubmitting(operationContext, existing)).txid
+        }
+        val current = existing ?: run {
+            requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
+            createAfterPreflight(
+                request.idempotencyKey,
+                hash,
+                OperationKind.SEND_BTC,
+            )
         }
         val prepared = ensurePrepared(
             checkpoint = current,
             context = operationContext,
             expectedKind = OperationKind.SEND_BTC,
+            createdPreflightSatisfied = existing == null,
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
             prepare = {
                 backendCall {
                     backend.prepareSendBtc(PrepareSendBtcRequest(operationContext, request))
@@ -75,9 +84,18 @@ internal class OperationCoordinator(
         val signed = ensureSigned(
             checkpoint = prepared,
             signer = signer,
-            LocalOperationIntent.SendBtc(configuration.network, configuration.signingPolicy, request),
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            intent = LocalOperationIntent.SendBtc(
+                configuration.network,
+                configuration.signingPolicy,
+                request,
+            ),
         )
-        val result = submitPersisted(operationContext, signed)
+        val result = submitPersisted(
+            context = operationContext,
+            checkpoint = signed,
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+        )
         return requireSendBtcResult(result).txid
     }
 
@@ -86,28 +104,37 @@ internal class OperationCoordinator(
         signer: LocalSigningEngine,
         request: CreateUtxosRequest,
     ): CreateUtxosResult {
-        requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
         val hash = RequestHasher.createUtxos(configuration.network, request)
         val operationContext = OperationRequestContext(
             backend = backendContext,
             idempotencyKey = request.idempotencyKey,
             requestHash = hash,
         )
-        val current = loadOrCreate(
+        val existing = loadValidated(
             request.idempotencyKey,
             hash,
             OperationKind.CREATE_UTXOS,
         )
-        if (current.phase == OperationPhase.TERMINAL) {
-            return requireCreateUtxosResult(requireTerminalResult(current)).result
+        if (existing?.phase == OperationPhase.TERMINAL) {
+            return requireCreateUtxosResult(requireTerminalResult(existing)).result
         }
-        if (current.phase == OperationPhase.SUBMITTING) {
-            return requireCreateUtxosResult(recoverSubmitting(operationContext, current)).result
+        if (existing?.phase == OperationPhase.SUBMITTING) {
+            return requireCreateUtxosResult(recoverSubmitting(operationContext, existing)).result
+        }
+        val current = existing ?: run {
+            requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
+            createAfterPreflight(
+                request.idempotencyKey,
+                hash,
+                OperationKind.CREATE_UTXOS,
+            )
         }
         val prepared = ensurePrepared(
             checkpoint = current,
             context = operationContext,
             expectedKind = OperationKind.CREATE_UTXOS,
+            createdPreflightSatisfied = existing == null,
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
             prepare = {
                 backendCall {
                     backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext, request))
@@ -128,14 +155,19 @@ internal class OperationCoordinator(
         val signed = ensureSigned(
             checkpoint = prepared,
             signer = signer,
-            LocalOperationIntent.CreateUtxos(
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            intent = LocalOperationIntent.CreateUtxos(
                 network = configuration.network,
                 policy = configuration.signingPolicy,
                 request = request,
                 exactOutputPlan = plan,
             ),
         )
-        val result = submitPersisted(operationContext, signed)
+        val result = submitPersisted(
+            context = operationContext,
+            checkpoint = signed,
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+        )
         return requireCreateUtxosResult(result).result
     }
 
@@ -144,28 +176,37 @@ internal class OperationCoordinator(
         signer: LocalSigningEngine,
         request: OnchainSendRequest,
     ): OnchainSendResponse {
-        requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
         val hash = RequestHasher.onchainSend(configuration.network, request)
         val operationContext = OperationRequestContext(
             backend = backendContext,
             idempotencyKey = request.idempotencyKey,
             requestHash = hash,
         )
-        val current = loadOrCreate(
+        val existing = loadValidated(
             request.idempotencyKey,
             hash,
             OperationKind.ONCHAIN_SEND,
         )
-        if (current.phase == OperationPhase.TERMINAL) {
-            return requireOnchainSendResult(requireTerminalResult(current)).result
+        if (existing?.phase == OperationPhase.TERMINAL) {
+            return requireOnchainSendResult(requireTerminalResult(existing)).result
         }
-        if (current.phase == OperationPhase.SUBMITTING) {
-            return requireOnchainSendResult(recoverSubmitting(operationContext, current)).result
+        if (existing?.phase == OperationPhase.SUBMITTING) {
+            return requireOnchainSendResult(recoverSubmitting(operationContext, existing)).result
+        }
+        val current = existing ?: run {
+            requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
+            createAfterPreflight(
+                request.idempotencyKey,
+                hash,
+                OperationKind.ONCHAIN_SEND,
+            )
         }
         val prepared = ensurePrepared(
             checkpoint = current,
             context = operationContext,
             expectedKind = OperationKind.ONCHAIN_SEND,
+            createdPreflightSatisfied = existing == null,
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
             prepare = {
                 backendCall {
                     backend.prepareOnchainSend(PrepareOnchainSendRequest(operationContext, request))
@@ -175,27 +216,41 @@ internal class OperationCoordinator(
         val signed = ensureSigned(
             checkpoint = prepared,
             signer = signer,
-            LocalOperationIntent.OnchainSend(
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            intent = LocalOperationIntent.OnchainSend(
                 network = configuration.network,
                 policy = configuration.signingPolicy,
                 request = request,
             ),
         )
-        val result = submitPersisted(operationContext, signed)
+        val result = submitPersisted(
+            context = operationContext,
+            checkpoint = signed,
+            requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+        )
         return requireOnchainSendResult(result).result
     }
 
     private suspend fun submitPersisted(
         context: OperationRequestContext,
         checkpoint: OperationCheckpoint,
+        requestedFeeRate: Long,
     ): BackendOperationResult {
         val prepared = checkpoint.preparedTransaction
             ?: throw SdkException.InternalInvariantViolation("signed checkpoint has no preparation")
         val signed = checkpoint.signedPayload
             ?: throw SdkException.InternalInvariantViolation("signed checkpoint has no payload")
         val submitting = when (checkpoint.phase) {
-            OperationPhase.SIGNED -> checkpoint.copy(phase = OperationPhase.SUBMITTING).also {
-                journalSave(it)
+            OperationPhase.SIGNED -> {
+                if (prepared.expiresAt.value <= now.now()) {
+                    persistExpiredAndThrow(checkpoint)
+                }
+                requireFeeWithinPolicy(requestedFeeRate)
+                backendPreflight(checkpoint.operationKind)
+                if (prepared.expiresAt.value <= now.now()) {
+                    persistExpiredAndThrow(checkpoint)
+                }
+                checkpoint.copy(phase = OperationPhase.SUBMITTING).also { journalSave(it) }
             }
             OperationPhase.SUBMITTING -> checkpoint
             else -> throw SdkException.InternalInvariantViolation(
@@ -241,37 +296,53 @@ internal class OperationCoordinator(
         return result
     }
 
-    private suspend fun loadOrCreate(
+    private suspend fun loadValidated(
+        idempotencyKey: IdempotencyKey,
+        hash: RequestHash,
+        kind: OperationKind,
+    ): OperationCheckpoint? {
+        val current = journalLoad(configuration.walletId, idempotencyKey)
+        if (current != null) {
+            if (current.requestHash != hash || current.operationKind != kind) {
+                throw SdkException.OperationConflict(idempotencyKey)
+            }
+        }
+        return current
+    }
+
+    private suspend fun createAfterPreflight(
         idempotencyKey: IdempotencyKey,
         hash: RequestHash,
         kind: OperationKind,
     ): OperationCheckpoint {
-        val current = journalLoad(configuration.walletId, idempotencyKey)
-        if (current == null) {
-            val created = OperationCheckpoint(
-                walletId = configuration.walletId,
-                idempotencyKey = idempotencyKey,
-                requestHash = hash,
-                operationKind = kind,
-                phase = OperationPhase.CREATED,
-            )
-            journalSave(created)
-            return created
-        }
-        if (current.requestHash != hash || current.operationKind != kind) {
-            throw SdkException.OperationConflict(idempotencyKey)
-        }
-        return current
+        // A deterministic readiness failure must occur before CREATED is
+        // persisted, so a disabled provisional profile leaves no checkpoint.
+        backendPreflight(kind)
+        val created = OperationCheckpoint(
+            walletId = configuration.walletId,
+            idempotencyKey = idempotencyKey,
+            requestHash = hash,
+            operationKind = kind,
+            phase = OperationPhase.CREATED,
+        )
+        journalSave(created)
+        return created
     }
 
     private suspend fun ensurePrepared(
         checkpoint: OperationCheckpoint,
         context: OperationRequestContext,
         expectedKind: OperationKind,
+        createdPreflightSatisfied: Boolean,
+        requestedFeeRate: Long,
         prepare: suspend () -> PreparedTransaction,
         verifyOperation: (PreparedTransaction) -> Unit = {},
     ): OperationCheckpoint {
         if (checkpoint.phase == OperationPhase.CREATED) {
+            if (!createdPreflightSatisfied) {
+                requireFeeWithinPolicy(requestedFeeRate)
+                backendPreflight(expectedKind)
+            }
             val prepared = prepare()
             verifyPrepared(prepared, context, expectedKind)
             verifyOperation(prepared)
@@ -295,7 +366,10 @@ internal class OperationCoordinator(
             ?: throw SdkException.InternalInvariantViolation("checkpoint has no prepared transaction")
         verifyPrepared(prepared, context, expectedKind)
         verifyOperation(prepared)
-        if (checkpoint.phase == OperationPhase.PREPARED && prepared.expiresAt.value <= now.now()) {
+        if ((checkpoint.phase == OperationPhase.PREPARED ||
+                checkpoint.phase == OperationPhase.SIGNED
+            ) && prepared.expiresAt.value <= now.now()
+        ) {
             journalSave(
                 checkpoint.copy(
                     phase = OperationPhase.TERMINAL,
@@ -310,6 +384,7 @@ internal class OperationCoordinator(
     private suspend fun ensureSigned(
         checkpoint: OperationCheckpoint,
         signer: LocalSigningEngine,
+        requestedFeeRate: Long,
         intent: LocalOperationIntent,
     ): OperationCheckpoint {
         if (checkpoint.phase == OperationPhase.SIGNED) return checkpoint
@@ -318,6 +393,11 @@ internal class OperationCoordinator(
         }
         val prepared = checkpoint.preparedTransaction
             ?: throw SdkException.InternalInvariantViolation("prepared checkpoint has no transaction")
+        requireFeeWithinPolicy(requestedFeeRate)
+        backendPreflight(checkpoint.operationKind)
+        if (prepared.expiresAt.value <= now.now()) {
+            persistExpiredAndThrow(checkpoint)
+        }
         val signed = signer.validateAndSign(prepared, intent)
         val next = checkpoint.copy(
             phase = OperationPhase.SIGNED,
@@ -479,6 +559,9 @@ internal class OperationCoordinator(
             throw SdkException.PolicyRejected("requested fee rate exceeds wallet policy")
         }
     }
+
+    private suspend fun backendPreflight(operation: OperationKind): Unit =
+        backendCall { backend.preflightOperation(operation) }
 
     private fun verifyResultIdentity(
         result: BackendOperationResult,

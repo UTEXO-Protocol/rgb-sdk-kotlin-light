@@ -1,5 +1,6 @@
 package com.utexo.rgb.sdk
 
+import com.utexo.rgb.sdk.internal.EpochSecondsSource
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CancellationException
@@ -14,6 +15,25 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 internal class OperationCoordinatorTest {
+    @Test
+    fun `preflight failures are sanitized before journal creation`(): Unit = runBlocking {
+        val backend = object : FakeBackend() {
+            override suspend fun preflightOperation(operation: OperationKind): Unit {
+                throw IOException("backend implementation detail")
+            }
+        }
+        val journal = InMemoryOperationJournal()
+        val wallet = testWallet(backend, FakeSigningEngine(), journal)
+        wallet.init()
+        wallet.unlock()
+
+        assertFailsWith<SdkException.BackendUnavailable> {
+            wallet.sendBtc(testSendRequest())
+        }
+        assertEquals(null, journal.load(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY))
+        assertEquals(0, backend.prepareSendCalls)
+    }
+
     @Test
     fun `sendBtc prepares signs and submits without exposing PSBT to caller`(): Unit = runBlocking {
         val events = mutableListOf<String>()
@@ -188,6 +208,7 @@ internal class OperationCoordinatorTest {
                 ),
             )
         }
+        assertEquals(listOf(OperationKind.CREATE_UTXOS), backend.preflightOperations)
         assertEquals(0, signer.signCalls)
         assertEquals(0, backend.submitCalls)
     }
@@ -289,6 +310,96 @@ internal class OperationCoordinatorTest {
             assertEquals(0, resumedSigner.signCalls)
             assertEquals("signed-psbt", backend.submissions.single().signedPsbtBase64)
         }
+
+    @Test
+    fun `expiry reached during local signing is persisted before submit`(): Unit = runBlocking {
+        var now = TEST_NOW
+        val journal = InMemoryOperationJournal()
+        val backend = FakeBackend()
+        val signer = FakeSigningEngine(beforeSign = { now = TEST_NOW + 1_000L })
+        val wallet = testWallet(
+            backend = backend,
+            signer = signer,
+            journal = journal,
+            epochSecondsSource = EpochSecondsSource { now },
+        )
+        wallet.init()
+        wallet.unlock()
+
+        val error = assertFailsWith<SdkException.OperationExpired> {
+            wallet.sendBtc(testSendRequest())
+        }
+        assertEquals(TEST_OPERATION_ID, error.operationId)
+        assertEquals(0, backend.submitCalls)
+        assertEquals(
+            OperationPhase.TERMINAL,
+            journal.load(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY)?.phase,
+        )
+    }
+
+    @Test
+    fun `expiry reached during pre-sign preflight prevents signing`(): Unit = runBlocking {
+        var now = TEST_NOW
+        var preflightCalls = 0
+        val journal = InMemoryOperationJournal()
+        val backend = FakeBackend(
+            onPreflight = {
+                preflightCalls += 1
+                if (preflightCalls == 2) now = TEST_NOW + 1_000L
+            },
+        )
+        val signer = FakeSigningEngine()
+        val wallet = testWallet(
+            backend = backend,
+            signer = signer,
+            journal = journal,
+            epochSecondsSource = EpochSecondsSource { now },
+        )
+        wallet.init()
+        wallet.unlock()
+
+        assertFailsWith<SdkException.OperationExpired> {
+            wallet.sendBtc(testSendRequest())
+        }
+        assertEquals(0, signer.signCalls)
+        assertEquals(0, backend.submitCalls)
+        assertEquals(
+            OperationPhase.TERMINAL,
+            journal.load(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY)?.phase,
+        )
+    }
+
+    @Test
+    fun `expiry reached during pre-submit preflight prevents submission`(): Unit = runBlocking {
+        var now = TEST_NOW
+        var preflightCalls = 0
+        val journal = InMemoryOperationJournal()
+        val backend = FakeBackend(
+            onPreflight = {
+                preflightCalls += 1
+                if (preflightCalls == 3) now = TEST_NOW + 1_000L
+            },
+        )
+        val signer = FakeSigningEngine()
+        val wallet = testWallet(
+            backend = backend,
+            signer = signer,
+            journal = journal,
+            epochSecondsSource = EpochSecondsSource { now },
+        )
+        wallet.init()
+        wallet.unlock()
+
+        assertFailsWith<SdkException.OperationExpired> {
+            wallet.sendBtc(testSendRequest())
+        }
+        assertEquals(1, signer.signCalls)
+        assertEquals(0, backend.submitCalls)
+        assertEquals(
+            OperationPhase.TERMINAL,
+            journal.load(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY)?.phase,
+        )
+    }
 
     @Test
     fun `restart from submitting only polls and never assumes resubmission is safe`(): Unit =

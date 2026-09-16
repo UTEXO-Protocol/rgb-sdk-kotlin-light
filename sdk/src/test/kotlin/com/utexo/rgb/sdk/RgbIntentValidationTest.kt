@@ -52,6 +52,14 @@ internal class RgbIntentValidationTest {
             ),
         )
         assertEquals(TEST_TXID, result.txid)
+        assertEquals(
+            listOf(
+                OperationKind.ONCHAIN_SEND,
+                OperationKind.ONCHAIN_SEND,
+                OperationKind.ONCHAIN_SEND,
+            ),
+            backend.preflightOperations,
+        )
         assertEquals(1, backend.prepareOnchainCalls)
         assertEquals(1, signer.signCalls)
     }

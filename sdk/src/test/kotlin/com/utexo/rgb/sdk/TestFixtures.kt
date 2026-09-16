@@ -63,6 +63,7 @@ internal class FakeSigningEngine(
     override val capabilities: WalletCapabilities = testCapabilities(),
     var decodedInvoice: InvoiceData? = null,
     private val events: MutableList<String>? = null,
+    private val beforeSign: () -> Unit = {},
 ) : LocalSigningEngine {
     var closed: Boolean = false
     var signCalls: Int = 0
@@ -86,6 +87,7 @@ internal class FakeSigningEngine(
         events?.add("sign")
         signCalls += 1
         intents += intent
+        beforeSign()
         return LocalSigningResult(
             signedPsbtBase64 = "signed-psbt",
             validation = testValidation(),
@@ -99,6 +101,7 @@ internal class FakeSigningEngine(
 
 internal open class FakeBackend(
     private val events: MutableList<String>? = null,
+    private val onPreflight: (OperationKind) -> Unit = {},
 ) : WalletBackend {
     var initializeCalls: Int = 0
     var registrationCalls: Int = 0
@@ -116,7 +119,13 @@ internal open class FakeBackend(
     var receiveResponse: InvoiceReceiveData? = null
     var onchainReceiveResponse: OnchainReceiveResponse? = null
     var resultTxid: TransactionId = TEST_TXID
+    val preflightOperations: MutableList<OperationKind> = mutableListOf()
     val submissions: MutableList<SignedTransactionSubmission> = mutableListOf()
+
+    override suspend fun preflightOperation(operation: OperationKind): Unit {
+        preflightOperations += operation
+        onPreflight(operation)
+    }
 
     override suspend fun initialize(request: BackendInitializeRequest): BackendSession {
         events?.add("initialize")
@@ -248,11 +257,12 @@ internal fun testWallet(
     backend: FakeBackend,
     signer: FakeSigningEngine,
     journal: OperationJournal = InMemoryOperationJournal(),
+    epochSecondsSource: EpochSecondsSource = EpochSecondsSource { TEST_NOW },
 ): UTEXOWallet = UTEXOWallet(
     configuration = testConfiguration(),
     backend = backend,
     keyProvider = WalletKeyProvider { SecretSeed.fromBytes(ByteArray(64) { 1 }) },
     operationJournal = journal,
     signingEngineFactory = LocalSigningEngineFactory { _, _ -> signer },
-    epochSecondsSource = EpochSecondsSource { TEST_NOW },
+    epochSecondsSource = epochSecondsSource,
 )

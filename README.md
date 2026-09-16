@@ -18,6 +18,11 @@ libraries are checked in for Android `arm64-v8a`, `armeabi-v7a`, and `x86_64`
 (minimum API 24). The Gradle build prepares generated code in an isolated build
 source so handwritten public code remains under Kotlin explicit-API checking.
 
+The only concrete remote adapter shipped in this phase is
+`RgbLightningNodeGatewayBackend`. `WalletBackend` remains an opt-in
+infrastructure seam for tests and future adapters; it is not a second
+application-facing integration path.
+
 The local Rust core currently supports complete signing policy for `sendBtc`
 only. `createUtxos`, `onchainSend`, and `inflate` are deliberately unavailable
 until their exact output/commitment evidence is frozen and enforced in Rust.
@@ -50,7 +55,8 @@ Android HTTP/TLS and kotlinx-serialization JSON `1.6.3` for strict response
 parsing. Redirects, automatic connection retries, and non-local cleartext HTTP
 are disabled so a bearer credential cannot be forwarded to another origin.
 
-The frozen key/signing profile is `utexo.bip86.v1` / `utexo.psbt.bip86.v1`:
+The implemented local candidate profile is `utexo.bip86.v1` /
+`utexo.psbt.bip86.v1`:
 
 - BIP39 mnemonic to 64-byte seed;
 - BIP32 hierarchical deterministic derivation;
@@ -58,7 +64,11 @@ The frozen key/signing profile is `utexo.bip86.v1` / `utexo.psbt.bip86.v1`:
 - BIP174 PSBT v0 plus BIP371 Taproot PSBT fields;
 - BIP341 Taproot validation and BIP340 Schnorr signatures;
 - transaction version 2, locktime 0, sequence `0xFFFFFFFD` (RBF);
-- vanilla inputs only and vanilla branch-1 change for `sendBtc`.
+- vanilla-account inputs only and vanilla branch-1 change for `sendBtc`.
+
+In this profile, “vanilla” is a locally verified BIP86 derivation account. It
+does not prove that an outpoint is free of RGB allocations; that needs
+authoritative RGB state evidence from the still-unfrozen gateway contract.
 
 Vanilla accounts use `m/86'/0'/0'` on mainnet and `m/86'/1'/0'` elsewhere.
 Colored accounts preserve the existing UTEXO profile at coin types `827166`
@@ -208,14 +218,19 @@ val backend = RgbLightningNodeGatewayBackend(
         baseUrl = "https://wallet-gateway.example",
         expectedNetwork = Network.SIGNET,
         bearerToken = tokenLoadedFromEncryptedApplicationStorage,
+        // Keep false in production until the exact PSBT profile and canonical
+        // fixtures are frozen. Tests must opt into true explicitly.
+        allowUnverifiedPsbtProfile = false,
     ),
 )
 ```
 
 The adapter currently maps authentication/session validation, watch-only xpub
-registration, BTC balance, a single asset balance, and BTC send
-prepare/complete. BTC sends still pass through the Rust local policy engine
-before completion. The prepare response's operation ID, intent, recipient,
+registration, BTC balance, and a single asset balance. BTC send
+prepare/complete is default-off and is reachable only through the explicitly
+unsafe `allowUnverifiedPsbtProfile` development opt-in. When enabled, BTC sends
+still pass through the Rust local policy engine before completion. The prepare
+response's operation ID, intent, recipient,
 amount, whole-number fee rate, canonical Base64 PSBT, and expiry are checked
 before the PSBT reaches that signer. Expiry must be in the future and no more
 than the configured `maximumPreparationTtlSeconds` (one hour by default). A
@@ -225,6 +240,13 @@ session after shutdown, and a different wallet ID is rejected. The gateway
 `userId` returned for that credential is also pinned across shutdown and reinit;
 an identity change fails as a backend protocol mismatch.
 
+Turning the provisional opt-in off prevents new, created, prepared, or signed
+work from advancing, without creating or nonterminally advancing a checkpoint.
+An already-expired prepared or signed checkpoint may still be truthfully
+terminalized. The gate does not hide a terminal result already in the journal,
+and a SUBMITTING checkpoint may still use status-only recovery; it can never
+issue another prepare or complete.
+
 The remaining gateway routes are deliberately not adapted when they cannot
 populate the SDK model without guessing. In particular, gateway addresses do
 not carry derivation branch/index evidence; UTXOs omit `pendingBlinded`;
@@ -233,6 +255,13 @@ issuance/timestamp fields; receive responses omit the authoritative batch
 index; sync omits server completion metadata; and the gateway has no
 operation-status route. Consequently an uncertain completion remains
 `OperationAmbiguous` and is never blindly resubmitted by the wallet coordinator.
+The promised durable GET-by-operation-ID route remains a production release
+gate; the SDK does not emulate it or retry completion in its absence.
+
+The adapter currently derives distinct prepare/complete HTTP idempotency keys
+from the caller's durable logical key. That mapping is provisional and lives
+behind `allowUnverifiedPsbtProfile`; it is not a frozen public or backend
+contract while the gateway README/implementation semantics are being resolved.
 
 PR #174 currently accepts only integer `feeRateSatPerVb`, so callers must pass
 an exact whole-sat/vB `FeeRate`; the RN-compatible 1.5 sat/vB default is rejected
@@ -244,7 +273,7 @@ identities. Local container HTTP is available only with
 Android emulator host `10.0.2.2`; a host application must also opt into Android
 cleartext traffic for that development endpoint.
 
-This wiring does not relax the frozen `utexo.psbt.bip86.v1` signer profile. A
+This wiring does not relax the strict local `utexo.psbt.bip86.v1` candidate profile. A
 gateway PSBT using a different transaction version, locktime, sequence, key
 branch, ownership class, or Taproot PSBT shape will be rejected locally. End-to-
 end compatibility therefore remains gated on a canonical backend fixture and a

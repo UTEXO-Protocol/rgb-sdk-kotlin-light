@@ -58,6 +58,8 @@ internal class WalletLifecycleTest {
     @Test
     fun `wrong backend network fails initialization`(): Unit = runBlocking {
         val backend = object : WalletBackend {
+            override suspend fun preflightOperation(operation: OperationKind): Unit = Unit
+
             override suspend fun initialize(request: BackendInitializeRequest): BackendSession =
                 BackendSession("session", 1, Network.MAINNET)
 
