@@ -5,6 +5,8 @@ import com.utexo.rgb.sdk.internal.LocalOperationIntent
 import com.utexo.rgb.sdk.internal.LocalSigningEngine
 import com.utexo.rgb.sdk.internal.LocalSigningEngineFactory
 import com.utexo.rgb.sdk.internal.LocalSigningResult
+import com.utexo.rgb.sdk.internal.LocallyDecodedInvoice
+import com.utexo.rgb.sdk.internal.InvoiceEncodedState
 import java.io.IOException
 
 internal const val TEST_NOW = 1_000L
@@ -67,18 +69,29 @@ internal class FakeSigningEngine(
 ) : LocalSigningEngine {
     var closed: Boolean = false
     var signCalls: Int = 0
+    var retainedValidationCalls: Int = 0
+    var retainedValidationFailure: SdkException? = null
+    var retainedValidationReport: LocalValidationReport = testValidation()
     var addressChecks: Int = 0
+    var decodedWitness: Boolean = true
+    var identityNetwork: Network = Network.SIGNET
+    var rawInvoiceState: InvoiceEncodedState? = null
+    var rawInvoiceAmount: AssetAmount? = null
     val intents: MutableList<LocalOperationIntent> = mutableListOf()
 
-    override suspend fun identity(): WalletIdentity = testIdentity()
+    override suspend fun identity(): WalletIdentity = testIdentity(identityNetwork)
 
     override suspend fun verifyReservedAddress(reservation: ReservedAddress): Unit {
         events?.add("verifyAddress")
         addressChecks += 1
     }
 
-    override suspend fun decodeRgbInvoice(invoice: RgbInvoice): InvoiceData =
-        decodedInvoice ?: throw SdkException.Unsupported("test RGB parser")
+    override suspend fun decodeRgbInvoice(invoice: RgbInvoice): LocallyDecodedInvoice {
+        val decoded = decodedInvoice ?: throw SdkException.Unsupported("test RGB parser")
+        return LocallyDecodedInvoice(decoded, decodedWitness,
+            rawInvoiceState ?: if (decoded.assignment.amount == null) InvoiceEncodedState.OMITTED else InvoiceEncodedState.AMOUNT,
+            if (rawInvoiceState == null) decoded.assignment.amount else rawInvoiceAmount)
+    }
 
     override suspend fun validateAndSign(
         prepared: PreparedTransaction,
@@ -92,6 +105,19 @@ internal class FakeSigningEngine(
             signedPsbtBase64 = "signed-psbt",
             validation = testValidation(),
         )
+    }
+
+    override suspend fun validateRetainedSigning(
+        prepared: PreparedTransaction,
+        intent: LocalOperationIntent,
+    ): LocalValidationReport {
+        retainedValidationCalls++
+        retainedValidationFailure?.let { throw it }
+        val report = retainedValidationReport
+        if (report.fee.value > intent.policy.maximumAbsoluteFee.value ||
+            report.inputCount > intent.policy.maximumInputs || report.outputCount > intent.policy.maximumOutputs
+        ) throw SdkException.PolicyRejected("current policy rejects retained transaction")
+        return report
     }
 
     override fun close(): Unit {
@@ -258,8 +284,9 @@ internal fun testWallet(
     signer: FakeSigningEngine,
     journal: OperationJournal = InMemoryOperationJournal(),
     epochSecondsSource: EpochSecondsSource = EpochSecondsSource { TEST_NOW },
+    configuration: WalletConfiguration = testConfiguration(),
 ): UTEXOWallet = UTEXOWallet(
-    configuration = testConfiguration(),
+    configuration = configuration,
     backend = backend,
     keyProvider = WalletKeyProvider { SecretSeed.fromBytes(ByteArray(64) { 1 }) },
     operationJournal = journal,

@@ -37,7 +37,11 @@ public final class ReleaseApiHardener {
             "SeedEnvelopeCipher",
             "SeedEnvelopeRepository",
             "AtomicSeedEnvelopeFile",
-            "AndroidKeystoreSeedCipher"
+            "AndroidKeystoreSeedCipher",
+            "ProtectedStorageCipher",
+            "AndroidProtectedStorageCipher",
+            "ProtectedWalletFile",
+            "EncryptedOperationJournal"
     );
 
     private ReleaseApiHardener() {}

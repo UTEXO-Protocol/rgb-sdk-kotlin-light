@@ -1,0 +1,253 @@
+{
+  "schema": "utexo.native-local-build.v1",
+  "platform": "android",
+  "assurance": "Locally observed build of possibly uncommitted source. Not a signed release, independent reproduction, or proof against a compromised compiler/dependency cache.",
+  "startedAt": "2026-09-21T14:12:22.218Z",
+  "tools": {
+    "rust": "rustc 1.88.0 (6b00bc388 2025-06-23)\nbinary: rustc\ncommit-hash: 6b00bc3880198600130e1cf62b8f8a93494488cc\ncommit-date: 2025-06-23\nhost: aarch64-apple-darwin\nrelease: 1.88.0\nLLVM version: 20.1.5",
+    "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
+    "cargoNdk": "cargo-ndk 4.1.2",
+    "ndk": "28.2.13676358",
+    "api": 24
+  },
+  "flags": {
+    "rust": [
+      "--remap-path-prefix=WORKSPACE=/utexo",
+      "--remap-path-prefix=CARGO_HOME=/cargo"
+    ],
+    "c": [
+      "-ffile-prefix-map=WORKSPACE=/utexo",
+      "-ffile-prefix-map=CARGO_HOME=/cargo"
+    ],
+    "profile": "Cargo.toml [profile.release]; --release --locked; inherited codegen overrides refused"
+  },
+  "inputs": {
+    "core": [
+      {
+        "path": "Cargo.lock",
+        "bytes": 30132,
+        "sha256": "b64e3169d8dcfc428ceda040341a66666e83641124ecbfc90249ed34e38cd242"
+      },
+      {
+        "path": "Cargo.toml",
+        "bytes": 1320,
+        "sha256": "82a017f9b83a6435a633be71d54b79151a3914497711489a2990f67348dc2b1e"
+      },
+      {
+        "path": "rust-toolchain.toml",
+        "bytes": 321,
+        "sha256": "8993f000341fab03e22bec93e00db234aba2b080695c7c8e8018ac3a4d68160f"
+      },
+      {
+        "path": "scripts/artifact-tree.mjs",
+        "bytes": 1601,
+        "sha256": "b85c519350cd25083321f346177129d202dc38c89f4ae95629ad67fbf5589539"
+      },
+      {
+        "path": "scripts/artifact-tree.test.mjs",
+        "bytes": 1518,
+        "sha256": "4aa9a3fb44c5fe1fe9f9936ac39563a59255a1fd6c83f60e70b8867e8659b4a3"
+      },
+      {
+        "path": "scripts/build-android.sh",
+        "bytes": 3523,
+        "sha256": "0e42a29cee79f2b66d489b59dd0322a0fa9ed95740af1313d6bb90350cc8889e"
+      },
+      {
+        "path": "scripts/build-apple.sh",
+        "bytes": 4382,
+        "sha256": "f59898d2911071c654461a080c1033006d499fa8b53387de212ad42c64fffd68"
+      },
+      {
+        "path": "scripts/build-environment.sh",
+        "bytes": 1502,
+        "sha256": "4bb989b02ee822d0d5abccc6e6ac72c400322f69e8521d44134639d000114a13"
+      },
+      {
+        "path": "scripts/build-environment.test.mjs",
+        "bytes": 1776,
+        "sha256": "6156af3212a9955c8d86191ff907ac047869f460817be7fad675b00f66e6c996"
+      },
+      {
+        "path": "scripts/build-receipt.mjs",
+        "bytes": 3699,
+        "sha256": "3d8cc5cdad8b239a6aba7cc86693f1309caae0203e82be8632b210a8fe880342"
+      },
+      {
+        "path": "scripts/generate-bindings.sh",
+        "bytes": 900,
+        "sha256": "d2f3200d66dbd0fd2fe27c8df216a43179bf56947285f4b750efc450142bd015"
+      },
+      {
+        "path": "scripts/linux-verifier.Dockerfile",
+        "bytes": 199,
+        "sha256": "5d9c0daf9eb53ae626902ef1792eb5e2f98f4aa8d8af25ea43d3efbfe7e850ab"
+      },
+      {
+        "path": "scripts/notice-binding.mjs",
+        "bytes": 1654,
+        "sha256": "349ed2be142b9f1a3b4c8514c0f4d59737f407a96321bbad828eece8406b899b"
+      },
+      {
+        "path": "scripts/notice-binding.test.mjs",
+        "bytes": 1624,
+        "sha256": "9e2bb0ceaefc9ff82c67342705b9580c97c0b0f8ea3a351e0ea37655f55f657e"
+      },
+      {
+        "path": "scripts/osv-response.mjs",
+        "bytes": 1056,
+        "sha256": "26783d486ac1778c088d09260b461684e9dba5e237fda94b39c8c3b5e024f672"
+      },
+      {
+        "path": "scripts/osv-response.test.mjs",
+        "bytes": 1626,
+        "sha256": "9339bc7397b2306a53d104cfa8d1cc53932ce2164ecc16ca7149c70facb5bcf9"
+      },
+      {
+        "path": "scripts/package-provenance.mjs",
+        "bytes": 4354,
+        "sha256": "aade0ac47dde127d5b7de7dd9ae83256e2689cd5b7225d7b463d9c60ebbea5c4"
+      },
+      {
+        "path": "scripts/package-source.sh",
+        "bytes": 491,
+        "sha256": "55912f0de35ab97d7a0aeea055dea00521e5383f32097c0eae6dc5060e701efe"
+      },
+      {
+        "path": "scripts/scan-gradle-advisories.mjs",
+        "bytes": 2790,
+        "sha256": "2153c978b32d56d0496ad32c20a3bc35aa82a0e49d16eee584fed79a38240602"
+      },
+      {
+        "path": "scripts/security-inventory.mjs",
+        "bytes": 9543,
+        "sha256": "318617ee2a75393e7fb34b0129ecf47e6d6bb219696ab6ca742cf77c9e75012c"
+      },
+      {
+        "path": "scripts/seed-fuzz-corpus.mjs",
+        "bytes": 2233,
+        "sha256": "261cfe50bd0699f738936db83ad3eb4172b6e6d4bb863b0bd3b1412892eb8246"
+      },
+      {
+        "path": "scripts/source-archive.mjs",
+        "bytes": 3561,
+        "sha256": "c76cc0305ac6e45fc25b866bca79722194ce31a78d60e6d45445fe45bfbac0c7"
+      },
+      {
+        "path": "scripts/test-source-archive.mjs",
+        "bytes": 3253,
+        "sha256": "23b1554f1d6f81c0e3cac5efb4ec177e10442f7803c459b8cd6aa2ba27946e4d"
+      },
+      {
+        "path": "scripts/verify-artifacts.mjs",
+        "bytes": 825,
+        "sha256": "ef80faa6746a4cf7ba6633f987351d311caaa297ed010f6fcbefd2fc46f9c781"
+      },
+      {
+        "path": "scripts/verify-core-differential.mjs",
+        "bytes": 2616,
+        "sha256": "c7d775a3d7b59a46c84b00766c8fc8850b1e79c4e461eb28fc5e8b135a8fdf00"
+      },
+      {
+        "path": "scripts/verify-source-archive.mjs",
+        "bytes": 2365,
+        "sha256": "a9bcea2045ff3924dc1d89f15315cbd063c8608d4a837c03a757fe3d394084f0"
+      },
+      {
+        "path": "scripts/verify.sh",
+        "bytes": 457,
+        "sha256": "d8fa3a7eaaf51aadf88c37948cbbedaab8b5a082a2c3daf81d8b79c71353cd9e"
+      },
+      {
+        "path": "src/assurance_tests.rs",
+        "bytes": 13173,
+        "sha256": "30ae3bb7c2878a40457363eb9d061bc3ac38d7d9492854448234e1bad677ffa7"
+      },
+      {
+        "path": "src/bin/uniffi-bindgen.rs",
+        "bytes": 49,
+        "sha256": "f7a2dd11fb370e9595bdfa6c32fc41a9b67a60bbab06ec711cb7a03eb873ffa6"
+      },
+      {
+        "path": "src/error.rs",
+        "bytes": 1754,
+        "sha256": "29590ca115d5a7729310af11e9267556425d7670999d8c7b9e5e1ea9883f761b"
+      },
+      {
+        "path": "src/gateway.rs",
+        "bytes": 19640,
+        "sha256": "9ec790cb8755416dac4f0e1cfbe2d5a9e8f9d7fb5f0b18777469295114e79802"
+      },
+      {
+        "path": "src/gateway_tests.rs",
+        "bytes": 28829,
+        "sha256": "b406bef98401e21082b8981b6074995b4fa111be3fb6fe46289a583cb51bf541"
+      },
+      {
+        "path": "src/invoice.rs",
+        "bytes": 53984,
+        "sha256": "86e6a58b573effd8cd1e911672302958f94c434e472863a1c8fd3d8683f86234"
+      },
+      {
+        "path": "src/keys.rs",
+        "bytes": 8054,
+        "sha256": "47c2950ae28ba29dcba47cfbf6c8c94ade536d2afc384f8689c2029015396290"
+      },
+      {
+        "path": "src/lib.rs",
+        "bytes": 21339,
+        "sha256": "412578a03d52ea6391fe128499c33cc424003dc67584b521a35e18b007477761"
+      },
+      {
+        "path": "src/model.rs",
+        "bytes": 13512,
+        "sha256": "b6b4844ca861a2895b9461cc90f32f9541c361a2117c08701700341b73899453"
+      },
+      {
+        "path": "src/policy.rs",
+        "bytes": 35390,
+        "sha256": "01fb4646309622f6d1fd3626bdbbd4a1e5f2de50c0ad4958d050d59a925b73e7"
+      },
+      {
+        "path": "src/tests.rs",
+        "bytes": 25963,
+        "sha256": "5df2bb60fd533fc839d86ac2e9e1584751ac123f6bce3728880c410136f60360"
+      },
+      {
+        "path": "uniffi-bindgen.toml",
+        "bytes": 319,
+        "sha256": "ec225b83d072bad850a77fd4faef5d6d917b6137e68e4f752d905fb9c7f9bc42"
+      },
+      {
+        "path": "uniffi.toml",
+        "bytes": 223,
+        "sha256": "aa6d85b7a388cb02fb30aaeababadb7d4a965294fc2b3e0bd63a4db9ce5da13b"
+      }
+    ],
+    "binding": [
+      {
+        "path": "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt",
+        "bytes": 138115,
+        "sha256": "39c4d4212c488ab573d1f0a8257f249152ef9b8e3c11785ad88989010ebbbf57"
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "path": "jniLibs/arm64-v8a/libutexo_local_signer.so",
+      "bytes": 2420472,
+      "sha256": "dd4e03e1de0e59dd091b8910df8f0ad65664e67e45869c1a7bd0679d690c708c"
+    },
+    {
+      "path": "jniLibs/armeabi-v7a/libutexo_local_signer.so",
+      "bytes": 2003964,
+      "sha256": "e20bf2313e0bd029aba4d047e116edac1c49e290c25bedef9d8968434cf0a792"
+    },
+    {
+      "path": "jniLibs/x86_64/libutexo_local_signer.so",
+      "bytes": 2588048,
+      "sha256": "1c3b578beab6bd092495868d02ae172a88d905b255fd0b3ee84859aad823e859"
+    }
+  ],
+  "finishedAt": "2026-09-21T14:12:22.679Z"
+}

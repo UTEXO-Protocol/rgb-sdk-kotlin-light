@@ -9,7 +9,7 @@ import java.util.Arrays
  */
 public class SecretSeed private constructor(seed: ByteArray) : AutoCloseable {
     private val lock: Any = Any()
-    private var bytes: ByteArray? = seed.copyOf()
+    private var bytes: ByteArray? = null
 
     init {
         if (seed.size != BIP39_SEED_LENGTH) {
@@ -18,6 +18,7 @@ public class SecretSeed private constructor(seed: ByteArray) : AutoCloseable {
                 "must be a 64-byte BIP39 seed",
             )
         }
+        bytes = seed.copyOf()
     }
 
     internal fun copyForNative(): ByteArray = synchronized(lock) {

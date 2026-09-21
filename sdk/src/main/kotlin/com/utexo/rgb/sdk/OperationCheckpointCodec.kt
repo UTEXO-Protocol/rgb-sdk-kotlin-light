@@ -21,6 +21,7 @@ import java.security.MessageDigest
 public object OperationCheckpointCodec {
     public const val SCHEMA_VERSION: Int = 1
     public const val MAX_ENCODED_BYTES: Int = 16_000_000
+    private const val COMPACT_TERMINAL_SCHEMA_VERSION: Int = 2
 
     private const val CHECKSUM_BYTES: Int = 32
     private val magic: ByteArray = "UTXOPCHK".toByteArray(StandardCharsets.US_ASCII)
@@ -30,16 +31,23 @@ public object OperationCheckpointCodec {
         DataOutputStream(buffer).use { output ->
             val writer = CheckpointWriter(output)
             output.write(magic)
-            output.writeInt(SCHEMA_VERSION)
+            val compactTerminal = checkpoint.phase == OperationPhase.TERMINAL && checkpoint.preparedTransaction == null
+            output.writeInt(if (compactTerminal) COMPACT_TERMINAL_SCHEMA_VERSION else SCHEMA_VERSION)
             writer.string(checkpoint.walletId.value, 128)
             writer.string(checkpoint.idempotencyKey.value, 128)
             writer.string(checkpoint.requestHash.hex, 64)
             writer.string(checkpoint.operationKind.wireValue, 32)
             writer.string(checkpoint.phase.wireValue, 32)
-            writer.optional(checkpoint.operationId) { writer.string(it.value, 128) }
-            writer.optional(checkpoint.preparedTransaction, writer::prepared)
-            writer.optional(checkpoint.signedPayload, writer::signed)
-            writer.optional(checkpoint.terminalOutcome, writer::outcome)
+            if (compactTerminal) {
+                writer.string(requireNotNull(checkpoint.operationId).value, 128)
+                writer.optional(checkpoint.signedPayload?.validation, writer::validation)
+                writer.outcome(requireNotNull(checkpoint.terminalOutcome))
+            } else {
+                writer.optional(checkpoint.operationId) { writer.string(it.value, 128) }
+                writer.optional(checkpoint.preparedTransaction, writer::prepared)
+                writer.optional(checkpoint.signedPayload, writer::signed)
+                writer.optional(checkpoint.terminalOutcome, writer::outcome)
+            }
         }
         val body = buffer.toByteArray()
         if (body.size > MAX_ENCODED_BYTES - CHECKSUM_BYTES) {
@@ -66,21 +74,39 @@ public object OperationCheckpointCodec {
             if (!actualMagic.contentEquals(magic)) {
                 throw IOException("invalid operation checkpoint magic")
             }
-            if (input.readInt() != SCHEMA_VERSION) {
+            val schema = input.readInt()
+            if (schema != SCHEMA_VERSION && schema != COMPACT_TERMINAL_SCHEMA_VERSION) {
                 throw IOException("unsupported operation checkpoint schema")
             }
             val reader = CheckpointReader(input)
-            val checkpoint = OperationCheckpoint(
-                walletId = WalletId.of(reader.string(128)),
-                idempotencyKey = IdempotencyKey.of(reader.string(128)),
-                requestHash = RequestHash.ofLowercaseHex(reader.string(64)),
-                operationKind = reader.operationKind(),
-                phase = reader.phase(),
-                operationId = reader.optional { OperationId.of(reader.string(128)) },
-                preparedTransaction = reader.optional(reader::prepared),
-                signedPayload = reader.optional(reader::signed),
-                terminalOutcome = reader.optional(reader::outcome),
-            )
+            val walletId = WalletId.of(reader.string(128))
+            val key = IdempotencyKey.of(reader.string(128))
+            val hash = RequestHash.ofLowercaseHex(reader.string(64))
+            val kind = reader.operationKind()
+            val phase = reader.phase()
+            val checkpoint = if (schema == COMPACT_TERMINAL_SCHEMA_VERSION) {
+                if (phase != OperationPhase.TERMINAL) throw IOException("compact receipt must be terminal")
+                OperationCheckpoint(
+                    walletId, key, hash, kind, phase,
+                    operationId = OperationId.of(reader.string(128)),
+                    signedPayload = reader.optional(reader::validation)?.let {
+                        SignedOperationPayload("terminal-receipt", it).terminalReceipt()
+                    },
+                    terminalOutcome = reader.outcome(),
+                )
+            } else {
+                OperationCheckpoint(
+                    walletId, key, hash, kind, phase,
+                    operationId = reader.optional { OperationId.of(reader.string(128)) },
+                    preparedTransaction = reader.optional(reader::prepared),
+                    signedPayload = reader.optional(reader::signed),
+                    terminalOutcome = reader.optional(reader::outcome),
+                ).also {
+                    if (phase != OperationPhase.CREATED && it.preparedTransaction == null) {
+                        throw IOException("schema v1 requires full preparation")
+                    }
+                }
+            }
             if (input.available() != 0) throw IOException("trailing operation checkpoint data")
             checkpoint
         }

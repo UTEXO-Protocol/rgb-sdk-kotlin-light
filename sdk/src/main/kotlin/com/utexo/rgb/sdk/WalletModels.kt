@@ -173,8 +173,8 @@ public data class TransferTransportEndpoint(
     public val used: Boolean,
 ) {
     init {
-        requireBoundedText("transportEndpoint", endpoint, 2_048)
-        requireBoundedText("transportType", transportType, 64)
+        requireCanonicalText("transportEndpoint", endpoint, 2_048)
+        requireCanonicalText("transportType", transportType, 64)
     }
 }
 
@@ -201,13 +201,19 @@ public data class Transfer(
         if (batchTransferIdx < 0L) {
             throw SdkException.InvalidArgument("batchTransferIdx", "must not be negative")
         }
+        recipientId?.let { requireCanonicalText("recipientId", it, 1_024) }
     }
 }
 
 public data class Media(
     public val reference: String? = null,
     public val mimeType: String? = null,
-)
+) {
+    init {
+        reference?.let { requireCanonicalText("media.reference", it, 2_048) }
+        mimeType?.let { requireCanonicalText("media.mimeType", it, 255) }
+    }
+}
 
 public data class AssetNia(
     public val assetId: AssetId,
@@ -220,7 +226,9 @@ public data class AssetNia(
     public val balance: AssetBalance,
     public val details: String? = null,
     public val media: Media? = null,
-)
+) {
+    init { validateAssetMetadata(ticker, name, precision, details) }
+}
 
 public data class AssetIfa(
     public val assetId: AssetId,
@@ -236,7 +244,15 @@ public data class AssetIfa(
     public val details: String? = null,
     public val media: Media? = null,
     public val rejectListUrl: String? = null,
-)
+) {
+    init {
+        validateAssetMetadata(ticker, name, precision, details)
+        if (initialSupply > maxSupply || knownCirculatingSupply > maxSupply) {
+            throw SdkException.InvalidArgument("supply", "must not exceed maximum supply")
+        }
+        rejectListUrl?.let { requireCanonicalText("rejectListUrl", it, 2_048) }
+    }
+}
 
 public data class AssetCfa(
     public val assetId: AssetId,
@@ -248,7 +264,9 @@ public data class AssetCfa(
     public val balance: AssetBalance,
     public val details: String? = null,
     public val media: Media? = null,
-)
+) {
+    init { validateAssetMetadata(null, name, precision, details) }
+}
 
 public data class AssetUda(
     public val assetId: AssetId,
@@ -259,7 +277,9 @@ public data class AssetUda(
     public val addedAt: UnixSeconds,
     public val balance: AssetBalance,
     public val details: String? = null,
-)
+) {
+    init { validateAssetMetadata(ticker, name, precision, details) }
+}
 
 public data class ListAssets(
     public val nia: List<AssetNia> = emptyList(),
@@ -275,7 +295,7 @@ public data class InvoiceReceiveData(
     public val batchTransferIdx: Long,
 ) {
     init {
-        requireBoundedText("recipientId", recipientId, 1_024)
+        requireCanonicalText("recipientId", recipientId, 1_024)
         if (batchTransferIdx < 0L) {
             throw SdkException.InvalidArgument("batchTransferIdx", "must not be negative")
         }
@@ -292,4 +312,20 @@ public data class InvoiceData(
     public val assignmentName: String? = null,
     public val expirationTimestamp: UnixSeconds? = null,
     public val transportEndpoints: List<String> = emptyList(),
-)
+) {
+    init {
+        requireCanonicalText("recipientId", recipientId, 1_024)
+        assetSchema?.let { requireCanonicalText("assetSchema", it, 128) }
+        assignmentName?.let { requireCanonicalText("assignmentName", it, 256) }
+        transportEndpoints.forEach { requireCanonicalText("transportEndpoint", it, 2_048) }
+    }
+}
+
+private fun validateAssetMetadata(ticker: String?, name: String, precision: Int, details: String?): Unit {
+    ticker?.let { requireCanonicalText("ticker", it, 16) }
+    requireCanonicalText("name", name, 256)
+    if (precision !in 0..18) throw SdkException.InvalidArgument("precision", "must be between 0 and 18")
+    if (details != null && details.toByteArray(Charsets.UTF_8).size > 4_096) {
+        throw SdkException.InvalidArgument("details", "must be at most 4096 UTF-8 bytes")
+    }
+}

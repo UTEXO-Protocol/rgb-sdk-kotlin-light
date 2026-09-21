@@ -22,10 +22,17 @@ public data class CreateUtxosRequest(
     public val idempotencyKey: IdempotencyKey = IdempotencyKey.random(),
 ) {
     init {
-        if (num != null && num !in 1..256) {
-            throw SdkException.InvalidArgument("num", "must be between 1 and 256")
+        // rgb-lib's requested output count is u8, independently of the PSBT
+        // output limit (which also includes change). Never wrap 256 to zero.
+        if (num != null && num !in 1..255) {
+            throw SdkException.InvalidArgument("num", "must be between 1 and 255")
         }
-        size?.let { Satoshis.positive("size", it) }
+        size?.let {
+            Satoshis.positive("size", it)
+            if (it.value > 4_294_967_295L) {
+                throw SdkException.InvalidArgument("size", "must fit the native unsigned 32-bit satoshi range")
+            }
+        }
     }
 }
 
@@ -96,7 +103,7 @@ public data class OnchainReceiveResponse(
     public val batchTransferIdx: Long? = null,
 ) {
     init {
-        recipientId?.let { requireBoundedText("recipientId", it, 1_024) }
+        recipientId?.let { requireCanonicalText("recipientId", it, 1_024) }
         if (batchTransferIdx != null && batchTransferIdx < 0L) {
             throw SdkException.InvalidArgument("batchTransferIdx", "must not be negative")
         }
@@ -137,8 +144,8 @@ public data class IssueAssetNiaRequest(
     public val precision: Int,
 ) {
     init {
-        requireBoundedText("ticker", ticker, 16)
-        requireBoundedText("name", name, 256)
+        requireCanonicalText("ticker", ticker, 16)
+        requireCanonicalText("name", name, 256)
         if (amounts.isEmpty()) throw SdkException.InvalidArgument("amounts", "must not be empty")
         amounts.forEach { AssetAmount.positive("amounts", it) }
         if (precision !in 0..18) {
@@ -156,15 +163,15 @@ public data class IssueAssetIfaRequest(
     public val rejectListUrl: String? = null,
 ) {
     init {
-        requireBoundedText("ticker", ticker, 16)
-        requireBoundedText("name", name, 256)
+        requireCanonicalText("ticker", ticker, 16)
+        requireCanonicalText("name", name, 256)
         if (precision !in 0..18) {
             throw SdkException.InvalidArgument("precision", "must be between 0 and 18")
         }
         if (amounts.isEmpty()) throw SdkException.InvalidArgument("amounts", "must not be empty")
         amounts.forEach { AssetAmount.positive("amounts", it) }
         inflationAmounts.forEach { AssetAmount.positive("inflationAmounts", it) }
-        rejectListUrl?.let { requireBoundedText("rejectListUrl", it, 2_048) }
+        rejectListUrl?.let { requireCanonicalText("rejectListUrl", it, 2_048) }
     }
 }
 
@@ -197,6 +204,7 @@ public data class FailTransfersRequest(
 
 public data class FailTransfersResult(public val transfersChanged: Boolean)
 
+/** [completedAt] is client-observed successful completion time, not a server/chain freshness proof. */
 public data class SyncResult(
     public val completedAt: UnixSeconds,
     public val tipHeight: Int? = null,

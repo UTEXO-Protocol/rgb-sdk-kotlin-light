@@ -1,0 +1,83 @@
+name: Kotlin SDK verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kotlin-sdk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 24
+            target: google_apis
+            pages: 4096
+          - api: 36
+            target: google_apis
+            pages: 4096
+          - api: 36
+            target: google_apis_ps16k
+            pages: 16384
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install pinned Android toolchain
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+      - name: Verify native source and artifact provenance
+        run: sha256sum -c NativeSource/SHA256SUMS
+      - name: Validate packaged native source, official vectors, and dependency advisories
+        env:
+          RUSTUP_TOOLCHAIN: 1.88.0
+        run: |
+          sdk_lock="$PWD/sdk/gradle.lockfile"
+          gradle_advisories="$RUNNER_TEMP/kotlin-gradle-advisories.json"
+          native_dir="$(mktemp -d)"
+          tar -xzf NativeSource/utexo-local-signer-source.tar.gz -C "$native_dir"
+          rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
+          cd "$native_dir"
+          cargo fetch --locked
+          node --test examples/core-consensus-cleanup.test.mjs
+          docker pull registry.gitlab.com/hashbeam/docker/bitcoind@sha256:5473c951ca8a703f7c15d9a353f99135e0a1f0cc7ef976f29d073160950098bf
+          node examples/verify-core-consensus.mjs
+          bash scripts/verify.sh
+          node --test scripts/osv-response.test.mjs
+          node scripts/security-inventory.mjs --check --advisories
+          node scripts/scan-gradle-advisories.mjs "$sdk_lock" "$gradle_advisories"
+      - name: Unit tests, release lint, API compatibility, and minified consumer build
+        run: ./gradlew verifyHostToolingDependencyFloors :sdk:testDebugUnitTest :sdk:lintRelease :sdk:verifyReleaseJvmApi :sdk:verifyReleaseApiBaseline :sdk:verifyReleaseNativeAbis :release-smoke-app:assembleRelease --no-daemon --max-workers=2
+      - name: Native distribution checksum completeness and path safety
+        run: bash scripts/verify-native-distribution.sh
+      - name: Isolated Maven and POM-only consumer with transitive dependencies
+        run: bash scripts/verify-maven-consumer.sh
+      - name: Reject incompatible native contract and checksums before key or signer calls
+        run: bash scripts/verify-native-compatibility.sh
+      - name: Enable KVM for emulator tests
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Packaged signer and production storage on Android
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2 commit (peeled annotated tag)
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: ${{ matrix.target }}
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-snapshot -gpu swiftshader_indirect
+          script: test "$(adb shell cat /proc/self/smaps | awk '/KernelPageSize:/ && !size {size=$2} END {print size*1024}')" = '${{ matrix.pages }}' && ./gradlew :sdk:verifyConnectedDebugAndroidTests :release-smoke-app:verifyPackagedReleaseSmoke --no-daemon --max-workers=2

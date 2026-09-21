@@ -681,21 +681,33 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_utexo_local_signer_checksum_func_derive_seed_from_mnemonic(
     ): Int
+    external fun uniffi_utexo_local_signer_checksum_func_extract_gateway_create_utxos_outputs(
+    ): Int
     external fun uniffi_utexo_local_signer_checksum_func_generate_keys(
     ): Int
     external fun uniffi_utexo_local_signer_checksum_func_get_xpub_from_xpriv(
     ): Int
     external fun uniffi_utexo_local_signer_checksum_func_verify_message(
     ): Int
+    external fun uniffi_utexo_local_signer_checksum_func_decode_rgb_invoice(
+    ): Int
+    external fun uniffi_utexo_local_signer_checksum_func_rgb_invoice_witness_recipient(
+    ): Int
     external fun uniffi_utexo_local_signer_checksum_func_default_signing_policy(
+    ): Int
+    external fun uniffi_utexo_local_signer_checksum_func_gateway_signing_policy(
     ): Int
     external fun uniffi_utexo_local_signer_checksum_method_localsigner_derive_address(
     ): Int
     external fun uniffi_utexo_local_signer_checksum_method_localsigner_identity(
     ): Int
+    external fun uniffi_utexo_local_signer_checksum_method_localsigner_sign_gateway_psbt(
+    ): Int
     external fun uniffi_utexo_local_signer_checksum_method_localsigner_sign_message(
     ): Int
     external fun uniffi_utexo_local_signer_checksum_method_localsigner_sign_psbt(
+    ): Int
+    external fun uniffi_utexo_local_signer_checksum_method_localsigner_validate_gateway_psbt(
     ): Int
     external fun uniffi_utexo_local_signer_checksum_method_localsigner_validate_psbt(
     ): Int
@@ -733,9 +745,13 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_method_localsigner_identity(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_utexo_local_signer_fn_method_localsigner_sign_gateway_psbt(`ptr`: Long,`psbtBase64`: RustBuffer.ByValue,`intent`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_method_localsigner_sign_message(`ptr`: Long,`messageUtf8`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_method_localsigner_sign_psbt(`ptr`: Long,`psbtBase64`: RustBuffer.ByValue,`intent`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_utexo_local_signer_fn_method_localsigner_validate_gateway_psbt(`ptr`: Long,`psbtBase64`: RustBuffer.ByValue,`intent`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_method_localsigner_validate_psbt(`ptr`: Long,`psbtBase64`: RustBuffer.ByValue,`intent`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -747,13 +763,21 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_func_derive_seed_from_mnemonic(`mnemonicUtf8`: RustBuffer.ByValue,`passphraseUtf8`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_utexo_local_signer_fn_func_extract_gateway_create_utxos_outputs(`psbtBase64`: RustBuffer.ByValue,`network`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_func_generate_keys(`network`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_func_get_xpub_from_xpriv(`xpriv`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_func_verify_message(`messageUtf8`: RustBuffer.ByValue,`signatureBase64`: RustBuffer.ByValue,`accountXpub`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    external fun uniffi_utexo_local_signer_fn_func_decode_rgb_invoice(`invoice`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_utexo_local_signer_fn_func_rgb_invoice_witness_recipient(`invoice`: RustBuffer.ByValue,`network`: RustBuffer.ByValue,`amountSats`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_utexo_local_signer_fn_func_default_signing_policy(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_utexo_local_signer_fn_func_gateway_signing_policy(`operation`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_utexo_local_signer_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -886,6 +910,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_utexo_local_signer_checksum_func_derive_seed_from_mnemonic() and 0xFFFF) != 1632) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_utexo_local_signer_checksum_func_extract_gateway_create_utxos_outputs() and 0xFFFF) != 5246) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_utexo_local_signer_checksum_func_generate_keys() and 0xFFFF) != 61253) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -895,7 +922,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_utexo_local_signer_checksum_func_verify_message() and 0xFFFF) != 13585) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_utexo_local_signer_checksum_func_decode_rgb_invoice() and 0xFFFF) != 51285) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_utexo_local_signer_checksum_func_rgb_invoice_witness_recipient() and 0xFFFF) != 54816) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_utexo_local_signer_checksum_func_default_signing_policy() and 0xFFFF) != 24902) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_utexo_local_signer_checksum_func_gateway_signing_policy() and 0xFFFF) != 12613) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_derive_address() and 0xFFFF) != 53715) {
@@ -904,10 +940,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_identity() and 0xFFFF) != 40060) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_sign_gateway_psbt() and 0xFFFF) != 25826) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_sign_message() and 0xFFFF) != 25670) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_sign_psbt() and 0xFFFF) != 38560) {
+    if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_sign_psbt() and 0xFFFF) != 29907) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_validate_gateway_psbt() and 0xFFFF) != 9058) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_utexo_local_signer_checksum_method_localsigner_validate_psbt() and 0xFFFF) != 46241) {
@@ -1119,6 +1161,29 @@ public object FfiConverterULong: FfiConverter<ULong, Long> {
 
     override fun write(value: ULong, buf: ByteBuffer) {
         buf.putLong(value.toLong())
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterLong: FfiConverter<Long, Long> {
+    override fun lift(value: Long): Long {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Long {
+        return buf.getLong()
+    }
+
+    override fun lower(value: Long): Long {
+        return value
+    }
+
+    override fun allocationSize(value: Long) = 8UL
+
+    override fun write(value: Long, buf: ByteBuffer) {
+        buf.putLong(value)
     }
 }
 
@@ -1342,6 +1407,15 @@ public interface LocalSignerInterface {
     fun `identity`(): WalletIdentity
     
     /**
+     * Validates, signs and finalizes the additive gateway profile. It never
+     * changes the prepared transaction's locktime, scripts or amounts.
+     *
+     * # Errors
+     * Returns a policy error before signing or a signature verification error.
+     */
+    fun `signGatewayPsbt`(`psbtBase64`: kotlin.String, `intent`: GatewaySigningIntent): SigningResult
+    
+    /**
      * RN-compatible legacy account message signature: SHA256(message), then a
      * BIP340 Schnorr signature at vanilla account child /0/0, base64 encoded.
      * This is not BIP322 and must not be reused as a generic login protocol.
@@ -1355,7 +1429,9 @@ public interface LocalSignerInterface {
     fun `signMessage`(`messageUtf8`: kotlin.ByteArray): kotlin.String
     
     /**
-     * Re-runs all policy checks, then signs every approved BIP86 key-path input.
+     * Re-runs all policy checks, then signs and finalizes every approved BIP86
+     * key-path input. The returned PSBT contains a verified final witness;
+     * consumed input signing metadata is removed per BIP174/BIP371.
      *
      * # Errors
      *
@@ -1363,6 +1439,16 @@ public interface LocalSignerInterface {
      * input cannot be signed by this wallet.
      */
     fun `signPsbt`(`psbtBase64`: kotlin.String, `intent`: SigningIntent): SigningResult
+    
+    /**
+     * Validates a branch-0 RGB-lib builder preparation against independent
+     * height/fee bounds and operation-specific caller authorization. RGB
+     * transitions and consignment validity remain server-trusted.
+     *
+     * # Errors
+     * Returns a validation error for malformed or unauthorized preparations.
+     */
+    fun `validateGatewayPsbt`(`psbtBase64`: kotlin.String, `intent`: GatewaySigningIntent): ValidationReport
     
     /**
      * Parses and validates a PSBT against the immutable caller intent without
@@ -1530,6 +1616,29 @@ open class LocalSigner: Disposable, AutoCloseable, LocalSignerInterface
 
     
     /**
+     * Validates, signs and finalizes the additive gateway profile. It never
+     * changes the prepared transaction's locktime, scripts or amounts.
+     *
+     * # Errors
+     * Returns a policy error before signing or a signature verification error.
+     */
+    @Throws(SignerException::class)override fun `signGatewayPsbt`(`psbtBase64`: kotlin.String, `intent`: GatewaySigningIntent): SigningResult {
+            return FfiConverterTypeSigningResult.lift(
+    callWithHandle {
+    uniffiRustCallWithError(SignerException) { _status ->
+    UniffiLib.uniffi_utexo_local_signer_fn_method_localsigner_sign_gateway_psbt(
+        it,
+        
+        FfiConverterString.lower(`psbtBase64`),
+        FfiConverterTypeGatewaySigningIntent.lower(`intent`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * RN-compatible legacy account message signature: SHA256(message), then a
      * BIP340 Schnorr signature at vanilla account child /0/0, base64 encoded.
      * This is not BIP322 and must not be reused as a generic login protocol.
@@ -1556,7 +1665,9 @@ open class LocalSigner: Disposable, AutoCloseable, LocalSignerInterface
 
     
     /**
-     * Re-runs all policy checks, then signs every approved BIP86 key-path input.
+     * Re-runs all policy checks, then signs and finalizes every approved BIP86
+     * key-path input. The returned PSBT contains a verified final witness;
+     * consumed input signing metadata is removed per BIP174/BIP371.
      *
      * # Errors
      *
@@ -1572,6 +1683,30 @@ open class LocalSigner: Disposable, AutoCloseable, LocalSignerInterface
         
         FfiConverterString.lower(`psbtBase64`),
         FfiConverterTypeSigningIntent.lower(`intent`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Validates a branch-0 RGB-lib builder preparation against independent
+     * height/fee bounds and operation-specific caller authorization. RGB
+     * transitions and consignment validity remain server-trusted.
+     *
+     * # Errors
+     * Returns a validation error for malformed or unauthorized preparations.
+     */
+    @Throws(SignerException::class)override fun `validateGatewayPsbt`(`psbtBase64`: kotlin.String, `intent`: GatewaySigningIntent): ValidationReport {
+            return FfiConverterTypeValidationReport.lift(
+    callWithHandle {
+    uniffiRustCallWithError(SignerException) { _status ->
+    UniffiLib.uniffi_utexo_local_signer_fn_method_localsigner_validate_gateway_psbt(
+        it,
+        
+        FfiConverterString.lower(`psbtBase64`),
+        FfiConverterTypeGatewaySigningIntent.lower(`intent`),_status)
 }
     }
     )
@@ -1685,6 +1820,143 @@ public object FfiConverterTypeLocalSigner: FfiConverter<LocalSigner, Long> {
 
 
 
+/**
+ * Locally authorized range of newly created colored outputs. Bounds must be
+ * derived from the caller's request, not copied from the server's PSBT.
+ */
+data class CreateUtxosAuthorization (
+    var `minCount`: kotlin.UInt
+    , 
+    var `maxCount`: kotlin.UInt
+    , 
+    var `sizeSats`: kotlin.ULong
+    , 
+    var `exactOutputs`: List<GatewayOwnedOutput>?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeCreateUtxosAuthorization: FfiConverterRustBuffer<CreateUtxosAuthorization> {
+    override fun read(buf: ByteBuffer): CreateUtxosAuthorization {
+        return CreateUtxosAuthorization(
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterOptionalSequenceTypeGatewayOwnedOutput.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: CreateUtxosAuthorization) = (
+            FfiConverterUInt.allocationSize(value.`minCount`) +
+            FfiConverterUInt.allocationSize(value.`maxCount`) +
+            FfiConverterULong.allocationSize(value.`sizeSats`) +
+            FfiConverterOptionalSequenceTypeGatewayOwnedOutput.allocationSize(value.`exactOutputs`)
+    )
+
+    override fun write(value: CreateUtxosAuthorization, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`minCount`, buf)
+            FfiConverterUInt.write(value.`maxCount`, buf)
+            FfiConverterULong.write(value.`sizeSats`, buf)
+            FfiConverterOptionalSequenceTypeGatewayOwnedOutput.write(value.`exactOutputs`, buf)
+    }
+}
+
+
+
+/**
+ * Locally decoded, compatibility-shaped RGB invoice data.
+ *
+ * The original invoice is intentionally not duplicated in this native DTO;
+ * Swift and Kotlin already hold the bounded input value and attach it to their
+ * public `InvoiceData` model.
+ */
+data class DecodedRgbInvoice (
+    var `recipientId`: kotlin.String
+    , 
+    var `recipientType`: RgbInvoiceRecipientType
+    , 
+    var `assetSchema`: kotlin.String?
+    , 
+    var `assetId`: kotlin.String?
+    , 
+    var `network`: Network
+    , 
+    var `assignment`: RgbInvoiceAssignment
+    , 
+    var `encodedState`: RgbInvoiceEncodedState
+    , 
+    var `assignmentName`: kotlin.String?
+    , 
+    var `expirationTimestamp`: kotlin.Long?
+    , 
+    var `transportEndpoints`: List<kotlin.String>
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDecodedRgbInvoice: FfiConverterRustBuffer<DecodedRgbInvoice> {
+    override fun read(buf: ByteBuffer): DecodedRgbInvoice {
+        return DecodedRgbInvoice(
+            FfiConverterString.read(buf),
+            FfiConverterTypeRgbInvoiceRecipientType.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterTypeNetwork.read(buf),
+            FfiConverterTypeRgbInvoiceAssignment.read(buf),
+            FfiConverterTypeRgbInvoiceEncodedState.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterSequenceString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DecodedRgbInvoice) = (
+            FfiConverterString.allocationSize(value.`recipientId`) +
+            FfiConverterTypeRgbInvoiceRecipientType.allocationSize(value.`recipientType`) +
+            FfiConverterOptionalString.allocationSize(value.`assetSchema`) +
+            FfiConverterOptionalString.allocationSize(value.`assetId`) +
+            FfiConverterTypeNetwork.allocationSize(value.`network`) +
+            FfiConverterTypeRgbInvoiceAssignment.allocationSize(value.`assignment`) +
+            FfiConverterTypeRgbInvoiceEncodedState.allocationSize(value.`encodedState`) +
+            FfiConverterOptionalString.allocationSize(value.`assignmentName`) +
+            FfiConverterOptionalLong.allocationSize(value.`expirationTimestamp`) +
+            FfiConverterSequenceString.allocationSize(value.`transportEndpoints`)
+    )
+
+    override fun write(value: DecodedRgbInvoice, buf: ByteBuffer) {
+            FfiConverterString.write(value.`recipientId`, buf)
+            FfiConverterTypeRgbInvoiceRecipientType.write(value.`recipientType`, buf)
+            FfiConverterOptionalString.write(value.`assetSchema`, buf)
+            FfiConverterOptionalString.write(value.`assetId`, buf)
+            FfiConverterTypeNetwork.write(value.`network`, buf)
+            FfiConverterTypeRgbInvoiceAssignment.write(value.`assignment`, buf)
+            FfiConverterTypeRgbInvoiceEncodedState.write(value.`encodedState`, buf)
+            FfiConverterOptionalString.write(value.`assignmentName`, buf)
+            FfiConverterOptionalLong.write(value.`expirationTimestamp`, buf)
+            FfiConverterSequenceString.write(value.`transportEndpoints`, buf)
+    }
+}
+
+
+
 data class DerivedAddress (
     var `address`: kotlin.String
     , 
@@ -1728,6 +2000,117 @@ public object FfiConverterTypeDerivedAddress: FfiConverterRustBuffer<DerivedAddr
             FfiConverterString.write(value.`scriptPubkeyHex`, buf)
             FfiConverterString.write(value.`derivationPath`, buf)
             FfiConverterString.write(value.`internalKeyHex`, buf)
+    }
+}
+
+
+
+/**
+ * An optional exact reservation of a created colored output, re-derived
+ * locally and compared to the transaction. Vanilla change is not in this plan.
+ */
+data class GatewayOwnedOutput (
+    var `account`: AccountKind
+    , 
+    var `keychain`: Keychain
+    , 
+    var `index`: kotlin.UInt
+    , 
+    var `amountSats`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeGatewayOwnedOutput: FfiConverterRustBuffer<GatewayOwnedOutput> {
+    override fun read(buf: ByteBuffer): GatewayOwnedOutput {
+        return GatewayOwnedOutput(
+            FfiConverterTypeAccountKind.read(buf),
+            FfiConverterTypeKeychain.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: GatewayOwnedOutput) = (
+            FfiConverterTypeAccountKind.allocationSize(value.`account`) +
+            FfiConverterTypeKeychain.allocationSize(value.`keychain`) +
+            FfiConverterUInt.allocationSize(value.`index`) +
+            FfiConverterULong.allocationSize(value.`amountSats`)
+    )
+
+    override fun write(value: GatewayOwnedOutput, buf: ByteBuffer) {
+            FfiConverterTypeAccountKind.write(value.`account`, buf)
+            FfiConverterTypeKeychain.write(value.`keychain`, buf)
+            FfiConverterUInt.write(value.`index`, buf)
+            FfiConverterULong.write(value.`amountSats`, buf)
+    }
+}
+
+
+
+/**
+ * Additive, explicitly selected profile for the RGB-lib branch-0 builder.
+ * `max_block_height` must come from an independently trusted chain context,
+ * never from the prepared PSBT. The fee target is not the independent hard
+ * maximum in `intent.policy`; both constraints are enforced.
+ */
+data class GatewaySigningIntent (
+    var `intent`: SigningIntent
+    , 
+    var `maxBlockHeight`: kotlin.UInt
+    , 
+    var `targetFeeRateMsatPerVbyte`: kotlin.ULong
+    , 
+    var `createUtxos`: CreateUtxosAuthorization?
+    , 
+    var `rgb`: RgbBitcoinAuthorization?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeGatewaySigningIntent: FfiConverterRustBuffer<GatewaySigningIntent> {
+    override fun read(buf: ByteBuffer): GatewaySigningIntent {
+        return GatewaySigningIntent(
+            FfiConverterTypeSigningIntent.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterOptionalTypeCreateUtxosAuthorization.read(buf),
+            FfiConverterOptionalTypeRgbBitcoinAuthorization.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: GatewaySigningIntent) = (
+            FfiConverterTypeSigningIntent.allocationSize(value.`intent`) +
+            FfiConverterUInt.allocationSize(value.`maxBlockHeight`) +
+            FfiConverterULong.allocationSize(value.`targetFeeRateMsatPerVbyte`) +
+            FfiConverterOptionalTypeCreateUtxosAuthorization.allocationSize(value.`createUtxos`) +
+            FfiConverterOptionalTypeRgbBitcoinAuthorization.allocationSize(value.`rgb`)
+    )
+
+    override fun write(value: GatewaySigningIntent, buf: ByteBuffer) {
+            FfiConverterTypeSigningIntent.write(value.`intent`, buf)
+            FfiConverterUInt.write(value.`maxBlockHeight`, buf)
+            FfiConverterULong.write(value.`targetFeeRateMsatPerVbyte`, buf)
+            FfiConverterOptionalTypeCreateUtxosAuthorization.write(value.`createUtxos`, buf)
+            FfiConverterOptionalTypeRgbBitcoinAuthorization.write(value.`rgb`, buf)
     }
 }
 
@@ -1867,6 +2250,165 @@ public object FfiConverterTypeRecipient: FfiConverterRustBuffer<Recipient> {
     override fun write(value: Recipient, buf: ByteBuffer) {
             FfiConverterString.write(value.`address`, buf)
             FfiConverterULong.write(value.`amountSats`, buf)
+    }
+}
+
+
+
+/**
+ * Bitcoin authorization and immutable caller context for a fungible RGB
+ * send. This deliberately does not claim RGB transition/consignment validity.
+ * The gateway remains trusted for RGB state and transition correctness.
+ */
+data class RgbBitcoinAuthorization (
+    var `invoice`: kotlin.String
+    , 
+    var `assetId`: kotlin.String
+    , 
+    var `amount`: kotlin.ULong
+    , 
+    var `witnessAmountSats`: kotlin.ULong?
+    , 
+    var `witnessBlinding`: kotlin.ULong?
+    , 
+    var `donation`: kotlin.Boolean
+    , 
+    var `minConfirmations`: kotlin.UInt
+    , 
+    var `skipSync`: kotlin.Boolean
+    , 
+    var `validationTimeUnixSeconds`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbBitcoinAuthorization: FfiConverterRustBuffer<RgbBitcoinAuthorization> {
+    override fun read(buf: ByteBuffer): RgbBitcoinAuthorization {
+        return RgbBitcoinAuthorization(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalULong.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RgbBitcoinAuthorization) = (
+            FfiConverterString.allocationSize(value.`invoice`) +
+            FfiConverterString.allocationSize(value.`assetId`) +
+            FfiConverterULong.allocationSize(value.`amount`) +
+            FfiConverterOptionalULong.allocationSize(value.`witnessAmountSats`) +
+            FfiConverterOptionalULong.allocationSize(value.`witnessBlinding`) +
+            FfiConverterBoolean.allocationSize(value.`donation`) +
+            FfiConverterUInt.allocationSize(value.`minConfirmations`) +
+            FfiConverterBoolean.allocationSize(value.`skipSync`) +
+            FfiConverterULong.allocationSize(value.`validationTimeUnixSeconds`)
+    )
+
+    override fun write(value: RgbBitcoinAuthorization, buf: ByteBuffer) {
+            FfiConverterString.write(value.`invoice`, buf)
+            FfiConverterString.write(value.`assetId`, buf)
+            FfiConverterULong.write(value.`amount`, buf)
+            FfiConverterOptionalULong.write(value.`witnessAmountSats`, buf)
+            FfiConverterOptionalULong.write(value.`witnessBlinding`, buf)
+            FfiConverterBoolean.write(value.`donation`, buf)
+            FfiConverterUInt.write(value.`minConfirmations`, buf)
+            FfiConverterBoolean.write(value.`skipSync`, buf)
+            FfiConverterULong.write(value.`validationTimeUnixSeconds`, buf)
+    }
+}
+
+
+
+/**
+ * Assignment requested by an RGB invoice. `amount` is present only for
+ * fungible and inflation-right assignments and retains the complete `u64`
+ * domain without crossing a floating-point boundary.
+ */
+data class RgbInvoiceAssignment (
+    var `kind`: RgbInvoiceAssignmentKind
+    , 
+    var `amount`: kotlin.ULong?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbInvoiceAssignment: FfiConverterRustBuffer<RgbInvoiceAssignment> {
+    override fun read(buf: ByteBuffer): RgbInvoiceAssignment {
+        return RgbInvoiceAssignment(
+            FfiConverterTypeRgbInvoiceAssignmentKind.read(buf),
+            FfiConverterOptionalULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RgbInvoiceAssignment) = (
+            FfiConverterTypeRgbInvoiceAssignmentKind.allocationSize(value.`kind`) +
+            FfiConverterOptionalULong.allocationSize(value.`amount`)
+    )
+
+    override fun write(value: RgbInvoiceAssignment, buf: ByteBuffer) {
+            FfiConverterTypeRgbInvoiceAssignmentKind.write(value.`kind`, buf)
+            FfiConverterOptionalULong.write(value.`amount`, buf)
+    }
+}
+
+
+
+data class RgbInvoiceEncodedState (
+    var `kind`: RgbInvoiceEncodedStateKind
+    , 
+    var `amount`: kotlin.ULong?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbInvoiceEncodedState: FfiConverterRustBuffer<RgbInvoiceEncodedState> {
+    override fun read(buf: ByteBuffer): RgbInvoiceEncodedState {
+        return RgbInvoiceEncodedState(
+            FfiConverterTypeRgbInvoiceEncodedStateKind.read(buf),
+            FfiConverterOptionalULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: RgbInvoiceEncodedState) = (
+            FfiConverterTypeRgbInvoiceEncodedStateKind.allocationSize(value.`kind`) +
+            FfiConverterOptionalULong.allocationSize(value.`amount`)
+    )
+
+    override fun write(value: RgbInvoiceEncodedState, buf: ByteBuffer) {
+            FfiConverterTypeRgbInvoiceEncodedStateKind.write(value.`kind`, buf)
+            FfiConverterOptionalULong.write(value.`amount`, buf)
     }
 }
 
@@ -2419,6 +2961,129 @@ public object FfiConverterTypeRbfPolicy: FfiConverterRustBuffer<RbfPolicy> {
 
 
 
+/**
+ * RN-compatible assignment categories returned by RGB invoice decoding.
+ */
+
+enum class RgbInvoiceAssignmentKind {
+    
+    FUNGIBLE,
+    NON_FUNGIBLE,
+    INFLATION_RIGHT,
+    ANY;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbInvoiceAssignmentKind: FfiConverterRustBuffer<RgbInvoiceAssignmentKind> {
+    override fun read(buf: ByteBuffer) = try {
+        RgbInvoiceAssignmentKind.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: RgbInvoiceAssignmentKind) = 4UL
+
+    override fun write(value: RgbInvoiceAssignmentKind, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * The assignment state literally encoded in the invoice path, before the
+ * RGB-lib compatibility projection into [`RgbInvoiceAssignment`].
+ *
+ * This evidence is required when validating a receive response: for example,
+ * an omitted state under a known NIA schema projects to `Fungible(0)`, while
+ * an explicit amount with no schema and no assignment name projects to `Any`.
+ */
+
+enum class RgbInvoiceEncodedStateKind {
+    
+    OMITTED,
+    AMOUNT,
+    NON_FUNGIBLE;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbInvoiceEncodedStateKind: FfiConverterRustBuffer<RgbInvoiceEncodedStateKind> {
+    override fun read(buf: ByteBuffer) = try {
+        RgbInvoiceEncodedStateKind.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: RgbInvoiceEncodedStateKind) = 4UL
+
+    override fun write(value: RgbInvoiceEncodedStateKind, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * The beneficiary construction encoded by an RGB invoice.
+ *
+ * This is intentionally explicit so the mobile facades can verify that a
+ * gateway response for a blind or witness receive request returned the same
+ * recipient mode in the encoded invoice.
+ */
+
+enum class RgbInvoiceRecipientType {
+    
+    BLIND,
+    WITNESS;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbInvoiceRecipientType: FfiConverterRustBuffer<RgbInvoiceRecipientType> {
+    override fun read(buf: ByteBuffer) = try {
+        RgbInvoiceRecipientType.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: RgbInvoiceRecipientType) = 4UL
+
+    override fun write(value: RgbInvoiceRecipientType, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
 
 
 /**
@@ -2497,6 +3162,14 @@ sealed class SignerException: kotlin.Exception() {
             get() = ""
     }
     
+    class InvalidRgbInvoice(
+        
+        val `reason`: kotlin.String
+        ) : SignerException() {
+        override val message
+            get() = "reason=${ `reason` }"
+    }
+    
 
     
 
@@ -2534,6 +3207,9 @@ public object FfiConverterTypeSignerError : FfiConverterRustBuffer<SignerExcepti
             8 -> SignerException.KeyDerivation()
             9 -> SignerException.SigningFailed()
             10 -> SignerException.SignatureVerification()
+            11 -> SignerException.InvalidRgbInvoice(
+                FfiConverterString.read(buf),
+                )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -2584,6 +3260,11 @@ public object FfiConverterTypeSignerError : FfiConverterRustBuffer<SignerExcepti
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
             )
+            is SignerException.InvalidRgbInvoice -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterString.allocationSize(value.`reason`)
+            )
         }
     }
 
@@ -2633,6 +3314,11 @@ public object FfiConverterTypeSignerError : FfiConverterRustBuffer<SignerExcepti
                 buf.putInt(10)
                 Unit
             }
+            is SignerException.InvalidRgbInvoice -> {
+                buf.putInt(11)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
 
@@ -2676,6 +3362,198 @@ public object FfiConverterOptionalUInt: FfiConverterRustBuffer<kotlin.UInt?> {
 /**
  * @suppress
  */
+public object FfiConverterOptionalULong: FfiConverterRustBuffer<kotlin.ULong?> {
+    override fun read(buf: ByteBuffer): kotlin.ULong? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterULong.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.ULong?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterULong.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.ULong?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterULong.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalLong: FfiConverterRustBuffer<kotlin.Long?> {
+    override fun read(buf: ByteBuffer): kotlin.Long? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterLong.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Long?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterLong.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Long?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterLong.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?> {
+    override fun read(buf: ByteBuffer): kotlin.String? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterString.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.String?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterString.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.String?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeCreateUtxosAuthorization: FfiConverterRustBuffer<CreateUtxosAuthorization?> {
+    override fun read(buf: ByteBuffer): CreateUtxosAuthorization? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeCreateUtxosAuthorization.read(buf)
+    }
+
+    override fun allocationSize(value: CreateUtxosAuthorization?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeCreateUtxosAuthorization.allocationSize(value)
+        }
+    }
+
+    override fun write(value: CreateUtxosAuthorization?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeCreateUtxosAuthorization.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeRgbBitcoinAuthorization: FfiConverterRustBuffer<RgbBitcoinAuthorization?> {
+    override fun read(buf: ByteBuffer): RgbBitcoinAuthorization? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeRgbBitcoinAuthorization.read(buf)
+    }
+
+    override fun allocationSize(value: RgbBitcoinAuthorization?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeRgbBitcoinAuthorization.allocationSize(value)
+        }
+    }
+
+    override fun write(value: RgbBitcoinAuthorization?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeRgbBitcoinAuthorization.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalSequenceTypeGatewayOwnedOutput: FfiConverterRustBuffer<List<GatewayOwnedOutput>?> {
+    override fun read(buf: ByteBuffer): List<GatewayOwnedOutput>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceTypeGatewayOwnedOutput.read(buf)
+    }
+
+    override fun allocationSize(value: List<GatewayOwnedOutput>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceTypeGatewayOwnedOutput.allocationSize(value)
+        }
+    }
+
+    override fun write(value: List<GatewayOwnedOutput>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceTypeGatewayOwnedOutput.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
     override fun read(buf: ByteBuffer): List<kotlin.String> {
         val len = buf.getInt()
@@ -2694,6 +3572,34 @@ public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.Str
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterString.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeGatewayOwnedOutput: FfiConverterRustBuffer<List<GatewayOwnedOutput>> {
+    override fun read(buf: ByteBuffer): List<GatewayOwnedOutput> {
+        val len = buf.getInt()
+        return List<GatewayOwnedOutput>(len) {
+            FfiConverterTypeGatewayOwnedOutput.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<GatewayOwnedOutput>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeGatewayOwnedOutput.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<GatewayOwnedOutput>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeGatewayOwnedOutput.write(it, buf)
         }
     }
 }
@@ -2847,6 +3753,31 @@ public object FfiConverterSequenceTypeRecipient: FfiConverterRustBuffer<List<Rec
     
 
         /**
+         * Extracts bounded, untrusted colored-output hints from an unsigned create
+         * preparation. This does not prove wallet ownership, input safety, fees or
+         * authorization. The caller must bind the returned plan to its original
+         * request and run `validate_gateway_psbt` / `sign_gateway_psbt`, which derive
+         * every owned key and script independently, before accepting or signing it.
+         * Vanilla change is deliberately excluded from the returned plan.
+         *
+         * # Errors
+         * Returns a parsing or policy error for malformed, oversized or out-of-profile
+         * preparations. No seed material or network request is involved.
+         */
+    @Throws(SignerException::class) fun `extractGatewayCreateUtxosOutputs`(`psbtBase64`: kotlin.String, `network`: Network): List<GatewayOwnedOutput> {
+            return FfiConverterSequenceTypeGatewayOwnedOutput.lift(
+    uniffiRustCallWithError(SignerException) { _status ->
+    UniffiLib.uniffi_utexo_local_signer_fn_func_extract_gateway_create_utxos_outputs(
+    
+        
+        FfiConverterString.lower(`psbtBase64`),
+        FfiConverterTypeNetwork.lower(`network`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Generates a 12-word English BIP39 wallet and its RN-compatible key fields.
          *
          * # Errors
@@ -2909,6 +3840,53 @@ public object FfiConverterSequenceTypeRecipient: FfiConverterRustBuffer<List<Rec
     
 
         /**
+         * Decodes and strictly validates a canonical RGB invoice without requiring a
+         * wallet, seed, network call, or persistent state.
+         *
+         * This validates invoice syntax, identifiers, checksums, supported schema and
+         * assignment combinations, and bounded transport metadata. It does not prove
+         * that an asset exists, that the beneficiary is owned by the caller, or that a
+         * future RGB state transition is valid.
+         *
+         * # Errors
+         *
+         * Returns `InvalidRgbInvoice` for malformed, non-canonical, oversized, or
+         * unsupported invoices. Error messages never include invoice contents.
+         */
+    @Throws(SignerException::class) fun `decodeRgbInvoice`(`invoice`: kotlin.String): DecodedRgbInvoice {
+            return FfiConverterTypeDecodedRgbInvoice.lift(
+    uniffiRustCallWithError(SignerException) { _status ->
+    UniffiLib.uniffi_utexo_local_signer_fn_func_decode_rgb_invoice(
+    
+        
+        FfiConverterString.lower(`invoice`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Derives the exact Bitcoin recipient encoded by a canonical RGB witness
+         * invoice. This is local syntax/output authorization, not RGB validation.
+         *
+         * # Errors
+         * Rejects blind/malformed invoices, network mismatch and invalid/dust amounts.
+         */
+    @Throws(SignerException::class) fun `rgbInvoiceWitnessRecipient`(`invoice`: kotlin.String, `network`: Network, `amountSats`: kotlin.ULong): Recipient {
+            return FfiConverterTypeRecipient.lift(
+    uniffiRustCallWithError(SignerException) { _status ->
+    UniffiLib.uniffi_utexo_local_signer_fn_func_rgb_invoice_witness_recipient(
+    
+        
+        FfiConverterString.lower(`invoice`),
+        FfiConverterTypeNetwork.lower(`network`),
+        FfiConverterULong.lower(`amountSats`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Returns the fail-closed baseline for a plain Bitcoin send.
          */ fun `defaultSigningPolicy`(): SigningPolicy {
             return FfiConverterTypeSigningPolicy.lift(
@@ -2916,6 +3894,22 @@ public object FfiConverterSequenceTypeRecipient: FfiConverterRustBuffer<List<Rec
     UniffiLib.uniffi_utexo_local_signer_fn_func_default_signing_policy(
     
         _status)
+}
+    )
+    }
+    
+
+        /**
+         * Baseline for the additive `utexo.psbt.rgb-lib.v1` profile. This policy is
+         * accepted only by `validate_gateway_psbt` / `sign_gateway_psbt`, which also
+         * require independent height, fee target and operation-specific context.
+         */ fun `gatewaySigningPolicy`(`operation`: OperationKind): SigningPolicy {
+            return FfiConverterTypeSigningPolicy.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_utexo_local_signer_fn_func_gateway_signing_policy(
+    
+        
+        FfiConverterTypeOperationKind.lower(`operation`),_status)
 }
     )
     }

@@ -1,0 +1,3174 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "library",
+      "name": "utexo-local-signer",
+      "version": "0.1.0",
+      "bom-ref": "pkg:cargo/utexo-local-signer@0.1.0",
+      "purl": "pkg:cargo/utexo-local-signer@0.1.0"
+    },
+    "properties": [
+      {
+        "name": "utexo:scope",
+        "value": "Locked production-crate all-feature graph, including its build, test, bindgen and all-platform dependencies; excludes the separately locked fuzz harness and is not a runtime-linked-code-only inventory."
+      },
+      {
+        "name": "utexo:cargo-lock-sha256",
+        "value": "b64e3169d8dcfc428ceda040341a66666e83641124ecbfc90249ed34e38cd242"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "amplify",
+      "version": "4.8.1",
+      "bom-ref": "pkg:cargo/amplify@4.8.1",
+      "purl": "pkg:cargo/amplify@4.8.1",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-amplify/rust-amplify"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "amplify_derive",
+      "version": "4.0.1",
+      "bom-ref": "pkg:cargo/amplify_derive@4.0.1",
+      "purl": "pkg:cargo/amplify_derive@4.0.1",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-amplify/amplify-derive"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "amplify_num",
+      "version": "0.5.4",
+      "bom-ref": "pkg:cargo/amplify_num@0.5.4",
+      "purl": "pkg:cargo/amplify_num@0.5.4",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-amplify/amplify-num"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "amplify_syn",
+      "version": "2.0.1",
+      "bom-ref": "pkg:cargo/amplify_syn@2.0.1",
+      "purl": "pkg:cargo/amplify_syn@2.0.1",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-amplify/amplify-derive"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "anstyle",
+      "version": "1.0.14",
+      "bom-ref": "pkg:cargo/anstyle@1.0.14",
+      "purl": "pkg:cargo/anstyle@1.0.14",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-cli/anstyle.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "anyhow",
+      "version": "1.0.104",
+      "bom-ref": "pkg:cargo/anyhow@1.0.104",
+      "purl": "pkg:cargo/anyhow@1.0.104",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/anyhow"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "arrayvec",
+      "version": "0.7.8",
+      "bom-ref": "pkg:cargo/arrayvec@0.7.8",
+      "purl": "pkg:cargo/arrayvec@0.7.8",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/bluss/arrayvec"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ascii",
+      "version": "1.1.0",
+      "bom-ref": "pkg:cargo/ascii@1.1.0",
+      "purl": "pkg:cargo/ascii@1.1.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/tomprogrammer/rust-ascii"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "askama",
+      "version": "0.16.1",
+      "bom-ref": "pkg:cargo/askama@0.16.1",
+      "purl": "pkg:cargo/askama@0.16.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/askama-rs/askama"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "askama_derive",
+      "version": "0.16.1",
+      "bom-ref": "pkg:cargo/askama_derive@0.16.1",
+      "purl": "pkg:cargo/askama_derive@0.16.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/askama-rs/askama"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "askama_macros",
+      "version": "0.16.1",
+      "bom-ref": "pkg:cargo/askama_macros@0.16.1",
+      "purl": "pkg:cargo/askama_macros@0.16.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/askama-rs/askama"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "askama_parser",
+      "version": "0.16.1",
+      "bom-ref": "pkg:cargo/askama_parser@0.16.1",
+      "purl": "pkg:cargo/askama_parser@0.16.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/askama-rs/askama"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "autocfg",
+      "version": "1.5.1",
+      "bom-ref": "pkg:cargo/autocfg@1.5.1",
+      "purl": "pkg:cargo/autocfg@1.5.1",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/cuviper/autocfg"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "baid64",
+      "version": "0.4.1",
+      "bom-ref": "pkg:cargo/baid64@0.4.1",
+      "purl": "pkg:cargo/baid64@0.4.1",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/UBIDECO/rust-baid64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "base58ck",
+      "version": "0.1.101",
+      "bom-ref": "pkg:cargo/base58ck@0.1.101",
+      "purl": "pkg:cargo/base58ck@0.1.101",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "base64",
+      "version": "0.22.1",
+      "bom-ref": "pkg:cargo/base64@0.22.1",
+      "purl": "pkg:cargo/base64@0.22.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/marshallpierce/rust-base64"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "basic-toml",
+      "version": "0.1.10",
+      "bom-ref": "pkg:cargo/basic-toml@0.1.10",
+      "purl": "pkg:cargo/basic-toml@0.1.10",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/basic-toml"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bech32",
+      "version": "0.11.1",
+      "bom-ref": "pkg:cargo/bech32@0.11.1",
+      "purl": "pkg:cargo/bech32@0.11.1",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bech32"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bip39",
+      "version": "2.2.2",
+      "bom-ref": "pkg:cargo/bip39@2.2.2",
+      "purl": "pkg:cargo/bip39@2.2.2",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bip39/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitcoin",
+      "version": "0.32.102",
+      "bom-ref": "pkg:cargo/bitcoin@0.32.102",
+      "purl": "pkg:cargo/bitcoin@0.32.102",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitcoin-consensus-encoding",
+      "version": "1.2.0",
+      "bom-ref": "pkg:cargo/bitcoin-consensus-encoding@1.2.0",
+      "purl": "pkg:cargo/bitcoin-consensus-encoding@1.2.0",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitcoin-internals",
+      "version": "0.6.0",
+      "bom-ref": "pkg:cargo/bitcoin-internals@0.6.0",
+      "purl": "pkg:cargo/bitcoin-internals@0.6.0",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitcoin-io",
+      "version": "0.1.101",
+      "bom-ref": "pkg:cargo/bitcoin-io@0.1.101",
+      "purl": "pkg:cargo/bitcoin-io@0.1.101",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitcoin-units",
+      "version": "0.1.101",
+      "bom-ref": "pkg:cargo/bitcoin-units@0.1.101",
+      "purl": "pkg:cargo/bitcoin-units@0.1.101",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitcoin_hashes",
+      "version": "0.14.101",
+      "bom-ref": "pkg:cargo/bitcoin_hashes@0.14.101",
+      "purl": "pkg:cargo/bitcoin_hashes@0.14.101",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-bitcoin"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bitflags",
+      "version": "2.13.2",
+      "bom-ref": "pkg:cargo/bitflags@2.13.2",
+      "purl": "pkg:cargo/bitflags@2.13.2",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/bitflags/bitflags"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "block-buffer",
+      "version": "0.10.4",
+      "bom-ref": "pkg:cargo/block-buffer@0.10.4",
+      "purl": "pkg:cargo/block-buffer@0.10.4",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/utils"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "borrow-or-share",
+      "version": "0.2.4",
+      "bom-ref": "pkg:cargo/borrow-or-share@0.2.4",
+      "purl": "pkg:cargo/borrow-or-share@0.2.4",
+      "licenses": [
+        {
+          "expression": "MIT-0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/yescallop/borrow-or-share"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bumpalo",
+      "version": "3.20.2",
+      "bom-ref": "pkg:cargo/bumpalo@3.20.2",
+      "purl": "pkg:cargo/bumpalo@3.20.2",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/fitzgen/bumpalo"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "bytes",
+      "version": "1.12.1",
+      "bom-ref": "pkg:cargo/bytes@1.12.1",
+      "purl": "pkg:cargo/bytes@1.12.1",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/tokio-rs/bytes"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "camino",
+      "version": "1.2.6",
+      "bom-ref": "pkg:cargo/camino@1.2.6",
+      "purl": "pkg:cargo/camino@1.2.6",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/camino-rs/camino"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cc",
+      "version": "1.4.6",
+      "bom-ref": "pkg:cargo/cc@1.4.6",
+      "purl": "pkg:cargo/cc@1.4.6",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/cc-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cfg-if",
+      "version": "1.0.4",
+      "bom-ref": "pkg:cargo/cfg-if@1.0.4",
+      "purl": "pkg:cargo/cfg-if@1.0.4",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/cfg-if"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "clap",
+      "version": "4.6.6",
+      "bom-ref": "pkg:cargo/clap@4.6.6",
+      "purl": "pkg:cargo/clap@4.6.6",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/clap-rs/clap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "clap_builder",
+      "version": "4.6.6",
+      "bom-ref": "pkg:cargo/clap_builder@4.6.6",
+      "purl": "pkg:cargo/clap_builder@4.6.6",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/clap-rs/clap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "clap_derive",
+      "version": "4.6.4",
+      "bom-ref": "pkg:cargo/clap_derive@4.6.4",
+      "purl": "pkg:cargo/clap_derive@4.6.4",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/clap-rs/clap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "clap_lex",
+      "version": "1.1.0",
+      "bom-ref": "pkg:cargo/clap_lex@1.1.0",
+      "purl": "pkg:cargo/clap_lex@1.1.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/clap-rs/clap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "cpufeatures",
+      "version": "0.2.17",
+      "bom-ref": "pkg:cargo/cpufeatures@0.2.17",
+      "purl": "pkg:cargo/cpufeatures@0.2.17",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/utils"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "crypto-common",
+      "version": "0.1.7",
+      "bom-ref": "pkg:cargo/crypto-common@0.1.7",
+      "purl": "pkg:cargo/crypto-common@0.1.7",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/traits"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "digest",
+      "version": "0.10.7",
+      "bom-ref": "pkg:cargo/digest@0.10.7",
+      "purl": "pkg:cargo/digest@0.10.7",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/traits"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "equivalent",
+      "version": "1.0.2",
+      "bom-ref": "pkg:cargo/equivalent@1.0.2",
+      "purl": "pkg:cargo/equivalent@1.0.2",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/indexmap-rs/equivalent"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "errno",
+      "version": "0.3.14",
+      "bom-ref": "pkg:cargo/errno@0.3.14",
+      "purl": "pkg:cargo/errno@0.3.14",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/lambda-fairy/rust-errno"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fast32",
+      "version": "1.0.3",
+      "bom-ref": "pkg:cargo/fast32@1.0.3",
+      "purl": "pkg:cargo/fast32@1.0.3",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rogusdev/fast32"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fastrand",
+      "version": "2.5.0",
+      "bom-ref": "pkg:cargo/fastrand@2.5.0",
+      "purl": "pkg:cargo/fastrand@2.5.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/smol-rs/fastrand"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "find-msvc-tools",
+      "version": "0.1.12",
+      "bom-ref": "pkg:cargo/find-msvc-tools@0.1.12",
+      "purl": "pkg:cargo/find-msvc-tools@0.1.12",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/cc-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fluent-uri",
+      "version": "0.3.2",
+      "bom-ref": "pkg:cargo/fluent-uri@0.3.2",
+      "purl": "pkg:cargo/fluent-uri@0.3.2",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/yescallop/fluent-uri-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fs-err",
+      "version": "3.3.1",
+      "bom-ref": "pkg:cargo/fs-err@3.3.1",
+      "purl": "pkg:cargo/fs-err@3.3.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/andrewhickman/fs-err"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "generic-array",
+      "version": "0.14.7",
+      "bom-ref": "pkg:cargo/generic-array@0.14.7",
+      "purl": "pkg:cargo/generic-array@0.14.7",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/fizyk20/generic-array.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "getrandom",
+      "version": "0.4.3",
+      "bom-ref": "pkg:cargo/getrandom@0.4.3",
+      "purl": "pkg:cargo/getrandom@0.4.3",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-random/getrandom"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "glob",
+      "version": "0.3.4",
+      "bom-ref": "pkg:cargo/glob@0.3.4",
+      "purl": "pkg:cargo/glob@0.3.4",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/glob"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "goblin",
+      "version": "0.8.2",
+      "bom-ref": "pkg:cargo/goblin@0.8.2",
+      "purl": "pkg:cargo/goblin@0.8.2",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/m4b/goblin"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hashbrown",
+      "version": "0.17.1",
+      "bom-ref": "pkg:cargo/hashbrown@0.17.1",
+      "purl": "pkg:cargo/hashbrown@0.17.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/hashbrown"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "heck",
+      "version": "0.5.0",
+      "bom-ref": "pkg:cargo/heck@0.5.0",
+      "purl": "pkg:cargo/heck@0.5.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/withoutboats/heck"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hex",
+      "version": "0.4.3",
+      "bom-ref": "pkg:cargo/hex@0.4.3",
+      "purl": "pkg:cargo/hex@0.4.3",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/KokaKiwi/rust-hex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hex-conservative",
+      "version": "0.2.3",
+      "bom-ref": "pkg:cargo/hex-conservative@0.2.3",
+      "purl": "pkg:cargo/hex-conservative@0.2.3",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/hex-conservative"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hex-conservative",
+      "version": "1.3.0",
+      "bom-ref": "pkg:cargo/hex-conservative@1.3.0",
+      "purl": "pkg:cargo/hex-conservative@1.3.0",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/hex-conservative"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "hex_lit",
+      "version": "0.1.1",
+      "bom-ref": "pkg:cargo/hex_lit@0.1.1",
+      "purl": "pkg:cargo/hex_lit@0.1.1",
+      "licenses": [
+        {
+          "expression": "MITNFA"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Kixunil/hex_lit"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "indexmap",
+      "version": "2.14.2",
+      "bom-ref": "pkg:cargo/indexmap@2.14.2",
+      "purl": "pkg:cargo/indexmap@2.14.2",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/indexmap-rs/indexmap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "itoa",
+      "version": "1.0.18",
+      "bom-ref": "pkg:cargo/itoa@1.0.18",
+      "purl": "pkg:cargo/itoa@1.0.18",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/itoa"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "libc",
+      "version": "0.2.189",
+      "bom-ref": "pkg:cargo/libc@0.2.189",
+      "purl": "pkg:cargo/libc@0.2.189",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/libc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "linux-raw-sys",
+      "version": "0.12.1",
+      "bom-ref": "pkg:cargo/linux-raw-sys@0.12.1",
+      "purl": "pkg:cargo/linux-raw-sys@0.12.1",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sunfishcode/linux-raw-sys"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "log",
+      "version": "0.4.34",
+      "bom-ref": "pkg:cargo/log@0.4.34",
+      "purl": "pkg:cargo/log@0.4.34",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/log"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "memchr",
+      "version": "2.8.3",
+      "bom-ref": "pkg:cargo/memchr@2.8.3",
+      "purl": "pkg:cargo/memchr@2.8.3",
+      "licenses": [
+        {
+          "expression": "Unlicense OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/BurntSushi/memchr"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "minimal-lexical",
+      "version": "0.2.1",
+      "bom-ref": "pkg:cargo/minimal-lexical@0.2.1",
+      "purl": "pkg:cargo/minimal-lexical@0.2.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Alexhuszagh/minimal-lexical"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mnemonic",
+      "version": "1.1.1",
+      "bom-ref": "pkg:cargo/mnemonic@1.1.1",
+      "purl": "pkg:cargo/mnemonic@1.1.1",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mbrubeck/rust-mnemonic"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "nom",
+      "version": "7.1.3",
+      "bom-ref": "pkg:cargo/nom@7.1.3",
+      "purl": "pkg:cargo/nom@7.1.3",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Geal/nom"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "once_cell",
+      "version": "1.21.4",
+      "bom-ref": "pkg:cargo/once_cell@1.21.4",
+      "purl": "pkg:cargo/once_cell@1.21.4",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/matklad/once_cell"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "percent-encoding",
+      "version": "2.3.2",
+      "bom-ref": "pkg:cargo/percent-encoding@2.3.2",
+      "purl": "pkg:cargo/percent-encoding@2.3.2",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/servo/rust-url/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "plain",
+      "version": "0.2.3",
+      "bom-ref": "pkg:cargo/plain@0.2.3",
+      "purl": "pkg:cargo/plain@0.2.3",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/randomites/plain"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "proc-macro2",
+      "version": "1.0.107",
+      "bom-ref": "pkg:cargo/proc-macro2@1.0.107",
+      "purl": "pkg:cargo/proc-macro2@1.0.107",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/proc-macro2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "quote",
+      "version": "1.0.47",
+      "bom-ref": "pkg:cargo/quote@1.0.47",
+      "purl": "pkg:cargo/quote@1.0.47",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/quote"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "r-efi",
+      "version": "6.0.0",
+      "bom-ref": "pkg:cargo/r-efi@6.0.0",
+      "purl": "pkg:cargo/r-efi@6.0.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0 OR LGPL-2.1-or-later"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/r-efi/r-efi"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ref-cast",
+      "version": "1.0.27",
+      "bom-ref": "pkg:cargo/ref-cast@1.0.27",
+      "purl": "pkg:cargo/ref-cast@1.0.27",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/ref-cast"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ref-cast-impl",
+      "version": "1.0.27",
+      "bom-ref": "pkg:cargo/ref-cast-impl@1.0.27",
+      "purl": "pkg:cargo/ref-cast-impl@1.0.27",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/ref-cast"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rustc-hash",
+      "version": "2.1.3",
+      "bom-ref": "pkg:cargo/rustc-hash@2.1.3",
+      "purl": "pkg:cargo/rustc-hash@2.1.3",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/rustc-hash"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rustix",
+      "version": "1.1.4",
+      "bom-ref": "pkg:cargo/rustix@1.1.4",
+      "purl": "pkg:cargo/rustix@1.1.4",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/bytecodealliance/rustix"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rustversion",
+      "version": "1.0.23",
+      "bom-ref": "pkg:cargo/rustversion@1.0.23",
+      "purl": "pkg:cargo/rustversion@1.0.23",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/rustversion"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "scroll",
+      "version": "0.12.0",
+      "bom-ref": "pkg:cargo/scroll@0.12.0",
+      "purl": "pkg:cargo/scroll@0.12.0",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/m4b/scroll"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "scroll_derive",
+      "version": "0.12.1",
+      "bom-ref": "pkg:cargo/scroll_derive@0.12.1",
+      "purl": "pkg:cargo/scroll_derive@0.12.1",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/m4b/scroll"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "secp256k1",
+      "version": "0.29.1",
+      "bom-ref": "pkg:cargo/secp256k1@0.29.1",
+      "purl": "pkg:cargo/secp256k1@0.29.1",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-secp256k1/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "secp256k1-sys",
+      "version": "0.10.1",
+      "bom-ref": "pkg:cargo/secp256k1-sys@0.10.1",
+      "purl": "pkg:cargo/secp256k1-sys@0.10.1",
+      "licenses": [
+        {
+          "expression": "CC0-1.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-bitcoin/rust-secp256k1/"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "serde",
+      "version": "1.0.229",
+      "bom-ref": "pkg:cargo/serde@1.0.229",
+      "purl": "pkg:cargo/serde@1.0.229",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/serde-rs/serde"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "serde_core",
+      "version": "1.0.229",
+      "bom-ref": "pkg:cargo/serde_core@1.0.229",
+      "purl": "pkg:cargo/serde_core@1.0.229",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/serde-rs/serde"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "serde_derive",
+      "version": "1.0.229",
+      "bom-ref": "pkg:cargo/serde_derive@1.0.229",
+      "purl": "pkg:cargo/serde_derive@1.0.229",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/serde-rs/serde"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "serde_json",
+      "version": "1.0.151",
+      "bom-ref": "pkg:cargo/serde_json@1.0.151",
+      "purl": "pkg:cargo/serde_json@1.0.151",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/serde-rs/json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "serde_spanned",
+      "version": "1.1.1",
+      "bom-ref": "pkg:cargo/serde_spanned@1.1.1",
+      "purl": "pkg:cargo/serde_spanned@1.1.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sha2",
+      "version": "0.10.9",
+      "bom-ref": "pkg:cargo/sha2@0.10.9",
+      "purl": "pkg:cargo/sha2@0.10.9",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/hashes"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "shlex",
+      "version": "2.0.1",
+      "bom-ref": "pkg:cargo/shlex@2.0.1",
+      "purl": "pkg:cargo/shlex@2.0.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/comex/rust-shlex"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "siphasher",
+      "version": "1.0.3",
+      "bom-ref": "pkg:cargo/siphasher@1.0.3",
+      "purl": "pkg:cargo/siphasher@1.0.3",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/jedisct1/rust-siphash"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "smawk",
+      "version": "0.3.3",
+      "bom-ref": "pkg:cargo/smawk@0.3.3",
+      "purl": "pkg:cargo/smawk@0.3.3",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mgeisler/smawk"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "static_assertions",
+      "version": "1.1.0",
+      "bom-ref": "pkg:cargo/static_assertions@1.1.0",
+      "purl": "pkg:cargo/static_assertions@1.1.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/nvzqz/static-assertions-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strsim",
+      "version": "0.11.1",
+      "bom-ref": "pkg:cargo/strsim@0.11.1",
+      "purl": "pkg:cargo/strsim@0.11.1",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rapidfuzz/strsim-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "syn",
+      "version": "1.0.109",
+      "bom-ref": "pkg:cargo/syn@1.0.109",
+      "purl": "pkg:cargo/syn@1.0.109",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/syn"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "syn",
+      "version": "2.0.119",
+      "bom-ref": "pkg:cargo/syn@2.0.119",
+      "purl": "pkg:cargo/syn@2.0.119",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/syn"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "syn",
+      "version": "3.0.5",
+      "bom-ref": "pkg:cargo/syn@3.0.5",
+      "purl": "pkg:cargo/syn@3.0.5",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/syn"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tempfile",
+      "version": "3.27.0",
+      "bom-ref": "pkg:cargo/tempfile@3.27.0",
+      "purl": "pkg:cargo/tempfile@3.27.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Stebalien/tempfile"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "textwrap",
+      "version": "0.16.2",
+      "bom-ref": "pkg:cargo/textwrap@0.16.2",
+      "purl": "pkg:cargo/textwrap@0.16.2",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mgeisler/textwrap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "thiserror",
+      "version": "2.0.17",
+      "bom-ref": "pkg:cargo/thiserror@2.0.17",
+      "purl": "pkg:cargo/thiserror@2.0.17",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/thiserror"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "thiserror-impl",
+      "version": "2.0.17",
+      "bom-ref": "pkg:cargo/thiserror-impl@2.0.17",
+      "purl": "pkg:cargo/thiserror-impl@2.0.17",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/thiserror"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tinyvec",
+      "version": "1.13.3",
+      "bom-ref": "pkg:cargo/tinyvec@1.13.3",
+      "purl": "pkg:cargo/tinyvec@1.13.3",
+      "licenses": [
+        {
+          "expression": "Zlib OR Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/Lokathor/tinyvec"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "toml",
+      "version": "0.9.12+spec-1.1.0",
+      "bom-ref": "pkg:cargo/toml@0.9.12%2Bspec-1.1.0",
+      "purl": "pkg:cargo/toml@0.9.12%2Bspec-1.1.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "toml_datetime",
+      "version": "0.7.5+spec-1.1.0",
+      "bom-ref": "pkg:cargo/toml_datetime@0.7.5%2Bspec-1.1.0",
+      "purl": "pkg:cargo/toml_datetime@0.7.5%2Bspec-1.1.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "toml_parser",
+      "version": "1.1.3+spec-1.1.0",
+      "bom-ref": "pkg:cargo/toml_parser@1.1.3%2Bspec-1.1.0",
+      "purl": "pkg:cargo/toml_parser@1.1.3%2Bspec-1.1.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "toml_writer",
+      "version": "1.1.2+spec-1.1.0",
+      "bom-ref": "pkg:cargo/toml_writer@1.1.2%2Bspec-1.1.0",
+      "purl": "pkg:cargo/toml_writer@1.1.2%2Bspec-1.1.0",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/toml-rs/toml"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "typenum",
+      "version": "1.20.1",
+      "bom-ref": "pkg:cargo/typenum@1.20.1",
+      "purl": "pkg:cargo/typenum@1.20.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/paholg/typenum"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "unicode-ident",
+      "version": "1.0.24",
+      "bom-ref": "pkg:cargo/unicode-ident@1.0.24",
+      "purl": "pkg:cargo/unicode-ident@1.0.24",
+      "licenses": [
+        {
+          "expression": "(MIT OR Apache-2.0) AND Unicode-3.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/unicode-ident"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "unicode-normalization",
+      "version": "0.1.25",
+      "bom-ref": "pkg:cargo/unicode-normalization@0.1.25",
+      "purl": "pkg:cargo/unicode-normalization@0.1.25",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/unicode-rs/unicode-normalization"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi@0.32.1",
+      "purl": "pkg:cargo/uniffi@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_bindgen",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_bindgen@0.32.1",
+      "purl": "pkg:cargo/uniffi_bindgen@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_core",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_core@0.32.1",
+      "purl": "pkg:cargo/uniffi_core@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_internal_macros",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_internal_macros@0.32.1",
+      "purl": "pkg:cargo/uniffi_internal_macros@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_macros",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_macros@0.32.1",
+      "purl": "pkg:cargo/uniffi_macros@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_meta",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_meta@0.32.1",
+      "purl": "pkg:cargo/uniffi_meta@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_pipeline",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_pipeline@0.32.1",
+      "purl": "pkg:cargo/uniffi_pipeline@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uniffi_udl",
+      "version": "0.32.1",
+      "bom-ref": "pkg:cargo/uniffi_udl@0.32.1",
+      "purl": "pkg:cargo/uniffi_udl@0.32.1",
+      "licenses": [
+        {
+          "expression": "MPL-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "version_check",
+      "version": "0.9.5",
+      "bom-ref": "pkg:cargo/version_check@0.9.5",
+      "purl": "pkg:cargo/version_check@0.9.5",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/SergioBenitez/version_check"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wasm-bindgen",
+      "version": "0.2.121",
+      "bom-ref": "pkg:cargo/wasm-bindgen@0.2.121",
+      "purl": "pkg:cargo/wasm-bindgen@0.2.121",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wasm-bindgen/wasm-bindgen"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wasm-bindgen-macro",
+      "version": "0.2.121",
+      "bom-ref": "pkg:cargo/wasm-bindgen-macro@0.2.121",
+      "purl": "pkg:cargo/wasm-bindgen-macro@0.2.121",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wasm-bindgen-macro-support",
+      "version": "0.2.121",
+      "bom-ref": "pkg:cargo/wasm-bindgen-macro-support@0.2.121",
+      "purl": "pkg:cargo/wasm-bindgen-macro-support@0.2.121",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro-support"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "wasm-bindgen-shared",
+      "version": "0.2.121",
+      "bom-ref": "pkg:cargo/wasm-bindgen-shared@0.2.121",
+      "purl": "pkg:cargo/wasm-bindgen-shared@0.2.121",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "weedle2",
+      "version": "5.0.0",
+      "bom-ref": "pkg:cargo/weedle2@5.0.0",
+      "purl": "pkg:cargo/weedle2@5.0.0",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/mozilla/uniffi-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "windows-link",
+      "version": "0.2.1",
+      "bom-ref": "pkg:cargo/windows-link@0.2.1",
+      "purl": "pkg:cargo/windows-link@0.2.1",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/microsoft/windows-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "windows-sys",
+      "version": "0.61.2",
+      "bom-ref": "pkg:cargo/windows-sys@0.61.2",
+      "purl": "pkg:cargo/windows-sys@0.61.2",
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/microsoft/windows-rs"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "winnow",
+      "version": "0.7.15",
+      "bom-ref": "pkg:cargo/winnow@0.7.15",
+      "purl": "pkg:cargo/winnow@0.7.15",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/winnow-rs/winnow"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "winnow",
+      "version": "1.0.4",
+      "bom-ref": "pkg:cargo/winnow@1.0.4",
+      "purl": "pkg:cargo/winnow@1.0.4",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/winnow-rs/winnow"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zeroize",
+      "version": "1.9.0",
+      "bom-ref": "pkg:cargo/zeroize@1.9.0",
+      "purl": "pkg:cargo/zeroize@1.9.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/utils"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zeroize_derive",
+      "version": "1.5.0",
+      "bom-ref": "pkg:cargo/zeroize_derive@1.5.0",
+      "purl": "pkg:cargo/zeroize_derive@1.5.0",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 OR MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/RustCrypto/utils"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zmij",
+      "version": "1.0.23",
+      "bom-ref": "pkg:cargo/zmij@1.0.23",
+      "purl": "pkg:cargo/zmij@1.0.23",
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/zmij"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:cargo/amplify@4.8.1",
+      "dependsOn": [
+        "pkg:cargo/amplify_derive@4.0.1",
+        "pkg:cargo/amplify_num@0.5.4",
+        "pkg:cargo/ascii@1.1.0",
+        "pkg:cargo/wasm-bindgen@0.2.121"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/amplify_derive@4.0.1",
+      "dependsOn": [
+        "pkg:cargo/amplify_syn@2.0.1",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@1.0.109"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/amplify_num@0.5.4",
+      "dependsOn": [
+        "pkg:cargo/wasm-bindgen@0.2.121"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/amplify_syn@2.0.1",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@1.0.109"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/anstyle@1.0.14",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/anyhow@1.0.104",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/arrayvec@0.7.8",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/ascii@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/askama@0.16.1",
+      "dependsOn": [
+        "pkg:cargo/askama_macros@0.16.1",
+        "pkg:cargo/itoa@1.0.18",
+        "pkg:cargo/percent-encoding@2.3.2",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_json@1.0.151"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/askama_derive@0.16.1",
+      "dependsOn": [
+        "pkg:cargo/askama_parser@0.16.1",
+        "pkg:cargo/basic-toml@0.1.10",
+        "pkg:cargo/glob@0.3.4",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/rustc-hash@2.1.3",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_derive@1.0.229",
+        "pkg:cargo/syn@3.0.5"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/askama_macros@0.16.1",
+      "dependsOn": [
+        "pkg:cargo/askama_derive@0.16.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/askama_parser@0.16.1",
+      "dependsOn": [
+        "pkg:cargo/rustc-hash@2.1.3",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_derive@1.0.229",
+        "pkg:cargo/unicode-ident@1.0.24",
+        "pkg:cargo/winnow@1.0.4"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/autocfg@1.5.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/baid64@0.4.1",
+      "dependsOn": [
+        "pkg:cargo/amplify@4.8.1",
+        "pkg:cargo/base64@0.22.1",
+        "pkg:cargo/mnemonic@1.1.1",
+        "pkg:cargo/sha2@0.10.9"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/base58ck@0.1.101",
+      "dependsOn": [
+        "pkg:cargo/bitcoin_hashes@0.14.101"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/base64@0.22.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/basic-toml@0.1.10",
+      "dependsOn": [
+        "pkg:cargo/serde@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bech32@0.11.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/bip39@2.2.2",
+      "dependsOn": [
+        "pkg:cargo/bitcoin_hashes@0.14.101",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/unicode-normalization@0.1.25",
+        "pkg:cargo/zeroize@1.9.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bitcoin-consensus-encoding@1.2.0",
+      "dependsOn": [
+        "pkg:cargo/bitcoin-internals@0.6.0",
+        "pkg:cargo/hex-conservative@1.3.0",
+        "pkg:cargo/serde@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bitcoin-internals@0.6.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/bitcoin-io@0.1.101",
+      "dependsOn": [
+        "pkg:cargo/bitcoin-consensus-encoding@1.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bitcoin-units@0.1.101",
+      "dependsOn": [
+        "pkg:cargo/bitcoin-consensus-encoding@1.2.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bitcoin@0.32.102",
+      "dependsOn": [
+        "pkg:cargo/base58ck@0.1.101",
+        "pkg:cargo/bech32@0.11.1",
+        "pkg:cargo/bitcoin-io@0.1.101",
+        "pkg:cargo/bitcoin-units@0.1.101",
+        "pkg:cargo/bitcoin_hashes@0.14.101",
+        "pkg:cargo/hex-conservative@0.2.3",
+        "pkg:cargo/hex_lit@0.1.1",
+        "pkg:cargo/secp256k1@0.29.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bitcoin_hashes@0.14.101",
+      "dependsOn": [
+        "pkg:cargo/bitcoin-io@0.1.101",
+        "pkg:cargo/hex-conservative@0.2.3"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/bitflags@2.13.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/block-buffer@0.10.4",
+      "dependsOn": [
+        "pkg:cargo/generic-array@0.14.7"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/borrow-or-share@0.2.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/bumpalo@3.20.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/bytes@1.12.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/camino@1.2.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/cc@1.4.6",
+      "dependsOn": [
+        "pkg:cargo/find-msvc-tools@0.1.12",
+        "pkg:cargo/shlex@2.0.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/cfg-if@1.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/clap@4.6.6",
+      "dependsOn": [
+        "pkg:cargo/clap_builder@4.6.6",
+        "pkg:cargo/clap_derive@4.6.4"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/clap_builder@4.6.6",
+      "dependsOn": [
+        "pkg:cargo/anstyle@1.0.14",
+        "pkg:cargo/clap_lex@1.1.0",
+        "pkg:cargo/strsim@0.11.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/clap_derive@4.6.4",
+      "dependsOn": [
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.5"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/clap_lex@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/cpufeatures@0.2.17",
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.189"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/crypto-common@0.1.7",
+      "dependsOn": [
+        "pkg:cargo/generic-array@0.14.7",
+        "pkg:cargo/typenum@1.20.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/digest@0.10.7",
+      "dependsOn": [
+        "pkg:cargo/block-buffer@0.10.4",
+        "pkg:cargo/crypto-common@0.1.7"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/equivalent@1.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/errno@0.3.14",
+      "dependsOn": [
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/windows-sys@0.61.2"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/fast32@1.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/fastrand@2.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/find-msvc-tools@0.1.12",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/fluent-uri@0.3.2",
+      "dependsOn": [
+        "pkg:cargo/borrow-or-share@0.2.4",
+        "pkg:cargo/ref-cast@1.0.27"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/fs-err@3.3.1",
+      "dependsOn": [
+        "pkg:cargo/autocfg@1.5.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/generic-array@0.14.7",
+      "dependsOn": [
+        "pkg:cargo/typenum@1.20.1",
+        "pkg:cargo/version_check@0.9.5"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/getrandom@0.4.3",
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/r-efi@6.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/glob@0.3.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/goblin@0.8.2",
+      "dependsOn": [
+        "pkg:cargo/log@0.4.34",
+        "pkg:cargo/plain@0.2.3",
+        "pkg:cargo/scroll@0.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/hashbrown@0.17.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/heck@0.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/hex-conservative@0.2.3",
+      "dependsOn": [
+        "pkg:cargo/arrayvec@0.7.8"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/hex-conservative@1.3.0",
+      "dependsOn": [
+        "pkg:cargo/arrayvec@0.7.8"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/hex@0.4.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/hex_lit@0.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/indexmap@2.14.2",
+      "dependsOn": [
+        "pkg:cargo/equivalent@1.0.2",
+        "pkg:cargo/hashbrown@0.17.1",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_core@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/itoa@1.0.18",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/libc@0.2.189",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/linux-raw-sys@0.12.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/log@0.4.34",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/memchr@2.8.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/minimal-lexical@0.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/mnemonic@1.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/nom@7.1.3",
+      "dependsOn": [
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/minimal-lexical@0.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/once_cell@1.21.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/percent-encoding@2.3.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/plain@0.2.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/proc-macro2@1.0.107",
+      "dependsOn": [
+        "pkg:cargo/unicode-ident@1.0.24"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/quote@1.0.47",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/r-efi@6.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/ref-cast-impl@1.0.27",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.5"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/ref-cast@1.0.27",
+      "dependsOn": [
+        "pkg:cargo/ref-cast-impl@1.0.27"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/rustc-hash@2.1.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/rustix@1.1.4",
+      "dependsOn": [
+        "pkg:cargo/bitflags@2.13.2",
+        "pkg:cargo/errno@0.3.14",
+        "pkg:cargo/libc@0.2.189",
+        "pkg:cargo/linux-raw-sys@0.12.1",
+        "pkg:cargo/windows-sys@0.61.2"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/rustversion@1.0.23",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/scroll@0.12.0",
+      "dependsOn": [
+        "pkg:cargo/scroll_derive@0.12.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/scroll_derive@0.12.1",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/secp256k1-sys@0.10.1",
+      "dependsOn": [
+        "pkg:cargo/cc@1.4.6"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/secp256k1@0.29.1",
+      "dependsOn": [
+        "pkg:cargo/bitcoin_hashes@0.14.101",
+        "pkg:cargo/secp256k1-sys@0.10.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde@1.0.229",
+      "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/serde_derive@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_core@1.0.229",
+      "dependsOn": [
+        "pkg:cargo/serde_derive@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_derive@1.0.229",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@3.0.5"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_json@1.0.151",
+      "dependsOn": [
+        "pkg:cargo/itoa@1.0.18",
+        "pkg:cargo/memchr@2.8.3",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/zmij@1.0.23"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/serde_spanned@1.1.1",
+      "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/sha2@0.10.9",
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/cpufeatures@0.2.17",
+        "pkg:cargo/digest@0.10.7"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/shlex@2.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/siphasher@1.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/smawk@0.3.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/static_assertions@1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/strsim@0.11.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/syn@1.0.109",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/unicode-ident@1.0.24"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/syn@2.0.119",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/unicode-ident@1.0.24"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/syn@3.0.5",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/unicode-ident@1.0.24"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/tempfile@3.27.0",
+      "dependsOn": [
+        "pkg:cargo/fastrand@2.5.0",
+        "pkg:cargo/getrandom@0.4.3",
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/rustix@1.1.4",
+        "pkg:cargo/windows-sys@0.61.2"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/textwrap@0.16.2",
+      "dependsOn": [
+        "pkg:cargo/smawk@0.3.3"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/thiserror-impl@2.0.17",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/thiserror@2.0.17",
+      "dependsOn": [
+        "pkg:cargo/thiserror-impl@2.0.17"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/tinyvec@1.13.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/toml@0.9.12%2Bspec-1.1.0",
+      "dependsOn": [
+        "pkg:cargo/indexmap@2.14.2",
+        "pkg:cargo/serde_core@1.0.229",
+        "pkg:cargo/serde_spanned@1.1.1",
+        "pkg:cargo/toml_datetime@0.7.5%2Bspec-1.1.0",
+        "pkg:cargo/toml_parser@1.1.3%2Bspec-1.1.0",
+        "pkg:cargo/toml_writer@1.1.2%2Bspec-1.1.0",
+        "pkg:cargo/winnow@0.7.15"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/toml_datetime@0.7.5%2Bspec-1.1.0",
+      "dependsOn": [
+        "pkg:cargo/serde_core@1.0.229"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/toml_parser@1.1.3%2Bspec-1.1.0",
+      "dependsOn": [
+        "pkg:cargo/winnow@1.0.4"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/toml_writer@1.1.2%2Bspec-1.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/typenum@1.20.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/unicode-ident@1.0.24",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/unicode-normalization@0.1.25",
+      "dependsOn": [
+        "pkg:cargo/tinyvec@1.13.3"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/camino@1.2.6",
+        "pkg:cargo/clap@4.6.6",
+        "pkg:cargo/uniffi_bindgen@0.32.1",
+        "pkg:cargo/uniffi_core@0.32.1",
+        "pkg:cargo/uniffi_macros@0.32.1",
+        "pkg:cargo/uniffi_pipeline@0.32.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_bindgen@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/askama@0.16.1",
+        "pkg:cargo/camino@1.2.6",
+        "pkg:cargo/fs-err@3.3.1",
+        "pkg:cargo/glob@0.3.4",
+        "pkg:cargo/goblin@0.8.2",
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/indexmap@2.14.2",
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/tempfile@3.27.0",
+        "pkg:cargo/textwrap@0.16.2",
+        "pkg:cargo/toml@0.9.12%2Bspec-1.1.0",
+        "pkg:cargo/uniffi_internal_macros@0.32.1",
+        "pkg:cargo/uniffi_meta@0.32.1",
+        "pkg:cargo/uniffi_pipeline@0.32.1",
+        "pkg:cargo/uniffi_udl@0.32.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_core@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/bytes@1.12.1",
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/static_assertions@1.1.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_internal_macros@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/indexmap@2.14.2",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_macros@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/camino@1.2.6",
+        "pkg:cargo/fs-err@3.3.1",
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/serde@1.0.229",
+        "pkg:cargo/syn@2.0.119",
+        "pkg:cargo/toml@0.9.12%2Bspec-1.1.0",
+        "pkg:cargo/uniffi_meta@0.32.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_meta@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/siphasher@1.0.3",
+        "pkg:cargo/uniffi_internal_macros@0.32.1",
+        "pkg:cargo/uniffi_pipeline@0.32.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_pipeline@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/heck@0.5.0",
+        "pkg:cargo/indexmap@2.14.2",
+        "pkg:cargo/tempfile@3.27.0",
+        "pkg:cargo/uniffi_internal_macros@0.32.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/uniffi_udl@0.32.1",
+      "dependsOn": [
+        "pkg:cargo/anyhow@1.0.104",
+        "pkg:cargo/textwrap@0.16.2",
+        "pkg:cargo/uniffi_meta@0.32.1",
+        "pkg:cargo/weedle2@5.0.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/utexo-local-signer@0.1.0",
+      "dependsOn": [
+        "pkg:cargo/baid64@0.4.1",
+        "pkg:cargo/base64@0.22.1",
+        "pkg:cargo/bip39@2.2.2",
+        "pkg:cargo/bitcoin@0.32.102",
+        "pkg:cargo/fast32@1.0.3",
+        "pkg:cargo/fluent-uri@0.3.2",
+        "pkg:cargo/getrandom@0.4.3",
+        "pkg:cargo/hex@0.4.3",
+        "pkg:cargo/percent-encoding@2.3.2",
+        "pkg:cargo/serde_json@1.0.151",
+        "pkg:cargo/sha2@0.10.9",
+        "pkg:cargo/thiserror@2.0.17",
+        "pkg:cargo/uniffi@0.32.1",
+        "pkg:cargo/zeroize@1.9.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/version_check@0.9.5",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/wasm-bindgen-macro-support@0.2.121",
+      "dependsOn": [
+        "pkg:cargo/bumpalo@3.20.2",
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119",
+        "pkg:cargo/wasm-bindgen-shared@0.2.121"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/wasm-bindgen-macro@0.2.121",
+      "dependsOn": [
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/wasm-bindgen-macro-support@0.2.121"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/wasm-bindgen-shared@0.2.121",
+      "dependsOn": [
+        "pkg:cargo/unicode-ident@1.0.24"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/wasm-bindgen@0.2.121",
+      "dependsOn": [
+        "pkg:cargo/cfg-if@1.0.4",
+        "pkg:cargo/once_cell@1.21.4",
+        "pkg:cargo/rustversion@1.0.23",
+        "pkg:cargo/wasm-bindgen-macro@0.2.121",
+        "pkg:cargo/wasm-bindgen-shared@0.2.121"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/weedle2@5.0.0",
+      "dependsOn": [
+        "pkg:cargo/nom@7.1.3"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/windows-link@0.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/windows-sys@0.61.2",
+      "dependsOn": [
+        "pkg:cargo/windows-link@0.2.1"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/winnow@0.7.15",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:cargo/winnow@1.0.4",
+      "dependsOn": [
+        "pkg:cargo/memchr@2.8.3"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/zeroize@1.9.0",
+      "dependsOn": [
+        "pkg:cargo/zeroize_derive@1.5.0"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/zeroize_derive@1.5.0",
+      "dependsOn": [
+        "pkg:cargo/proc-macro2@1.0.107",
+        "pkg:cargo/quote@1.0.47",
+        "pkg:cargo/syn@2.0.119"
+      ]
+    },
+    {
+      "ref": "pkg:cargo/zmij@1.0.23",
+      "dependsOn": []
+    }
+  ]
+}

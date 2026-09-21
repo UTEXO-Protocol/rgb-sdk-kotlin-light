@@ -15,6 +15,7 @@ internal class ValueTypesTest {
 
     @Test
     fun `fee rates are exact and reject unsafe doubles`(): Unit {
+        assertEquals(2_000, FeeRate.DEFAULT.milliSatsPerVbyte)
         assertEquals(1_500, FeeRate.satPerVbyte("1.5").milliSatsPerVbyte)
         assertEquals(1_500, FeeRate.satPerVbyte(1.5).milliSatsPerVbyte)
         assertFailsWith<SdkException.InvalidArgument> { FeeRate.satPerVbyte(Double.NaN) }

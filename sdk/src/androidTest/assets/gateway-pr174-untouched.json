@@ -1,0 +1,116 @@
+{
+  "warning": "Public test mnemonic only; never fund these keys. Original historical PSBTs unchanged; no network or broadcast in tests.",
+  "fixtures": [
+    {
+      "name": "send-btc",
+      "backendCommit": "8eebc40a44ff519bd21c818a7fbe7c11d3275e8c",
+      "nativePackage": "@utexo/rgb-lib@0.3.0-beta.18",
+      "capturedAt": "2026-09-18T13:12:40.491Z",
+      "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+      "request": {
+        "address": "bcrt1pjyd6wjs2nlefjehddqsvxe8r0ng5r70urvlx72u5fvpsnhs35feqsu7305",
+        "amountSat": 40000,
+        "feeRateSatPerVb": 2
+      },
+      "prepared": {
+        "opId": "5bb28e16-416e-4c59-b07d-1af5ffbce4c0",
+        "psbt": "cHNidP8BAIkCAAAAAcMFXrbZjpyhu3DXPxMJoKxc0EjQyGCKiWwyLKCWtwK2AAAAAAD9////AkCcAAAAAAAAIlEgkRunSgqf8plm7Wggw2TjfNFB+fwbPm8rlEsDCd4RonLLpA4AAAAAACJRIKCrRhP30zmYlO/WxZO7/hR08k5v5czT4mOgawdnU6IXaAAAAAABAStAQg8AAAAAACJRIDuCsrKpGFMV2m+A2l8G0EQNil4UV/qTOHwtkZyG7IeGIRZVNVyoPJc/HZfODjhDyF14kFrxa03FMbxIjlchLSMBFhkAc8XaClYAAIABAACAAAAAgAAAAAAAAAAAARcgVTVcqDyXPx2Xzg44Q8hdeJBa8WtNxTG8SI5XIS0jARYAAAEFIJlVJesfKWoH+6aDa4ZRRvstWF79+quWgN9F3OQFgH3yIQeZVSXrHylqB/umg2uGUUb7LVhe/fqrloDfRdzkBYB98hkAc8XaClYAAIABAACAAAAAgAAAAAADAAAAAA==",
+        "intent": {
+          "kind": "send_btc",
+          "feeRateSatPerVb": 2,
+          "recipients": [
+            {
+              "address": "bcrt1pjyd6wjs2nlefjehddqsvxe8r0ng5r70urvlx72u5fvpsnhs35feqsu7305",
+              "scriptHex": "5120911ba74a0a9ff29966ed6820c364e37cd141f9fc1b3e6f2b944b0309de11a272",
+              "amountSat": 40000
+            }
+          ],
+          "asset": null,
+          "utxos": null
+        },
+        "expiresAt": 1789737760596
+      },
+      "txid": "c85326c4ef41a07740b0024b9ffd405ec0b114684b63833dd01653ad4df579fb",
+      "psbtSha256": "b1b7aaa3b191d90f22950bb89e7424a7b83a0bd991035d5848ff10e3ae0b6cec",
+      "coloredOutputIndices": []
+    },
+    {
+      "name": "create-utxos",
+      "backendCommit": "8eebc40a44ff519bd21c818a7fbe7c11d3275e8c",
+      "nativePackage": "@utexo/rgb-lib@0.3.0-beta.18",
+      "capturedAt": "2026-09-18T13:12:40.491Z",
+      "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+      "request": {
+        "num": 5,
+        "size": 5000,
+        "feeRateSatPerVb": 2
+      },
+      "prepared": {
+        "opId": "95e0fc55-7898-4102-812d-283f74c199f6",
+        "psbt": "cHNidP8BAP01AQIAAAABwwVettmOnKG7cNc/EwmgrFzQSNDIYIqJbDIsoJa3ArYAAAAAAP3///8GiBMAAAAAAAAiUSA/igS64ltEtpbXqB6AQ7FkKMoSb6xEciyL/f396kW6rIgTAAAAAAAAIlEgU5yAs09PjE5dCcbQBx4xn/156X9Ru/eZL7wciUjRvleIEwAAAAAAACJRIKSkGbHEFybBpTrY00ry+35zXDfzqPyi6MJ6iAEm/a6YiBMAAAAAAAAiUSBpR7J1dbw33J1gVx5w2hOjYTQ0e3g7ATHWBl7ign8swQveDgAAAAAAIlEg9QsIVm79ixnv8hhCquwNXjFM1TrkZkXkCqe9vRxk7B6IEwAAAAAAACJRIHICjNdhKSOZZA9deuT0zA8H1LEzh8O3OfplZ7AI47gVaAAAAAABAStAQg8AAAAAACJRIDuCsrKpGFMV2m+A2l8G0EQNil4UV/qTOHwtkZyG7IeGIRZVNVyoPJc/HZfODjhDyF14kFrxa03FMbxIjlchLSMBFhkAc8XaClYAAIABAACAAAAAgAAAAAAAAAAAARcgVTVcqDyXPx2Xzg44Q8hdeJBa8WtNxTG8SI5XIS0jARYAAQUg46FpuTh442cMVs/yjPTbwtYpcahIgc0oF4jiNZDHb5whB+Ohabk4eONnDFbP8oz028LWKXGoSIHNKBeI4jWQx2+cGQBzxdoKVgAAgB+fDIAAAACAAAAAAAYAAAAAAQUgCZXb2oj9JV4I/vwvLvRjw54lnniWCj2i0wvX3VZEhJQhBwmV29qI/SVeCP78Ly70Y8OeJZ54lgo9otML191WRISUGQBzxdoKVgAAgB+fDIAAAACAAAAAAAcAAAAAAQUgmg+wcdU7TZ5L/aU9Kp7xLCCsKqDIAP1wGgR1GszjgxQhB5oPsHHVO02eS/2lPSqe8SwgrCqgyAD9cBoEdRrM44MUGQBzxdoKVgAAgB+fDIAAAACAAAAAAAkAAAAAAQUgUblWS0XcV3cPxq5Ie7tWGwFoEY0bpkUoBUTrBY04O9shB1G5VktF3Fd3D8auSHu7VhsBaBGNG6ZFKAVE6wWNODvbGQBzxdoKVgAAgB+fDIAAAACAAAAAAAgAAAAAAQUg06Ogkx7uOjjnj4Jg5uTQah+odrSWqHgvH3TPFeR/OMMhB9OjoJMe7jo454+CYObk0GofqHa0lqh4Lx90zxXkfzjDGQBzxdoKVgAAgAEAAIAAAACAAAAAAAQAAAAAAQUgrf3UFMClmzhQAjFugNyfRbDtG1SCmLf654pe3p45tNkhB6391BTApZs4UAIxboDcn0Ww7RtUgpi3+ueKXt6eObTZGQBzxdoKVgAAgB+fDIAAAACAAAAAAAoAAAAA",
+        "intent": {
+          "kind": "create_utxos",
+          "feeRateSatPerVb": 2,
+          "recipients": [],
+          "asset": null,
+          "utxos": {
+            "upTo": false,
+            "num": 5,
+            "size": 5000
+          }
+        },
+        "expiresAt": 1789737761046
+      },
+      "txid": "9f4b8d594d577e5b73cd941db229870965f099bf0092df8cf9444cc309986967",
+      "psbtSha256": "69d40d5564582223b47113476f727ef71a641f15e9b628e18be9c8d87cf29911",
+      "coloredOutputIndices": [
+        6,
+        7,
+        9,
+        8,
+        10
+      ]
+    },
+    {
+      "name": "send-asset",
+      "backendCommit": "8eebc40a44ff519bd21c818a7fbe7c11d3275e8c",
+      "nativePackage": "@utexo/rgb-lib@0.3.0-beta.18",
+      "capturedAt": "2026-09-18T13:23:27.376Z",
+      "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+      "request": {
+        "assetId": "rgb:9p3aZVvS-e886rs0-7XWD2vq-uh0GutQ-eK6o4xd-X29gYGo",
+        "amount": 40,
+        "recipientId": "bcrt:utxob:rrenuOZq-sm2KkQo-w_ksB_K-ESeK4vF-N79kMAi-suQX4q2-J1tYQ",
+        "transportEndpoints": [
+          "rpc://proxy:3000/json-rpc"
+        ],
+        "feeRateSatPerVb": 2
+      },
+      "prepared": {
+        "opId": "09ae93ad-14f7-4b28-8627-61417deb6764",
+        "psbt": "cHNidP8BAIkCAAAAAR2KIt3irReZSjrsrmaFFuJBMLiStfhMnAaDHJkPAjgKAQAAAAD9////AgAAAAAAAAAAImogWOMP2CVjHELnJNDiGdElV80VbJ60FWNWr44vDmGSPTJTEgAAAAAAACJRIK9e8Lw6jXMCVonmxCxaFAMIWyUXQGUjNavhKSbyO5ijbQAAACb8A1JHQgGjIrEHjg38PIc71XPXy6mj1p2M7HK+TvSSsUt+9Y9yD50AAPad2mVb0nvPOq7NO11g9r6rodBrrUHiuqOMXV9vYGBq//////////8QJwAAAQBURjmHG3H0GMbeHtk+FqFUkCMZxDv0+ur5zmfY7uR50aAPAAABAKAPAQIAAAABAAAAxleWMJ/0BPQIPAAAAAAAAAABrrenuOZqsm2KkQow+ksB+KESeK4vFN79kMAisuQX4q0IKAAAAAAAAAAABvwDUkdCAgEAJvwDUkdCBPad2mVb0nvPOq7NO11g9r6rodBrrUHiuqOMXV9vYGBqRFRGOYcbcfQYxt4e2T4WoVSQIxnEO/T66vnOZ9ju5HnRoA8AAKMisQeODfw8hzvVc9fLqaPWnYzscr5O9JKxS371j3IPAAEBK4gTAAAAAAAAIlEglDQtzOhDbJ7VOzv4Y4k9mxMnbtpTWTc4JflKEIatknohFrKktYEOznb4eBjUiZ0VT+4OTQuXE+WwX2RquXfXp+4jGQBzxdoKVgAAgB+fDIAAAACAAAAAAA4AAAABFyCypLWBDs52+HgY1ImdFU/uDk0LlxPlsF9karl316fuIwAm/ANNUEMA9p3aZVvSe886rs07XWD2vquh0GutQeK6o4xdX29gYGog1ms2Ftr8A/m78jaypYLnSFT/6M22JR8KStpu8sz5wxgG/ANNUEMBCH+0ZmLIWLl1BvwDTVBDECBY4w/YJWMcQuck0OIZ0SVXzRVsnrQVY1avji8OYZI9Mgb8A01QQxH9PwEDAAAIAAAAAAMr9jmqMScSweRgGnsjWoFUYMzsN0L+WL10RERdxSOiRAAD+Mz1T25F1gS5F9fOr7XIOEAOutZS4b6QqLPtEJ4OfbUAA0ozIuAdV13T0fH7Hqme4N8ThhajjeZW/Shzb6Z42U5JAAMjQdRTXA8HvKpgDpI6LyclyvTXWWaN1aj/vqG3KMu1BgADzljv6tTAD5bf4jgNPa5jr2YKmKDP8rQGd+APUUSVcikAA4OSQCPUFV+tC9THiaEi6IJnvCgJawo2neupANs0sXR5Afad2mVb0nvPOq7NO11g9r6rodBrrUHiuqOMXV9vYGBq1ms2Ftr8A/m78jaypYLnSFT/6M22JR8KStpu8sz5wxgAA/X+L1oUktp/Lx/F6/euyFAO4zqlS9J+0KOPliGHqRPdAX+0ZmLIWLl1CPwFT1BSRVQBIFjjD9glYxxC5yTQ4hnRJVfNFWyetBVjVq+OLw5hkj0yAAEFIEL9SeQDwrrpFk1sQ/15mHbwQ8BK0AhQqrT2i9zH5Xr4IQdC/UnkA8K66RZNbEP9eZh28EPAStAIUKq09ovcx+V6+BkAc8XaClYAAIAfnwyAAAAAgAAAAAAPAAAAAA==",
+        "intent": {
+          "kind": "send_asset",
+          "feeRateSatPerVb": 2,
+          "recipients": [],
+          "asset": {
+            "assetId": "rgb:9p3aZVvS-e886rs0-7XWD2vq-uh0GutQ-eK6o4xd-X29gYGo",
+            "amount": 40,
+            "recipientId": "bcrt:utxob:rrenuOZq-sm2KkQo-w_ksB_K-ESeK4vF-N79kMAi-suQX4q2-J1tYQ",
+            "witnessAmountSat": null,
+            "transportEndpoints": [
+              "rpc://proxy:3000/json-rpc"
+            ]
+          },
+          "utxos": null
+        },
+        "expiresAt": 1789738407321
+      },
+      "txid": "e41e4ebdc769b0575126a5d728394d4c01206110e7eaebf6446029d5acd0d814",
+      "psbtSha256": "10a7910139d496ad45ebf75ad64660b379390ebbe49289fd9fdc075351b3d870",
+      "coloredOutputIndices": [
+        15
+      ]
+    }
+  ]
+}

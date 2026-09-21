@@ -1,0 +1,72 @@
+{
+  "schema": "utexo.packaged-native-artifacts.v1",
+  "scope": "Complete file sets of the listed native/binding/facade/source/receipt roots. Not a signed release or a checksum of a final app, remote Maven archive or entire Git repository.",
+  "roots": [
+    "NativeSource/utexo-local-signer-source.tar.gz",
+    "NativeSource/dependencies.json",
+    "NativeSource/native-source.cdx.json",
+    "NativeSource/THIRD_PARTY_RUST_NOTICES.md",
+    "NativeSource/license-review.json",
+    "NativeSource/advisories.json",
+    "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi",
+    "sdk/src/main/jniLibs",
+    "NativeSource/native-build.json"
+  ],
+  "files": [
+    {
+      "path": "NativeSource/THIRD_PARTY_RUST_NOTICES.md",
+      "bytes": 1300543,
+      "sha256": "0c17b2fd4794d81c96b4d6a08a67b8c47aca64e579893c07d47b8099b80acc54"
+    },
+    {
+      "path": "NativeSource/advisories.json",
+      "bytes": 423,
+      "sha256": "284c00d9ce3b4048c190a1fdc132fc228089eeda8fe5a3a06b83ebe135add580"
+    },
+    {
+      "path": "NativeSource/dependencies.json",
+      "bytes": 31826,
+      "sha256": "ec108f7469ab688a4255d6f4de0f04334c7a5e54e1e4cb157933fe455743e2e5"
+    },
+    {
+      "path": "NativeSource/license-review.json",
+      "bytes": 614,
+      "sha256": "abedec146d69f94445cf69d26f8cf11ad29431a0e2c92c376f9a580119419660"
+    },
+    {
+      "path": "NativeSource/native-build.json",
+      "bytes": 8585,
+      "sha256": "02d9290fc2f7af77efbcd13e06c80e98b23d59fc560aac7c6adce27850bf5e9d"
+    },
+    {
+      "path": "NativeSource/native-source.cdx.json",
+      "bytes": 74047,
+      "sha256": "d56a1eeadf2f4a2181e6bb752d804e6c4724f90ac46b424c1cba531d813f04c0"
+    },
+    {
+      "path": "NativeSource/utexo-local-signer-source.tar.gz",
+      "bytes": 263495,
+      "sha256": "503ae13fa6ac02ca92b1de8c11106b5c509cb754b954dbd132bf21e62309770f"
+    },
+    {
+      "path": "sdk/src/main/jniLibs/arm64-v8a/libutexo_local_signer.so",
+      "bytes": 2420472,
+      "sha256": "dd4e03e1de0e59dd091b8910df8f0ad65664e67e45869c1a7bd0679d690c708c"
+    },
+    {
+      "path": "sdk/src/main/jniLibs/armeabi-v7a/libutexo_local_signer.so",
+      "bytes": 2003964,
+      "sha256": "e20bf2313e0bd029aba4d047e116edac1c49e290c25bedef9d8968434cf0a792"
+    },
+    {
+      "path": "sdk/src/main/jniLibs/x86_64/libutexo_local_signer.so",
+      "bytes": 2588048,
+      "sha256": "1c3b578beab6bd092495868d02ae172a88d905b255fd0b3ee84859aad823e859"
+    },
+    {
+      "path": "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt",
+      "bytes": 138115,
+      "sha256": "39c4d4212c488ab573d1f0a8257f249152ef9b8e3c11785ad88989010ebbbf57"
+    }
+  ]
+}

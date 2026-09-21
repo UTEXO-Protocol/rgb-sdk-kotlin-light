@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
+    <!-- Versions are deliberately pinned/locked and upgraded in reviewed compatibility changes.
+         Security advisories are reviewed separately; an available newer version is not a defect. -->
+    <issue id="NewerVersionAvailable">
+        <ignore path="build.gradle.kts" />
+    </issue>
+    <issue id="GradleDependency">
+        <ignore path="build.gradle.kts" />
+    </issue>
+    <issue id="AndroidGradlePluginVersion">
+        <ignore path="../gradle/wrapper/gradle-wrapper.properties" />
+    </issue>
     <!--
       UniFFI reflectively probes java.lang.ref.Cleaner before this guarded
       implementation can be instantiated, and falls back to JNA Cleaner on

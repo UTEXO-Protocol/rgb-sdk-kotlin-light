@@ -84,6 +84,13 @@ internal class KeyManagementTest {
         val mnemonic = SecretMnemonic.fromWords("alpha beta gamma".toCharArray())
         try {
             assertFailsWith<SdkException.InvalidArgument> {
+                deriveSeedFromMnemonic(mnemonic, charArrayOf('\uD800'))
+            }
+            @Suppress("DEPRECATION")
+            assertFailsWith<SdkException.InvalidArgument> {
+                getXprivFromMnemonic(Network.SIGNET, mnemonic, charArrayOf('\uD800'))
+            }
+            assertFailsWith<SdkException.InvalidArgument> {
                 deriveKeysFromMnemonic(
                     network = Network.SIGNET,
                     mnemonic = mnemonic,

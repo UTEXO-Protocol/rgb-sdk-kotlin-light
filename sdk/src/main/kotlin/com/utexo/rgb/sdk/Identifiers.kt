@@ -11,6 +11,13 @@ internal fun requireBoundedText(field: String, value: String, maximumBytes: Int)
     return normalized
 }
 
+/** Data-class fields retain their constructor value; reject noncanonical text instead of hiding it. */
+internal fun requireCanonicalText(field: String, value: String, maximumBytes: Int): Unit {
+    if (value != requireBoundedText(field, value, maximumBytes)) {
+        throw SdkException.InvalidArgument(field, "must not contain surrounding whitespace")
+    }
+}
+
 internal fun requireProtocolIdentifier(field: String, value: String): String {
     val normalized = requireBoundedText(field, value, 128)
     if (normalized.any { it !in 'a'..'z' && it !in 'A'..'Z' && it !in '0'..'9' && it !in "-_.:" }) {
@@ -105,7 +112,7 @@ public value class BitcoinAddress private constructor(public val value: String) 
     }
 }
 
-/** Opaque until the local RGB invoice parser is linked into the native core. */
+/** Bounded invoice text; semantic parsing/validation is performed by the local RGB invoice engine. */
 @JvmInline
 public value class RgbInvoice private constructor(public val value: String) {
     override fun toString(): String = "RgbInvoice([REDACTED])"

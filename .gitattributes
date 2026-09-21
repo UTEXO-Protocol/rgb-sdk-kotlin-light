@@ -11,3 +11,7 @@
 *.so binary
 
 sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/** linguist-generated=true whitespace=-blank-at-eol,-blank-at-eof
+
+# Preserve the exact upstream license bytes covered by artifact provenance.
+NativeSource/THIRD_PARTY_RUST_NOTICES.md -text -eol linguist-generated=true whitespace=-blank-at-eol,-blank-at-eof
+sdk/api/release-api.txt linguist-generated=true whitespace=-blank-at-eol,-blank-at-eof

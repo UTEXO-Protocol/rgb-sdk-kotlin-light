@@ -1,0 +1,10 @@
+{
+  "schema": "utexo.advisory-scan.v1",
+  "checkedAt": "2026-09-21T07:28:12.405Z",
+  "source": "https://api.osv.dev/v1/querybatch",
+  "cargoLockSha256": "b64e3169d8dcfc428ceda040341a66666e83641124ecbfc90249ed34e38cd242",
+  "scope": "Exact locked all-feature Cargo versions; not OS/runtime/container/Gradle or unpublished vulnerabilities.",
+  "queriedPackages": 128,
+  "findings": [],
+  "status": "no-advisories-returned"
+}

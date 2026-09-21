@@ -3,9 +3,25 @@ package com.utexo.rgb.sdk
 import com.utexo.rgb.sdk.internal.EpochSecondsSource
 import com.utexo.rgb.sdk.internal.OperationCoordinator
 import com.utexo.rgb.sdk.internal.RequestHasher
+import com.utexo.rgb.sdk.internal.LocalSigningEngine
+import com.utexo.rgb.sdk.internal.LocalSigningEngineFactory
+import com.utexo.rgb.sdk.internal.LocalOperationIntent
+import com.utexo.rgb.sdk.internal.LocalSigningResult
 import java.lang.reflect.Modifier
 import java.util.ArrayDeque
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -14,6 +30,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.Buffer
+import okio.ByteString.Companion.decodeBase64
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -22,6 +39,532 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 internal class RgbLightningNodeGatewayBackendTest {
+    @Test
+    fun `gateway request-domain failures do not create a journal entry or acquire credentials`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(transport)
+        var credentials = 0
+        backend.configureCredentials(WalletAPIKeyProvider { credentials++; WalletAPIKey.fromCharacters("credential".toCharArray()) })
+        val journal = InMemoryOperationJournal()
+        val coordinator = OperationCoordinator(gatewayWalletConfiguration(), backend, journal)
+        val signer = FakeSigningEngine(testCapabilities(setOf(OperationKind.SEND_BTC, OperationKind.CREATE_UTXOS)))
+        for (request in listOf(sendBtcRequest().copy(feeRate = FeeRate.satPerVbyte("1.5")),
+            sendBtcRequest().copy(amount = Satoshis.of(293)))) {
+            assertFailsWith<SdkException.InvalidArgument> { coordinator.sendBtc(inactiveContext(), signer, request) }
+        }
+        assertFailsWith<SdkException.Unsupported> { coordinator.sendBtc(inactiveContext(), signer, sendBtcRequest(true)) }
+        val create = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        for (request in listOf(create.copy(feeRate = FeeRate.satPerVbyte("1.5")), create.copy(num = 51),
+            create.copy(size = Satoshis.of(329)))) {
+            assertFailsWith<SdkException.InvalidArgument> { coordinator.createUtxos(inactiveContext(), signer, request) }
+        }
+        assertFailsWith<SdkException.Unsupported> { coordinator.createUtxos(inactiveContext(), signer, create.copy(skipSync = true)) }
+        assertEquals(null, journal.load(TEST_WALLET_ID, TEST_IDEMPOTENCY_KEY))
+        assertEquals(0, credentials)
+        assertEquals(0, signer.signCalls)
+        assertTrue(transport.requests.isEmpty())
+    }
+
+    @Test
+    fun `create prepare explicitly maps defaults extracts hints and completion returns actual partial count`(): Unit = runBlocking {
+        for (upTo in listOf(true, false)) {
+            val request = CreateUtxosRequest(upTo = upTo, idempotencyKey = TEST_IDEMPOTENCY_KEY)
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+                queuedResponse(201, preparedCreateJson(request)),
+                queuedResponse(200, "{\"txid\":\"${TEST_TXID.hex}\",\"utxosCreated\":2}"))
+            var extracts = 0
+            val backend = testBackend(transport, createPlanExtractor = { psbt, network ->
+                assertEquals(TEST_PSBT_BASE64, psbt); assertEquals(Network.SIGNET, network)
+                extracts++; createPlan()
+            })
+            val context = initializedContext(backend)
+            val opContext = OperationRequestContext(context, request.idempotencyKey, RequestHasher.createUtxos(Network.SIGNET, request))
+            val prepared = backend.prepareCreateUtxos(PrepareCreateUtxosRequest(opContext, request))
+            assertEquals(createPlan(), prepared.createUtxosOutputPlan)
+            assertEquals(UnixSeconds.of(2_000L), prepared.expiresAt)
+            val submitted = SignedTransactionSubmission(opContext, prepared.operationId, TEST_PSBT_BASE64,
+                testValidation().copy(psbtSha256 = TEST_PSBT_BASE64.decodeBase64()!!.sha256().hex()))
+            val result = backend.submitSignedTransaction(submitted, prepared) as BackendOperationResult.CreateUtxos
+            assertEquals(CreateUtxosResult(TEST_TXID, 2), result.result)
+            assertEquals(1, extracts)
+            assertEquals("/v1/onchain/create-utxos/prepare", transport.requests[1].url.encodedPath)
+            assertEquals("/v1/onchain/create-utxos/complete", transport.requests[2].url.encodedPath)
+            assertEquals(Json.parseToJsonElement("{\"num\":5,\"size\":1000,\"upTo\":$upTo,\"feeRateSatPerVb\":2}"),
+                Json.parseToJsonElement(transport.requests[1].bodyUtf8()))
+            assertNotEquals(transport.requests[1].header("Idempotency-Key"), transport.requests[2].header("Idempotency-Key"))
+        }
+    }
+
+    @Test
+    fun `qualified create coordinator validates extracted plan before submit and ordinary gate stays closed`(): Unit = runBlocking {
+        val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, preparedCreateJson(request)),
+            queuedResponse(200, "{\"txid\":\"${TEST_TXID.hex}\",\"utxosCreated\":2}"))
+        val backend = testBackend(transport, createPlanExtractor = { _, _ -> createPlan() })
+        val context = initializedContext(backend)
+        val journal = InMemoryOperationJournal()
+        var signed = 0
+        val signer = object : LocalSigningEngine by FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS))) {
+            override suspend fun validateAndSign(prepared: PreparedTransaction, intent: LocalOperationIntent): LocalSigningResult {
+                signed++
+                assertEquals(OperationPhase.PREPARED, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+                assertEquals(createPlan(), prepared.createUtxosOutputPlan)
+                assertEquals(createPlan(), (intent as LocalOperationIntent.CreateUtxos).exactOutputPlan)
+                return LocalSigningResult(TEST_PSBT_BASE64,
+                    testValidation().copy(psbtSha256 = TEST_PSBT_BASE64.decodeBase64()!!.sha256().hex()))
+            }
+        }
+        val coordinator = OperationCoordinator(gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW })
+        assertEquals(CreateUtxosResult(TEST_TXID, 2), coordinator.createUtxos(context, signer, request))
+        assertEquals(CreateUtxosResult(TEST_TXID, 2), coordinator.createUtxos(context, signer, request))
+        assertEquals(1, signed)
+        assertEquals(OperationPhase.TERMINAL, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+        assertEquals(listOf("/v1/me", "/v1/onchain/create-utxos/prepare", "/v1/onchain/create-utxos/complete"),
+            transport.requests.map { it.url.encodedPath })
+
+        val blockedTransport = QueueInterceptor()
+        val blocked = testBackend(blockedTransport, allowUnverifiedPsbtProfile = false)
+        val blockedJournal = InMemoryOperationJournal()
+        assertFailsWith<SdkException.Unsupported> {
+            OperationCoordinator(gatewayWalletConfiguration(), blocked, blockedJournal)
+                .createUtxos(inactiveContext(), signer, request)
+        }
+        assertEquals(null, blockedJournal.load(TEST_WALLET_ID, request.idempotencyKey))
+        assertTrue(blockedTransport.requests.isEmpty())
+        assertEquals(1, signed)
+    }
+
+    @Test
+    fun `create preparation binds every intent field and rejects malformed shapes before extracting`(): Unit = runBlocking {
+        val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val valid = preparedCreateJson(request)
+        val variants = listOf(valid.replace("create_utxos", "send_btc"),
+            valid.replace("\"feeRateSatPerVb\":2", "\"feeRateSatPerVb\":3"),
+            valid.replace("\"recipients\":[]", "\"recipients\":[{}]"),
+            valid.replace("\"asset\":null", "\"asset\":{}"),
+            valid.replace("\"upTo\":true", "\"upTo\":false"),
+            valid.replace("\"upTo\":true", "\"upTo\":\"true\""),
+            valid.replace("\"num\":5", "\"num\":4"),
+            valid.replace("\"size\":1000", "\"size\":1001"),
+            valid.replace("\"utxos\":{", "\"utxos\":null,\"unused\": {"),
+            valid.replace(TEST_OPERATION_ID, "INVALID-UUID"),
+            valid.replace(TEST_PSBT_BASE64, "$TEST_PSBT_BASE64 "),
+            valid.replace("2000123", "1500000"))
+        for (body in variants) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch>(body) {
+                backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext(context), request))
+            }
+            assertEquals(2, transport.requests.size)
+        }
+    }
+
+    @Test
+    fun `create output hints must match count size account branch and unique paths`(): Unit = runBlocking {
+        val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val one = createPlan().outputs.first()
+        val invalid = listOf(CreateUtxosOutputPlan(List(6) { one.copy(index = it) }),
+            CreateUtxosOutputPlan(listOf(one.copy(amount = Satoshis.of(999)))),
+            CreateUtxosOutputPlan(listOf(one.copy(account = AccountKind.VANILLA))),
+            CreateUtxosOutputPlan(listOf(one.copy(keychain = Keychain.CHANGE))),
+            CreateUtxosOutputPlan(listOf(one, one)))
+        for (plan in invalid) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, preparedCreateJson(request)))
+            val backend = testBackend(transport, createPlanExtractor = { _, _ -> plan })
+            assertFailsWith<SdkException.BackendProtocolMismatch> {
+                backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext(initializedContext(backend)), request))
+            }
+        }
+    }
+
+    @Test
+    fun `create submitted recovery works with gate disabled and past TTL without signing or post`(): Unit = runBlocking {
+        val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val checkpoint = createCheckpoint(request)
+        val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, createStatusJson(request)))
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false, clock = { 9_000_000L })
+        val context = initializedContext(backend)
+        val signer = FakeSigningEngine()
+        val coordinator = OperationCoordinator(gatewayWalletConfiguration(maximumFeeRate = FeeRate.satPerVbyte("1")),
+            backend, journal, EpochSecondsSource { 9_000L })
+        assertEquals(CreateUtxosResult(TEST_TXID, 2), coordinator.createUtxos(context, signer, request))
+        assertEquals(CreateUtxosResult(TEST_TXID, 2), coordinator.createUtxos(context, signer, request))
+        assertEquals(listOf("GET", "GET"), transport.requests.map { it.method })
+        assertEquals(0, signer.signCalls)
+        assertEquals(OperationPhase.TERMINAL, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+    }
+
+    @Test
+    fun `create malformed or unresolved status remains submitting with original evidence`(): Unit = runBlocking {
+        val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val valid = createStatusJson(request)
+        for (body in listOf(createStatusJson(request, "pending", null), createStatusJson(request, "expired", null),
+            valid.replace(TEST_TXID.hex, "f".repeat(64)), valid.replace("create_utxos", "send_btc"),
+            valid.replace("\"size\":1000", "\"size\":1001"),
+            valid.replace("\"mayHaveBroadcast\":false", "\"mayHaveBroadcast\":true"))) {
+            val checkpoint = createCheckpoint(request)
+            val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.OperationAmbiguous> {
+                recoveryCoordinator(backend, journal).createUtxos(context, FakeSigningEngine(), request)
+            }
+            assertEquals(checkpoint, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+            assertTrue(transport.requests.all { it.method == "GET" })
+        }
+    }
+
+    @Test
+    fun `create completion ambiguous response reconciles once then fresh disabled adapter recovers`(): Unit = runBlocking {
+        val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val signed = createCheckpoint(request, OperationPhase.SIGNED)
+        val failures = listOf(queuedResponse(200, "{\"txid\":null,\"utxosCreated\":2}"),
+            queuedResponse(200, "{\"txid\":\"${TEST_TXID.hex.uppercase()}\",\"utxosCreated\":2}"),
+            queuedResponse(200, "{\"txid\":\"${TEST_TXID.hex}\",\"utxosCreated\":5}"),
+            queuedResponse(410, "{\"error\":{\"code\":\"OP_EXPIRED\"}}"),
+            queuedResponse(502, "{\"error\":{\"code\":\"COMPLETE_AMBIGUOUS\"}}"))
+        for (failure in failures) {
+            val journal = InMemoryOperationJournal().also { it.save(signed) }
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), failure,
+                queuedResponse(200, createStatusJson(request, "expired", null)))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            val signer = FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS))).apply {
+                retainedValidationReport = signed.signedPayload!!.validation
+            }
+            val coordinator = OperationCoordinator(gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW })
+            assertFailsWith<SdkException.OperationAmbiguous> { coordinator.createUtxos(context, signer, request) }
+            assertEquals(signed.copy(phase = OperationPhase.SUBMITTING), journal.load(TEST_WALLET_ID, request.idempotencyKey))
+            assertEquals(listOf("GET", "POST", "GET"), transport.requests.map { it.method })
+            assertEquals("/v1/onchain/create-utxos/complete", transport.requests[1].url.encodedPath)
+            val restartedTransport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, createStatusJson(request)))
+            val restarted = testBackend(restartedTransport, allowUnverifiedPsbtProfile = false)
+            assertEquals(CreateUtxosResult(TEST_TXID, 2), recoveryCoordinator(restarted, journal).createUtxos(
+                initializedContext(restarted), FakeSigningEngine(), request))
+            assertEquals(0, signer.signCalls)
+            assertTrue(restartedTransport.requests.all { it.method == "GET" })
+        }
+    }
+
+    @Test
+    fun `invalid preparation clocks fail before HTTP and a backwards response clock fails closed`(): Unit = runBlocking {
+        for (clock in listOf(0L, -1L, Long.MAX_VALUE)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+            val backend = testBackend(transport, clock = { clock })
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.InternalInvariantViolation> {
+                backend.prepareSendBtc(PrepareSendBtcRequest(operationContext(context), sendBtcRequest()))
+            }
+            assertFailsWith<SdkException.InternalInvariantViolation> {
+                backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext(context), CreateUtxosRequest()))
+            }
+            assertEquals(1, transport.requests.size)
+        }
+        var calls = 0
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, preparedSendBtcJson(TEST_OPERATION_ID, 2_000_123)))
+        val backend = testBackend(transport, clock = { if (calls++ == 0) 1_500_000L else 1_499_000L })
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.prepareSendBtc(PrepareSendBtcRequest(operationContext(initializedContext(backend)), sendBtcRequest()))
+        }
+    }
+
+    @Test
+    fun `session shutdown while credential retrieval suspends prevents business HTTP`(): Unit = runBlocking {
+        val suspended = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        var suspendCredentials = false
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+        val backend = testBackend(transport)
+        backend.configureCredentials(WalletAPIKeyProvider {
+            if (suspendCredentials) { suspended.complete(Unit); release.await() }
+            WalletAPIKey.fromCharacters("credential".toCharArray())
+        })
+        val context = initializedContext(backend)
+        suspendCredentials = true
+        val pending = launch {
+            assertFailsWith<SdkException.InvalidState> { backend.getBtcBalance(context) }
+        }
+        suspended.await()
+        backend.shutdown(context.session)
+        release.complete(Unit)
+        pending.join()
+        assertEquals(1, transport.requests.size)
+    }
+
+    @Test
+    fun `session shutdown or cancellation during plan extraction prevents a usable preparation`(): Unit = runBlocking {
+        for (cancel in listOf(false, true)) {
+            val extracting = CompletableDeferred<Unit>()
+            val release = CompletableDeferred<Unit>()
+            val request = CreateUtxosRequest(idempotencyKey = TEST_IDEMPOTENCY_KEY)
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, preparedCreateJson(request)))
+            val backend = testBackend(transport, createPlanExtractor = { _, _ ->
+                extracting.complete(Unit); release.await(); createPlan()
+            })
+            val context = initializedContext(backend)
+            var returned = false
+            val pending = launch {
+                if (cancel) {
+                    backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext(context), request))
+                } else {
+                    assertFailsWith<SdkException.InvalidState> {
+                        backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext(context), request))
+                    }
+                }
+                returned = cancel
+            }
+            extracting.await()
+            if (cancel) pending.cancelAndJoin() else backend.shutdown(context.session)
+            release.complete(Unit)
+            pending.join()
+            assertFalse(returned)
+            assertEquals(2, transport.requests.size)
+        }
+    }
+
+    @Test
+    fun `all eighteen unsupported business methods and ordinary send gate refuse without business HTTP`(): Unit = runBlocking {
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(201, "{\"fingerprint\":\"deadbeef\",\"address\":\"fixture-address\"}"))
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val signer = FakeSigningEngine(capabilities = testCapabilities(rgbInvoiceParsing = true))
+        val engine = object : LocalSigningEngine by signer {
+            override suspend fun identity(): WalletIdentity = gatewayIdentity()
+        }
+        val journal = InMemoryOperationJournal()
+        val wallet = UTEXOWallet(gatewayWalletConfiguration(), backend,
+            WalletKeyProvider { SecretSeed.fromBytes(ByteArray(64) { 1 }) }, journal,
+            LocalSigningEngineFactory { _, _ -> engine }, EpochSecondsSource { TEST_NOW })
+        wallet.init(); wallet.unlock()
+        fun method(name: String, action: suspend () -> Unit) = name to action
+        val asset = AssetId.of("fixture-asset")
+        val unavailable = listOf(
+            method("getAddress") { wallet.getAddress() },
+            method("rotateVanillaAddress") { wallet.rotateVanillaAddress() },
+            method("listUnspents") { wallet.listUnspents() },
+            method("estimateFeeRate") { wallet.estimateFeeRate(BlockCount.of(6)) },
+            method("createUtxos") { wallet.createUtxos() },
+            method("listAssets") { wallet.listAssets() },
+            method("issueAssetNia") { wallet.issueAssetNia(IssueAssetNiaRequest("T", "Fixture", listOf(AssetAmount.of(1)), 0)) },
+            method("issueAssetIfa") { wallet.issueAssetIfa(IssueAssetIfaRequest("T", "Fixture", 0, listOf(AssetAmount.of(1)), listOf(AssetAmount.of(1)))) },
+            method("blindReceive") { wallet.blindReceive(InvoiceRequest()) },
+            method("witnessReceive") { wallet.witnessReceive(InvoiceRequest()) },
+            method("onchainSend") { wallet.onchainSend(OnchainSendRequest(RgbInvoice.of("rgb:fixture"), AssetAmount.of(1))) },
+            method("inflate") { wallet.inflate(InflateRequest(asset, listOf(AssetAmount.of(1)))) },
+            method("listTransactions") { wallet.listTransactions() },
+            method("listTransactionsByTxid") { wallet.listTransactionsByTxid(TEST_TXID) },
+            method("listTransfers") { wallet.listTransfers() },
+            method("listTransfersByTxid") { wallet.listTransfersByTxid(TEST_TXID) },
+            method("listOnchainTransfers") { wallet.listOnchainTransfers() },
+            method("failTransfers") { wallet.failTransfers(FailTransfersRequest()) },
+        )
+        try {
+            assertEquals(18, unavailable.size)
+            for ((name, call) in unavailable) {
+                assertFailsWith<SdkException.Unsupported>(name) { call() }
+                assertEquals(2, transport.requests.size, "$name must not issue business HTTP")
+            }
+            assertFailsWith<SdkException.Unsupported> { wallet.sendBtc(sendBtcRequest()) }
+            assertEquals(null, journal.load(TEST_WALLET_ID, TEST_IDEMPOTENCY_KEY))
+            assertEquals(2, transport.requests.size)
+            assertEquals(0, signer.signCalls)
+            assertEquals(0, signer.addressChecks)
+        } finally { wallet.destroy() }
+    }
+
+    @Test
+    fun `receive maps exact caller intent optional metadata and explicit default duration`(): Unit = runBlocking {
+        for (witness in listOf(true, false)) {
+            val mode = if (witness) "witness" else "blind"
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
+                "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"$mode\",\"expirationTimestamp\":87900}"))
+            val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+            val context = initializedContext(backend)
+            val received = backend.onchainReceive(context, OnchainReceiveRequest(witness = witness))
+            assertEquals(null, received.batchTransferIdx)
+            assertEquals(UnixSeconds.of(87_900), received.expirationTimestamp)
+            val sent = transport.requests.last()
+            assertEquals("/v1/wallet/receive", sent.url.encodedPath)
+            assertEquals(null, sent.header("Idempotency-Key"))
+            val fields = Json.parseToJsonElement(Buffer().also { sent.body!!.writeTo(it) }.readUtf8()).jsonObject
+            assertEquals(Json.parseToJsonElement("{\"mode\":\"$mode\",\"durationSeconds\":86400,\"minConfirmations\":0}"), fields)
+        }
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
+            "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":5100,\"batchTransferIdx\":17}"))
+        val backend = testBackend(transport)
+        val received = backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest(
+            amount = AssetAmount.parse("9007199254740991"), assetId = AssetId.of("asset-id"),
+            duration = DurationSeconds.of(3600), minConfirmations = BlockCount.of(100),
+        ))
+        assertEquals(17, received.batchTransferIdx)
+        val fields = Json.parseToJsonElement(Buffer().also { transport.requests.last().body!!.writeTo(it) }.readUtf8())
+        assertEquals(Json.parseToJsonElement("{\"mode\":\"witness\",\"amount\":9007199254740991,\"assetId\":\"asset-id\",\"durationSeconds\":3600,\"minConfirmations\":100}"), fields)
+    }
+
+    @Test
+    fun `receive rejects unrepresentable parameters before creating remote receive state`(): Unit = runBlocking {
+        val invalid = listOf(
+            OnchainReceiveRequest(amount = AssetAmount.parse("9007199254740992")),
+            OnchainReceiveRequest(amount = AssetAmount.parse(AssetAmount.MAX_VALUE)),
+            OnchainReceiveRequest(duration = DurationSeconds.of(59)),
+            OnchainReceiveRequest(duration = DurationSeconds.of(2_592_001)),
+            OnchainReceiveRequest(minConfirmations = BlockCount.of(101)),
+        )
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        invalid.forEach { assertFailsWith<SdkException.Unsupported> { backend.onchainReceive(context, it) } }
+        assertEquals(1, transport.requests.size)
+    }
+
+    @Test
+    fun `receive rejects mode expiry numeric and missing-field inconsistencies without retrying`(): Unit = runBlocking {
+        val valid = "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":87900}"
+        val invalid = listOf(
+            valid.replace("witness", "blind"), valid.replace("87900", "87901"), valid.replace("87900", "87899"),
+            valid.replace("87900", "87900.0"), valid.replace("87900", "\"87900\""),
+            valid.replace(",\"expirationTimestamp\":87900", ""),
+            valid.replace("\"recipientId\":\"recipient-fixture\",", ""),
+            valid.dropLast(1) + ",\"batchTransferIdx\":-1}",
+            valid.dropLast(1) + ",\"batchTransferIdx\":9007199254740992}",
+        )
+        for (body in invalid) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, body))
+            val backend = testBackend(transport)
+            assertFailsWith<SdkException.BackendProtocolMismatch> {
+                backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest())
+            }
+            assertEquals(2, transport.requests.size)
+        }
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, valid.replace("87900", "null")))
+        val backend = testBackend(transport)
+        assertEquals(null, backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest()).expirationTimestamp)
+    }
+
+    @Test
+    fun `receive accepts only bounded completion-time expiry and rejects clocks before HTTP or after backwards jump`(): Unit = runBlocking {
+        for (finish in listOf(1_502_000L, 1_499_000L)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
+                "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":87901}"))
+            var calls = 0
+            val backend = testBackend(transport, clock = { if (calls++ == 0) 1_500_000L else finish })
+            val context = initializedContext(backend)
+            if (finish > 1_500_000L) assertEquals(UnixSeconds.of(87_901), backend.onchainReceive(context, OnchainReceiveRequest()).expirationTimestamp)
+            else assertFailsWith<SdkException.BackendProtocolMismatch> { backend.onchainReceive(context, OnchainReceiveRequest()) }
+        }
+        for (invalid in listOf(-1L, Long.MAX_VALUE)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+            val backend = testBackend(transport, clock = { invalid })
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.InternalInvariantViolation> { backend.onchainReceive(context, OnchainReceiveRequest()) }
+            assertEquals(1, transport.requests.size)
+        }
+    }
+
+    @Test
+    fun `hostile JSON is bounded on both success and error paths including additive fields`(): Unit = runBlocking {
+        val hostile = "{\"userId\":\"audit-user\",\"createdAt\":1,\"extra\":" +
+            "[".repeat(100_000) + "0" + "]".repeat(100_000) + "}"
+        assertTrue(hostile.length < 1_500_000)
+        for (status in listOf(200, 400, 401, 503)) {
+            val transport = QueueInterceptor(queuedResponse(status, hostile))
+            val backend = testBackend(transport)
+            assertFailsWith<SdkException> { backend.initialize(initializeRequest()) }
+            assertEquals(1, transport.requests.size)
+        }
+        for (depth in listOf(32, 63, 64)) {
+            val body = TEST_ME_JSON.dropLast(1) + ",\"extra\":" +
+                "[".repeat(depth) + "0" + "]".repeat(depth) + "}"
+            val transport = QueueInterceptor(queuedResponse(200, body))
+            val backend = testBackend(transport)
+            if (depth < 64) initializedContext(backend)
+            else assertFailsWith<SdkException.BackendProtocolMismatch> { initializedContext(backend) }
+        }
+    }
+
+    @Test
+    fun `sync and refresh await exact successful response with client completion time and no tip claim`(): Unit = runBlocking {
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, "{\"status\":\"ok\"}"), queuedResponse(200, "{\"status\":\"ok\"}"))
+        var now = 1_500_999L
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false, clock = { now })
+        val context = initializedContext(backend)
+        assertEquals(SyncResult(UnixSeconds.of(1_500)), backend.syncWallet(context))
+        now = 1_501_001L
+        assertEquals(SyncResult(UnixSeconds.of(1_501)), backend.refreshWallet(context))
+        assertEquals(listOf("GET", "POST", "POST"), transport.requests.map { it.method })
+        transport.requests.drop(1).forEach {
+            assertEquals("/v1/wallet/sync", it.url.encodedPath)
+            assertEquals("Bearer $TEST_TOKEN", it.header("Authorization"))
+            assertEquals(null, it.header("Idempotency-Key"))
+        }
+    }
+
+    @Test
+    fun `sync fails closed for wrong session response and invalid clock without retrying`(): Unit = runBlocking {
+        for (body in listOf("{}", "{\"status\":\"pending\"}", "{\"status\":true}", "{\"status\":null}")) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch> { backend.syncWallet(context) }
+            assertEquals(2, transport.requests.size)
+        }
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, "{\"status\":\"ok\"}"))
+        val backend = testBackend(transport, clock = { -1L })
+        val context = initializedContext(backend)
+        assertFailsWith<SdkException.InvalidState> { backend.syncWallet(inactiveContext()) }
+        assertEquals(1, transport.requests.size)
+        assertFailsWith<SdkException.InternalInvariantViolation> { backend.syncWallet(context) }
+        assertEquals(2, transport.requests.size)
+    }
+
+    @Test
+    fun `sync transport error is propagated without automatic retry`(): Unit = runBlocking {
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(503, "{\"error\":{\"code\":\"UNAVAILABLE\"}}"))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        assertFailsWith<SdkException.BackendUnavailable> { backend.refreshWallet(context) }
+        assertEquals(2, transport.requests.size)
+    }
+    @Test
+    fun `rotating provider loads request scoped credentials and verifies unchanged account`(): Unit = runBlocking {
+        val me = "{\"userId\":\"u_0123456789abcdef\",\"createdAt\":1234}"
+        val other = "{\"userId\":\"u_other\",\"createdAt\":1234}"
+        val transport = QueueInterceptor(
+            queuedResponse(200, me), queuedResponse(200, me), queuedResponse(200, other), queuedResponse(200, other),
+        )
+        val backend = testBackend(transport)
+        var token = "credential-one"
+        val issued = mutableListOf<WalletAPIKey>()
+        backend.configureCredentials(WalletAPIKeyProvider {
+            WalletAPIKey.fromCharacters(token.toCharArray()).also(issued::add)
+        })
+        val context = initializedContext(backend)
+        // The first guarded request binds its exact credential. A deliberately malformed payload
+        // stops the balance path after identity verification and one read-only balance request.
+        assertFailsWith<SdkException.BackendProtocolMismatch> { backend.getBtcBalance(context) }
+        assertEquals("Bearer credential-one", transport.requests.last().header("Authorization"))
+        token = "credential-two"
+        assertFailsWith<SdkException.BackendProtocolMismatch> { backend.getBtcBalance(context) }
+        assertEquals("/v1/me", transport.requests.last().url.encodedPath)
+        assertEquals("Bearer credential-two", transport.requests.last().header("Authorization"))
+        issued.forEach { key -> assertFailsWith<SdkException.InvalidState> { key.authorizationValue() } }
+    }
+
+    @Test
+    fun `provider failures are redacted and fail before HTTP`(): Unit = runBlocking {
+        val transport = QueueInterceptor()
+        val backend = testBackend(transport)
+        backend.configureCredentials(WalletAPIKeyProvider { throw IllegalStateException("secret-token") })
+        val error = assertFailsWith<SdkException.KeyAccessFailed> { backend.initialize(initializeRequest()) }
+        assertFalse(error.message.orEmpty().contains("secret-token"))
+        assertEquals(null, error.cause)
+        assertTrue(transport.requests.isEmpty())
+    }
+
     @Test
     fun `configuration requires TLS except explicit local development and redacts token`(): Unit {
         assertFailsWith<SdkException.InvalidArgument> {
@@ -212,6 +755,363 @@ internal class RgbLightningNodeGatewayBackendTest {
             journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase,
         )
         assertTrue(transport.requests.isEmpty())
+    }
+
+    @Test
+    fun `completed BTC recovery checks durable local evidence with profile disabled and replays terminally`(): Unit = runBlocking {
+        val transport = QueueInterceptor(
+            queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(200, operationStatusJson()),
+        )
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val context = initializedContext(backend)
+        val request = sendBtcRequest()
+        val journal = InMemoryOperationJournal()
+        journal.save(persistedSendCheckpoint(request, OperationPhase.SUBMITTING))
+        val coordinator = recoveryCoordinator(backend, journal)
+        // No current signing preflight: old submissions remain recoverable after stricter policy.
+        assertEquals(TEST_TXID, coordinator.sendBtc(context, FakeSigningEngine(), request))
+        assertEquals(TEST_TXID, coordinator.sendBtc(context, FakeSigningEngine(), request))
+        assertEquals(OperationPhase.TERMINAL, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+        assertEquals(listOf("/v1/me", "/v1/onchain/operations/$TEST_OPERATION_ID"), transport.requests.map { it.url.encodedPath })
+        assertTrue(transport.requests.all { it.method == "GET" && it.header("Idempotency-Key") == null && it.body == null })
+    }
+
+    @Test
+    fun `pending and expired status never prove no broadcast even without txid`(): Unit = runBlocking {
+        for (state in listOf("pending", "expired")) {
+            for (txid in listOf(null, TEST_TXID.hex)) {
+                val response = operationStatusJson(state = state, txid = txid)
+                val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, response))
+                val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+                val context = initializedContext(backend)
+                val request = sendBtcRequest()
+                val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING)
+                val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+                assertFailsWith<SdkException.OperationAmbiguous> {
+                    recoveryCoordinator(backend, journal).sendBtc(context, FakeSigningEngine(), request)
+                }
+                assertEquals(checkpoint, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+                assertEquals(2, transport.requests.size)
+                assertTrue(transport.requests.all { it.method == "GET" })
+            }
+        }
+    }
+
+    @Test
+    fun `forged malformed and contradictory recovery status retains submitting checkpoint`(): Unit = runBlocking {
+        val original = Json.parseToJsonElement(operationStatusJson()).jsonObject
+        fun changed(field: String, value: kotlinx.serialization.json.JsonElement): String =
+            JsonObject(original + (field to value)).toString()
+        fun changedIntent(field: String, value: kotlinx.serialization.json.JsonElement): String =
+            changed("intent", JsonObject(original.getValue("intent").jsonObject + (field to value)))
+        val invalid = listOf(
+            changed("opId", JsonPrimitive("223e4567-e89b-42d3-a456-426614174000")),
+            changed("opId", JsonPrimitive(TEST_OPERATION_ID.uppercase())),
+            changed("kind", JsonPrimitive("send_asset")),
+            changed("kind", JsonPrimitive("create_utxos")),
+            changed("state", JsonPrimitive("failed")),
+            changed("state", JsonPrimitive(" completed")),
+            changed("txid", JsonNull),
+            changed("txid", JsonPrimitive("f".repeat(64))),
+            changed("txid", JsonPrimitive(TEST_TXID.hex.uppercase())),
+            changed("txid", JsonPrimitive("not-a-txid")),
+            changed("mayHaveBroadcast", JsonPrimitive(true)),
+            changed("mayHaveBroadcast", JsonPrimitive("false")),
+            changed("mayHaveBroadcast", JsonPrimitive(0)),
+            changed("createdAt", JsonPrimitive(-1)),
+            changed("createdAt", JsonPrimitive(0)),
+            changed("createdAt", JsonPrimitive(2_000_999)),
+            changed("createdAt", JsonPrimitive("1000000")),
+            changed("expiresAt", JsonPrimitive(2_001_000)),
+            changed("expiresAt", JsonPrimitive(9_007_199_254_740_992L)),
+            changed("expiresAt", JsonPrimitive(2_000.5)),
+            changedIntent("kind", JsonPrimitive("send_asset")),
+            changedIntent("feeRateSatPerVb", JsonPrimitive(3)),
+            changedIntent("asset", JsonObject(emptyMap())),
+            changedIntent("utxos", JsonObject(emptyMap())),
+            operationStatusJson().replace("\"amountSat\":25000", "\"amountSat\":25001"),
+            operationStatusJson().replace(TEST_GATEWAY_ADDRESS.value, "tb1potheraddress"),
+            operationStatusJson().replace("512000", "51200G"),
+            operationStatusJson().replace("512000", "51200"),
+            operationStatusJson().replace("512000", ""),
+            JsonObject(original - "mayHaveBroadcast").toString(),
+            operationStatusJson("pending", TEST_TXID.hex).replace("\"mayHaveBroadcast\":true", "\"mayHaveBroadcast\":false"),
+            operationStatusJson("expired", null).replace("\"mayHaveBroadcast\":false", "\"mayHaveBroadcast\":true"),
+        )
+        for (body in invalid) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            val request = sendBtcRequest()
+            val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING)
+            val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+            assertFailsWith<SdkException.OperationAmbiguous>(body) {
+                recoveryCoordinator(backend, journal).sendBtc(context, FakeSigningEngine(), request)
+            }
+            assertEquals(checkpoint, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+            assertTrue(transport.requests.all { it.method == "GET" })
+        }
+    }
+
+    @Test
+    fun `status transport failures never trigger another prepare sign or complete`(): Unit = runBlocking {
+        val responses = listOf(
+            queuedResponse(404, "{\"error\":{\"code\":\"OP_NOT_FOUND\",\"message\":\"secret\"}}"),
+            queuedResponse(401, "{\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"secret\"}}"),
+            queuedResponse(502, "{\"error\":{\"code\":\"COMPLETE_AMBIGUOUS\"}}"),
+            queuedResponse(200, operationStatusJson(), mapOf("Content-Type" to "text/plain")),
+            queuedResponse(201, operationStatusJson()),
+            queuedResponse(302, operationStatusJson()),
+            queuedResponse(200, "{}"),
+            queuedResponse(200, "{malformed"),
+        )
+        for (response in responses) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), response)
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            val request = sendBtcRequest()
+            val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING)
+            val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+            val error = assertFailsWith<SdkException.OperationAmbiguous> {
+                recoveryCoordinator(backend, journal).sendBtc(context, FakeSigningEngine(), request)
+            }
+            assertFalse(error.message.orEmpty().contains("secret"))
+            assertEquals(checkpoint, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+            assertEquals(2, transport.requests.size)
+            assertTrue(transport.requests.all { it.method == "GET" })
+        }
+    }
+
+    @Test
+    fun `recovery rejects inconsistent local evidence before HTTP`(): Unit = runBlocking {
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        val request = sendBtcRequest()
+        val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING)
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.getOperationForRecovery(context, checkpoint, request.copy(amount = Satoshis.of(25_001)))
+        }
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.getOperationForRecovery(context, checkpoint.copy(phase = OperationPhase.SIGNED), request)
+        }
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.getOperationForRecovery(context, checkpoint.copy(walletId = WalletId.of("other-wallet")), request)
+        }
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.getOperationForRecovery(context, checkpoint.copy(signedPayload = SignedOperationPayload(
+                TEST_PSBT_BASE64, testValidation().copy(psbtSha256 = "f".repeat(64)),
+            )), request)
+        }
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.getOperationForRecovery(context, checkpoint.copy(signedPayload = SignedOperationPayload(
+                "$TEST_PSBT_BASE64 ", checkpoint.signedPayload!!.validation,
+            )), request)
+        }
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.getOperationForRecovery(context, checkpoint.copy(
+                preparedTransaction = checkpoint.preparedTransaction!!.let { prepared -> PreparedTransaction(
+                    prepared.operationId, prepared.idempotencyKey, prepared.requestHash,
+                    prepared.network, prepared.operation, "$TEST_PSBT_BASE64 ", prepared.expiresAt,
+                ) },
+            ), request)
+        }
+        assertFailsWith<SdkException.Unsupported> { backend.getOperation(context, checkpoint.operationId!!) }
+        assertEquals(1, transport.requests.size)
+    }
+
+    @Test
+    fun `recovery rejects status lifetime exceeding local maximum even when expiry matches`(): Unit = runBlocking {
+        val original = Json.parseToJsonElement(operationStatusJson()).jsonObject
+        val status = JsonObject(original + mapOf(
+            "createdAt" to JsonPrimitive(1L),
+            "expiresAt" to JsonPrimitive(5_000_123L),
+        ))
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, status.toString()))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        val request = sendBtcRequest()
+        val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING, UnixSeconds.of(5_000L))
+        val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+        assertFailsWith<SdkException.OperationAmbiguous> {
+            recoveryCoordinator(backend, journal).sendBtc(context, FakeSigningEngine(), request)
+        }
+        assertEquals(checkpoint, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+    }
+
+    @Test
+    fun `canceled in flight recovery leaves submitting and fresh disabled adapter can recover`(): Unit = runBlocking {
+        val statusStarted = CompletableDeferred<Unit>()
+        val releaseStatus = CountDownLatch(1)
+        val statusFinished = CountDownLatch(1)
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, operationStatusJson()))
+        val backend = testBackend(Interceptor { chain ->
+            if (chain.request().url.encodedPath.startsWith("/v1/onchain/operations/")) {
+                statusStarted.complete(Unit)
+                try {
+                    check(releaseStatus.await(5, TimeUnit.SECONDS))
+                    transport.intercept(chain)
+                } finally {
+                    statusFinished.countDown()
+                }
+            } else {
+                transport.intercept(chain)
+            }
+        }, allowUnverifiedPsbtProfile = false)
+        val context = initializedContext(backend)
+        val request = sendBtcRequest()
+        val checkpoint = persistedSendCheckpoint(request, OperationPhase.SUBMITTING)
+        val journal = InMemoryOperationJournal().also { it.save(checkpoint) }
+        val recovery = launch { recoveryCoordinator(backend, journal).sendBtc(context, FakeSigningEngine(), request) }
+        try {
+            statusStarted.await()
+            recovery.cancelAndJoin()
+            assertEquals(checkpoint, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+        } finally {
+            releaseStatus.countDown()
+            withContext(Dispatchers.IO) { assertTrue(statusFinished.await(5, TimeUnit.SECONDS)) }
+        }
+        val restartedTransport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, operationStatusJson()))
+        val restarted = testBackend(restartedTransport, allowUnverifiedPsbtProfile = false)
+        assertEquals(TEST_TXID, recoveryCoordinator(restarted, journal).sendBtc(
+            initializedContext(restarted), FakeSigningEngine(), request,
+        ))
+        assertEquals(OperationPhase.TERMINAL, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+        assertTrue(restartedTransport.requests.all { it.method == "GET" })
+    }
+
+    @Test
+    fun `ambiguous completion including expiry reconciles by GET only`(): Unit = runBlocking {
+        val responses = listOf(
+            queuedResponse(400, "not json"),
+            queuedResponse(400, "{\"error\":{\"code\":\"UNREVIEWED_ERROR\"}}"),
+            queuedResponse(401, "{\"error\":{\"code\":\"UNAUTHORIZED\"}}"),
+            queuedResponse(403, "<html>intermediary rejected request</html>"),
+            queuedResponse(404, "{\"error\":{\"code\":\"OP_NOT_FOUND\"}}"),
+            queuedResponse(413, "[".repeat(100_000) + "0" + "]".repeat(100_000)),
+            queuedResponse(410, "{\"error\":{\"code\":\"OP_EXPIRED\"}}"),
+            queuedResponse(409, "{\"error\":{\"code\":\"OP_ALREADY_COMPLETED\"}}"),
+            queuedResponse(409, "{\"error\":{\"code\":\"OP_KIND_MISMATCH\"}}"),
+            queuedResponse(409, "{\"error\":{\"code\":\"IDEMPOTENCY_KEY_REUSED\"}}"),
+            queuedResponse(502, "{\"error\":{\"code\":\"COMPLETE_AMBIGUOUS\"}}"),
+            queuedResponse(200, "{\"txid\":\"invalid\"}"),
+        )
+        for (response in responses) {
+            val transport = QueueInterceptor(
+                queuedResponse(200, TEST_ME_JSON), response, queuedResponse(200, operationStatusJson()),
+            )
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            val request = sendBtcRequest()
+            val journal = InMemoryOperationJournal().also {
+                it.save(persistedSendCheckpoint(request, OperationPhase.SIGNED))
+            }
+            val coordinator = OperationCoordinator(
+                gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW },
+            )
+            val signer = FakeSigningEngine().apply {
+                retainedValidationReport = persistedSendCheckpoint(request, OperationPhase.SIGNED).signedPayload!!.validation
+            }
+            assertEquals(TEST_TXID, coordinator.sendBtc(context, signer, request))
+            assertEquals(listOf("GET", "POST", "GET"), transport.requests.map { it.method })
+            assertEquals("/v1/onchain/send-btc/complete", transport.requests[1].url.encodedPath)
+            assertEquals("/v1/onchain/operations/$TEST_OPERATION_ID", transport.requests[2].url.encodedPath)
+            assertEquals(null, transport.requests[2].header("Idempotency-Key"))
+        }
+    }
+
+    @Test
+    fun `completion conflicts reconcile once retain exact evidence and recover with fresh gated backend`(): Unit = runBlocking {
+        for (code in listOf("OP_KIND_MISMATCH", "IDEMPOTENCY_KEY_REUSED")) {
+            for (status in listOf(
+                queuedResponse(200, operationStatusJson("pending", null)),
+                queuedResponse(503, "{\"error\":{\"code\":\"UNAVAILABLE\"}}"),
+                queuedResponse(200, operationStatusJson(txid = "f".repeat(64))),
+            )) {
+                val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+                    queuedResponse(409, "{\"error\":{\"code\":\"$code\",\"message\":\"secret-marker\"}}"), status)
+                val backend = testBackend(transport)
+                val context = initializedContext(backend)
+                val request = sendBtcRequest()
+                val signed = persistedSendCheckpoint(request, OperationPhase.SIGNED)
+                val journal = InMemoryOperationJournal().also { it.save(signed) }
+                val signer = FakeSigningEngine().apply { retainedValidationReport = signed.signedPayload!!.validation }
+                val error = assertFailsWith<SdkException.OperationAmbiguous> {
+                    OperationCoordinator(gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW })
+                        .sendBtc(context, signer, request)
+                }
+                assertEquals(signed.operationId, error.operationId)
+                assertTrue(error.retryable)
+                assertFalse(error.message.orEmpty().contains("secret-marker"))
+                assertEquals(signed.copy(phase = OperationPhase.SUBMITTING), journal.load(TEST_WALLET_ID, request.idempotencyKey))
+                assertEquals(listOf("GET", "POST", "GET"), transport.requests.map { it.method })
+                assertEquals("/v1/onchain/send-btc/complete", transport.requests[1].url.encodedPath)
+                assertEquals("/v1/onchain/operations/$TEST_OPERATION_ID", transport.requests[2].url.encodedPath)
+                assertEquals(0, signer.signCalls)
+
+                val restartedTransport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, operationStatusJson()))
+                val restarted = testBackend(restartedTransport, allowUnverifiedPsbtProfile = false)
+                val restartedContext = initializedContext(restarted)
+                val restartedSigner = FakeSigningEngine()
+                val coordinator = recoveryCoordinator(restarted, journal)
+                assertEquals(TEST_TXID, coordinator.sendBtc(restartedContext, restartedSigner, request))
+                assertEquals(TEST_TXID, coordinator.sendBtc(restartedContext, restartedSigner, request))
+                assertEquals(listOf("GET", "GET"), restartedTransport.requests.map { it.method })
+                assertEquals(0, restartedSigner.signCalls)
+                assertEquals(OperationPhase.TERMINAL, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+            }
+        }
+    }
+
+    @Test
+    fun `expiry completion followed by expired null status stays ambiguous durably`(): Unit = runBlocking {
+        val transport = QueueInterceptor(
+            queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(410, "{\"error\":{\"code\":\"OP_EXPIRED\"}}"),
+            queuedResponse(200, operationStatusJson("expired", null)),
+        )
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        val request = sendBtcRequest()
+        val journal = InMemoryOperationJournal().also { it.save(persistedSendCheckpoint(request, OperationPhase.SIGNED)) }
+        assertFailsWith<SdkException.OperationAmbiguous> {
+            OperationCoordinator(gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW })
+                .sendBtc(context, FakeSigningEngine().apply {
+                    retainedValidationReport = persistedSendCheckpoint(request, OperationPhase.SIGNED).signedPayload!!.validation
+                }, request)
+        }
+        assertEquals(OperationPhase.SUBMITTING, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+        assertEquals(listOf("GET", "POST", "GET"), transport.requests.map { it.method })
+    }
+
+    @Test
+    fun `unknown completion 4xx retains submitting across restart and recovers without a second POST`(): Unit = runBlocking {
+        for (response in listOf(queuedResponse(400, "<html>bad request</html>"),
+            queuedResponse(401, "{\"error\":{\"code\":\"UNAUTHORIZED\"}}"),
+            queuedResponse(422, "{\"error\":{\"code\":\"UNKNOWN_CODE\"}}"))) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), response,
+                queuedResponse(200, operationStatusJson("pending", null)))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            val request = sendBtcRequest()
+            val journal = InMemoryOperationJournal().also { it.save(persistedSendCheckpoint(request, OperationPhase.SIGNED)) }
+            val signer = FakeSigningEngine().apply {
+                retainedValidationReport = persistedSendCheckpoint(request, OperationPhase.SIGNED).signedPayload!!.validation
+            }
+            assertFailsWith<SdkException.OperationAmbiguous> {
+                OperationCoordinator(gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW })
+                    .sendBtc(context, signer, request)
+            }
+            assertEquals(OperationPhase.SUBMITTING, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+            assertEquals(null, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.terminalOutcome)
+            assertEquals(listOf("GET", "POST", "GET"), transport.requests.map { it.method })
+            val restartedTransport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, operationStatusJson()))
+            val restarted = testBackend(restartedTransport, allowUnverifiedPsbtProfile = false)
+            assertEquals(TEST_TXID, recoveryCoordinator(restarted, journal).sendBtc(
+                initializedContext(restarted), FakeSigningEngine(), request))
+            assertTrue(restartedTransport.requests.all { it.method == "GET" })
+        }
     }
 
     @Test
@@ -445,12 +1345,11 @@ internal class RgbLightningNodeGatewayBackendTest {
                     OperationId.of("123e4567-e89b-42d3-a456-426614174000"),
                 )
             }
-            assertFailsWith<SdkException.Unsupported> { backend.syncWallet(context) }
             assertFailsWith<SdkException.Unsupported> { backend.reserveAddress(
                 ReserveAddressRequest(context, rotate = false),
             ) }
             assertFailsWith<SdkException.Unsupported> {
-                backend.onchainReceive(context, OnchainReceiveRequest())
+                backend.blindReceive(context, InvoiceRequest())
             }
             assertEquals(1, transport.requests.size)
         }
@@ -548,8 +1447,7 @@ internal class RgbLightningNodeGatewayBackendTest {
         }
 
     @Test
-    fun `operation kind mismatch is a protocol failure`(): Unit = runBlocking {
-        val operationId = OperationId.of("123e4567-e89b-42d3-a456-426614174000")
+    fun `prepare operation kind mismatch remains a protocol failure without submitted identity`(): Unit = runBlocking {
         val transport = QueueInterceptor(
             queuedResponse(200, "{\"userId\":\"u_0123456789abcdef\",\"createdAt\":1234}"),
             queuedResponse(
@@ -562,14 +1460,31 @@ internal class RgbLightningNodeGatewayBackendTest {
         val context = initializedContext(backend)
 
         val error = assertFailsWith<SdkException.BackendProtocolMismatch> {
-            backend.submitSignedTransaction(
-                signedSubmission(context, operationId, TEST_PSBT_BASE64),
-            )
+            backend.prepareSendBtc(PrepareSendBtcRequest(operationContext(context), sendBtcRequest()))
         }
 
-        assertEquals(operationId, error.operationId)
+        assertEquals(null, error.operationId)
         assertEquals("request-kind-mismatch", error.correlationId)
         assertFalse(error.message.orEmpty().contains("do-not-expose"))
+        assertEquals(listOf("GET", "POST"), transport.requests.map { it.method })
+    }
+
+    @Test
+    fun `direct completion conflicts carry operation identity and never report prepare conflict`(): Unit = runBlocking {
+        val operationId = OperationId.of(TEST_OPERATION_ID)
+        for (code in listOf("OP_KIND_MISMATCH", "IDEMPOTENCY_KEY_REUSED")) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+                queuedResponse(409, "{\"error\":{\"code\":\"$code\",\"message\":\"do-not-expose\"}}"))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            val error = assertFailsWith<SdkException.OperationAmbiguous> {
+                backend.submitSignedTransaction(signedSubmission(context, operationId, TEST_PSBT_BASE64))
+            }
+            assertEquals(operationId, error.operationId)
+            assertTrue(error.retryable)
+            assertFalse(error.message.orEmpty().contains("do-not-expose"))
+            assertEquals(2, transport.requests.size)
+        }
     }
 
     @Test
@@ -867,6 +1782,62 @@ internal class RgbLightningNodeGatewayBackendTest {
         return BackendContext(session, TEST_WALLET_ID, Network.SIGNET)
     }
 
+    private fun createPlan(): CreateUtxosOutputPlan = CreateUtxosOutputPlan(listOf(3, 4).map {
+        ExpectedWalletOutput(AccountKind.COLORED, Keychain.EXTERNAL, it, Satoshis.of(1_000))
+    })
+
+    private fun preparedCreateJson(request: CreateUtxosRequest): String = """
+        {"opId":"$TEST_OPERATION_ID","psbt":"$TEST_PSBT_BASE64","intent":{
+        "kind":"create_utxos","feeRateSatPerVb":2,"recipients":[],"asset":null,
+        "utxos":{"num":${request.num ?: 5},"size":${request.size?.value ?: 1000},"upTo":${request.upTo}}},"expiresAt":2000123}
+    """.trimIndent()
+
+    private fun createStatusJson(request: CreateUtxosRequest, state: String = "completed", txid: String? = TEST_TXID.hex): String {
+        val preparation = Json.parseToJsonElement(preparedCreateJson(request)).jsonObject
+        return JsonObject(mapOf(
+            "opId" to JsonPrimitive(TEST_OPERATION_ID), "kind" to JsonPrimitive("create_utxos"),
+            "state" to JsonPrimitive(state), "txid" to (txid?.let(::JsonPrimitive) ?: JsonNull),
+            "mayHaveBroadcast" to JsonPrimitive(state != "completed" && txid != null),
+            "intent" to preparation.getValue("intent"), "createdAt" to JsonPrimitive(1_000_000L),
+            "expiresAt" to JsonPrimitive(2_000_123L),
+        )).toString()
+    }
+
+    private fun createCheckpoint(request: CreateUtxosRequest, phase: OperationPhase = OperationPhase.SUBMITTING): OperationCheckpoint {
+        val hash = RequestHasher.createUtxos(Network.SIGNET, request)
+        val opId = OperationId.of(TEST_OPERATION_ID)
+        val prepared = PreparedTransaction(opId, request.idempotencyKey, hash, Network.SIGNET,
+            OperationKind.CREATE_UTXOS, TEST_PSBT_BASE64, UnixSeconds.of(2_000), createPlan())
+        return OperationCheckpoint(TEST_WALLET_ID, request.idempotencyKey, hash, OperationKind.CREATE_UTXOS,
+            phase, opId, prepared,
+            SignedOperationPayload(TEST_PSBT_BASE64, testValidation().copy(
+                psbtSha256 = TEST_PSBT_BASE64.decodeBase64()!!.sha256().hex())))
+    }
+
+    private fun recoveryCoordinator(
+        backend: RgbLightningNodeGatewayBackend,
+        journal: OperationJournal,
+    ): OperationCoordinator = OperationCoordinator(
+        gatewayWalletConfiguration(maximumFeeRate = FeeRate.satPerVbyte(1.0)),
+        backend,
+        journal,
+        EpochSecondsSource { TEST_NOW },
+    )
+
+    private fun operationStatusJson(state: String = "completed", txid: String? = TEST_TXID.hex): String {
+        val preparation = Json.parseToJsonElement(preparedSendBtcJson(TEST_OPERATION_ID, 2_000_123L)).jsonObject
+        return JsonObject(mapOf(
+            "opId" to JsonPrimitive(TEST_OPERATION_ID),
+            "kind" to JsonPrimitive("send_btc"),
+            "state" to JsonPrimitive(state),
+            "txid" to (txid?.let(::JsonPrimitive) ?: JsonNull),
+            "mayHaveBroadcast" to JsonPrimitive(state != "completed" && txid != null),
+            "intent" to preparation.getValue("intent"),
+            "createdAt" to JsonPrimitive(1_000_000L),
+            "expiresAt" to JsonPrimitive(2_000_123L),
+        )).toString()
+    }
+
     private fun initializeRequest(): BackendInitializeRequest = BackendInitializeRequest(
         walletId = TEST_WALLET_ID,
         network = Network.SIGNET,
@@ -916,7 +1887,10 @@ internal class RgbLightningNodeGatewayBackendTest {
             psbtBase64 = TEST_PSBT_BASE64,
             expiresAt = expiresAt,
         )
-        val signed = SignedOperationPayload(TEST_PSBT_BASE64, testValidation())
+        val signed = SignedOperationPayload(
+            TEST_PSBT_BASE64,
+            testValidation().copy(psbtSha256 = TEST_PSBT_BASE64.decodeBase64()!!.sha256().hex()),
+        )
         return OperationCheckpoint(
             walletId = TEST_WALLET_ID,
             idempotencyKey = request.idempotencyKey,
@@ -958,6 +1932,10 @@ internal class RgbLightningNodeGatewayBackendTest {
     private fun testBackend(
         interceptor: Interceptor,
         allowUnverifiedPsbtProfile: Boolean = true,
+        clock: () -> Long = { 1_500_000L },
+        createPlanExtractor: suspend (String, Network) -> CreateUtxosOutputPlan = { _, _ ->
+            throw AssertionError("unexpected native create-plan extraction in JVM transport test")
+        },
     ): RgbLightningNodeGatewayBackend {
         val configuration = gatewayConfiguration(
             allowUnverifiedPsbtProfile = allowUnverifiedPsbtProfile,
@@ -972,9 +1950,10 @@ internal class RgbLightningNodeGatewayBackendTest {
             RgbLightningNodeGatewayConfiguration::class.java,
             OkHttpClient::class.java,
             Function0::class.java,
+            Function3::class.java,
         )
         constructor.isAccessible = true
-        return constructor.newInstance(configuration, client, { 1_500_000L })
+        return constructor.newInstance(configuration, client, clock, createPlanExtractor)
             as RgbLightningNodeGatewayBackend
     }
 
@@ -1024,6 +2003,8 @@ internal class RgbLightningNodeGatewayBackendTest {
     """.trimIndent()
 
     private companion object {
+        const val TEST_OPERATION_ID: String = "123e4567-e89b-42d3-a456-426614174000"
+        const val TEST_ME_JSON: String = "{\"userId\":\"u_0123456789abcdef\",\"createdAt\":1234}"
         const val TEST_TOKEN: String = "utxg_test_token_0123456789"
         const val TEST_PSBT_BASE64: String = "cHNidP8BAHECAAAAAAAAAAAA"
         val TEST_WALLET_ID: WalletId = WalletId.of("gateway-wallet")

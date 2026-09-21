@@ -20,6 +20,7 @@ import com.utexo.rgb.sdk.PreparedTransaction
 import com.utexo.rgb.sdk.PrepareOnchainSendRequest
 import com.utexo.rgb.sdk.PrepareSendBtcRequest
 import com.utexo.rgb.sdk.RequestHash
+import com.utexo.rgb.sdk.RgbLightningNodeGatewayBackend
 import com.utexo.rgb.sdk.SdkException
 import com.utexo.rgb.sdk.SendBtcRequest
 import com.utexo.rgb.sdk.SignedOperationPayload
@@ -44,6 +45,10 @@ internal class OperationCoordinator(
         signer: LocalSigningEngine,
         request: SendBtcRequest,
     ): TransactionId {
+        val localPreflight: suspend () -> Unit = {
+            requireLocalSigning(signer, OperationKind.SEND_BTC)
+            if (backend is RgbLightningNodeGatewayBackend) backend.validateRequest(request)
+        }
         val hash = RequestHasher.sendBtc(configuration.network, request)
         val operationContext = OperationRequestContext(
             backend = backendContext,
@@ -59,7 +64,7 @@ internal class OperationCoordinator(
             return requireSendBtcResult(requireTerminalResult(existing)).txid
         }
         if (existing?.phase == OperationPhase.SUBMITTING) {
-            return requireSendBtcResult(recoverSubmitting(operationContext, existing)).txid
+            return requireSendBtcResult(recoverSubmitting(operationContext, existing, request)).txid
         }
         val current = existing ?: run {
             requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
@@ -67,6 +72,7 @@ internal class OperationCoordinator(
                 request.idempotencyKey,
                 hash,
                 OperationKind.SEND_BTC,
+                localPreflight,
             )
         }
         val prepared = ensurePrepared(
@@ -75,6 +81,7 @@ internal class OperationCoordinator(
             expectedKind = OperationKind.SEND_BTC,
             createdPreflightSatisfied = existing == null,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
             prepare = {
                 backendCall {
                     backend.prepareSendBtc(PrepareSendBtcRequest(operationContext, request))
@@ -85,6 +92,7 @@ internal class OperationCoordinator(
             checkpoint = prepared,
             signer = signer,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
             intent = LocalOperationIntent.SendBtc(
                 configuration.network,
                 configuration.signingPolicy,
@@ -95,6 +103,8 @@ internal class OperationCoordinator(
             context = operationContext,
             checkpoint = signed,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
+            sendBtcRequest = request,
         )
         return requireSendBtcResult(result).txid
     }
@@ -104,6 +114,10 @@ internal class OperationCoordinator(
         signer: LocalSigningEngine,
         request: CreateUtxosRequest,
     ): CreateUtxosResult {
+        val localPreflight: suspend () -> Unit = {
+            requireLocalSigning(signer, OperationKind.CREATE_UTXOS)
+            if (backend is RgbLightningNodeGatewayBackend) backend.validateRequest(request)
+        }
         val hash = RequestHasher.createUtxos(configuration.network, request)
         val operationContext = OperationRequestContext(
             backend = backendContext,
@@ -116,10 +130,15 @@ internal class OperationCoordinator(
             OperationKind.CREATE_UTXOS,
         )
         if (existing?.phase == OperationPhase.TERMINAL) {
-            return requireCreateUtxosResult(requireTerminalResult(existing)).result
+            val result = requireCreateUtxosResult(requireTerminalResult(existing)).result
+            val maximum = request.num ?: 5
+            if (result.createdUtxoCount !in 1..maximum) {
+                throw SdkException.BackendProtocolMismatch("retained create UTXO count differs from the original request")
+            }
+            return result
         }
         if (existing?.phase == OperationPhase.SUBMITTING) {
-            return requireCreateUtxosResult(recoverSubmitting(operationContext, existing)).result
+            return requireCreateUtxosResult(recoverSubmitting(operationContext, existing, createUtxosRequest = request)).result
         }
         val current = existing ?: run {
             requireFeeWithinPolicy(request.feeRate.milliSatsPerVbyte)
@@ -127,6 +146,7 @@ internal class OperationCoordinator(
                 request.idempotencyKey,
                 hash,
                 OperationKind.CREATE_UTXOS,
+                localPreflight,
             )
         }
         val prepared = ensurePrepared(
@@ -135,6 +155,7 @@ internal class OperationCoordinator(
             expectedKind = OperationKind.CREATE_UTXOS,
             createdPreflightSatisfied = existing == null,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
             prepare = {
                 backendCall {
                     backend.prepareCreateUtxos(PrepareCreateUtxosRequest(operationContext, request))
@@ -156,6 +177,7 @@ internal class OperationCoordinator(
             checkpoint = prepared,
             signer = signer,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
             intent = LocalOperationIntent.CreateUtxos(
                 network = configuration.network,
                 policy = configuration.signingPolicy,
@@ -167,6 +189,8 @@ internal class OperationCoordinator(
             context = operationContext,
             checkpoint = signed,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
+            createUtxosRequest = request,
         )
         return requireCreateUtxosResult(result).result
     }
@@ -175,7 +199,12 @@ internal class OperationCoordinator(
         backendContext: BackendContext,
         signer: LocalSigningEngine,
         request: OnchainSendRequest,
+        validateInvoice: suspend () -> Unit,
     ): OnchainSendResponse {
+        val localPreflight: suspend () -> Unit = {
+            requireLocalSigning(signer, OperationKind.ONCHAIN_SEND)
+            validateInvoice()
+        }
         val hash = RequestHasher.onchainSend(configuration.network, request)
         val operationContext = OperationRequestContext(
             backend = backendContext,
@@ -199,6 +228,7 @@ internal class OperationCoordinator(
                 request.idempotencyKey,
                 hash,
                 OperationKind.ONCHAIN_SEND,
+                localPreflight,
             )
         }
         val prepared = ensurePrepared(
@@ -207,6 +237,7 @@ internal class OperationCoordinator(
             expectedKind = OperationKind.ONCHAIN_SEND,
             createdPreflightSatisfied = existing == null,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
             prepare = {
                 backendCall {
                     backend.prepareOnchainSend(PrepareOnchainSendRequest(operationContext, request))
@@ -217,6 +248,7 @@ internal class OperationCoordinator(
             checkpoint = prepared,
             signer = signer,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
             intent = LocalOperationIntent.OnchainSend(
                 network = configuration.network,
                 policy = configuration.signingPolicy,
@@ -227,6 +259,7 @@ internal class OperationCoordinator(
             context = operationContext,
             checkpoint = signed,
             requestedFeeRate = request.feeRate.milliSatsPerVbyte,
+            localPreflight = localPreflight,
         )
         return requireOnchainSendResult(result).result
     }
@@ -235,6 +268,9 @@ internal class OperationCoordinator(
         context: OperationRequestContext,
         checkpoint: OperationCheckpoint,
         requestedFeeRate: Long,
+        sendBtcRequest: SendBtcRequest? = null,
+        createUtxosRequest: CreateUtxosRequest? = null,
+        localPreflight: suspend () -> Unit,
     ): BackendOperationResult {
         val prepared = checkpoint.preparedTransaction
             ?: throw SdkException.InternalInvariantViolation("signed checkpoint has no preparation")
@@ -246,7 +282,9 @@ internal class OperationCoordinator(
                     persistExpiredAndThrow(checkpoint)
                 }
                 requireFeeWithinPolicy(requestedFeeRate)
+                localPreflight()
                 backendPreflight(checkpoint.operationKind)
+                localPreflight()
                 if (prepared.expiresAt.value <= now.now()) {
                     persistExpiredAndThrow(checkpoint)
                 }
@@ -264,13 +302,16 @@ internal class OperationCoordinator(
             validation = signed.validation,
         )
         val result = try {
-            backendCall { backend.submitSignedTransaction(submission) }
+            backendCall {
+                if (backend is RgbLightningNodeGatewayBackend) backend.submitSignedTransaction(submission, prepared)
+                else backend.submitSignedTransaction(submission)
+            }
         } catch (cancellation: CancellationException) {
             // SUBMITTING was persisted first. Cancellation stops waiting; it
             // does not imply that backend processing or broadcast was undone.
             throw cancellation
         } catch (_: SdkException.BackendUnavailable) {
-            return reconcileAfterSubmit(context.backend, submitting)
+            return reconcileAfterSubmit(context.backend, submitting, sendBtcRequest, createUtxosRequest)
         } catch (expired: SdkException.OperationExpired) {
             if (expired.operationId != prepared.operationId) {
                 throw SdkException.OperationAmbiguous(prepared.operationId)
@@ -279,12 +320,19 @@ internal class OperationCoordinator(
         } catch (rejected: SdkException.BackendRejected) {
             persistDirectRejectionOrThrow(submitting, rejected)
         } catch (ambiguous: SdkException.OperationAmbiguous) {
+            if (ambiguous.operationId != prepared.operationId) {
+                throw SdkException.OperationAmbiguous(prepared.operationId)
+            }
+            if (backend is RgbLightningNodeGatewayBackend) {
+                return reconcileAfterSubmit(context.backend, submitting, sendBtcRequest, createUtxosRequest)
+            }
             throw ambiguous
-        } catch (definitive: SdkException) {
-            // OperationConflict and protocol failures are definitive API
-            // outcomes. The current journal schema has no matching terminal
-            // variant, so preserve SUBMITTING and never poll or resubmit.
-            throw definitive
+        } catch (failure: SdkException) {
+            // Custom infrastructure backends retain their error contract. An API
+            // error is not proof of no broadcast: preserve SUBMITTING rather than
+            // inventing a terminal receipt. The concrete gateway maps uncertain
+            // completion responses to OperationAmbiguous for one GET reconciliation.
+            throw failure
         }
         verifyResultIdentityOrAmbiguous(result, submitting)
         journalSave(
@@ -294,6 +342,14 @@ internal class OperationCoordinator(
             ),
         )
         return result
+    }
+
+    private fun requireLocalSigning(signer: LocalSigningEngine, operation: OperationKind): Unit {
+        val capabilities = signer.capabilities
+        if (!capabilities.localTransactionValidation || !capabilities.localTransactionSigning ||
+            operation !in capabilities.localSigningOperations) {
+            throw SdkException.Unsupported("complete local ${operation.wireValue} Bitcoin intent validation and signing")
+        }
     }
 
     private suspend fun loadValidated(
@@ -314,10 +370,13 @@ internal class OperationCoordinator(
         idempotencyKey: IdempotencyKey,
         hash: RequestHash,
         kind: OperationKind,
+        localPreflight: suspend () -> Unit,
     ): OperationCheckpoint {
         // A deterministic readiness failure must occur before CREATED is
         // persisted, so a disabled provisional profile leaves no checkpoint.
+        localPreflight()
         backendPreflight(kind)
+        localPreflight()
         val created = OperationCheckpoint(
             walletId = configuration.walletId,
             idempotencyKey = idempotencyKey,
@@ -335,14 +394,17 @@ internal class OperationCoordinator(
         expectedKind: OperationKind,
         createdPreflightSatisfied: Boolean,
         requestedFeeRate: Long,
+        localPreflight: suspend () -> Unit,
         prepare: suspend () -> PreparedTransaction,
         verifyOperation: (PreparedTransaction) -> Unit = {},
     ): OperationCheckpoint {
         if (checkpoint.phase == OperationPhase.CREATED) {
             if (!createdPreflightSatisfied) {
                 requireFeeWithinPolicy(requestedFeeRate)
+                localPreflight()
                 backendPreflight(expectedKind)
             }
+            localPreflight()
             val prepared = prepare()
             verifyPrepared(prepared, context, expectedKind)
             verifyOperation(prepared)
@@ -386,15 +448,34 @@ internal class OperationCoordinator(
         signer: LocalSigningEngine,
         requestedFeeRate: Long,
         intent: LocalOperationIntent,
+        localPreflight: suspend () -> Unit,
     ): OperationCheckpoint {
-        if (checkpoint.phase == OperationPhase.SIGNED) return checkpoint
+        if (checkpoint.phase == OperationPhase.SIGNED) {
+            val prepared = checkpoint.preparedTransaction
+                ?: throw SdkException.InternalInvariantViolation("signed checkpoint has no preparation")
+            val retained = checkpoint.signedPayload
+                ?: throw SdkException.InternalInvariantViolation("signed checkpoint has no payload")
+            requireFeeWithinPolicy(requestedFeeRate)
+            localPreflight()
+            backendPreflight(checkpoint.operationKind)
+            localPreflight()
+            val current = signer.validateRetainedSigning(prepared, intent)
+            // Policy contributes to the intent digest. All transaction facts and
+            // preparation binding must remain identical; never replace signed bytes.
+            if (current.copy(intentSha256 = retained.validation.intentSha256) != retained.validation) {
+                throw SdkException.InternalInvariantViolation("retained signing validation changed")
+            }
+            return checkpoint
+        }
         if (checkpoint.phase != OperationPhase.PREPARED) {
             throw SdkException.InternalInvariantViolation("checkpoint cannot enter signing")
         }
         val prepared = checkpoint.preparedTransaction
             ?: throw SdkException.InternalInvariantViolation("prepared checkpoint has no transaction")
         requireFeeWithinPolicy(requestedFeeRate)
+        localPreflight()
         backendPreflight(checkpoint.operationKind)
+        localPreflight()
         if (prepared.expiresAt.value <= now.now()) {
             persistExpiredAndThrow(checkpoint)
         }
@@ -413,11 +494,13 @@ internal class OperationCoordinator(
     private suspend fun recoverSubmitting(
         context: OperationRequestContext,
         checkpoint: OperationCheckpoint,
+        sendBtcRequest: SendBtcRequest? = null,
+        createUtxosRequest: CreateUtxosRequest? = null,
     ): BackendOperationResult {
         val operationId = checkpoint.operationId
             ?: throw SdkException.InternalInvariantViolation("submitting checkpoint has no operation ID")
         val status = try {
-            tryGetOperation(context.backend, operationId)
+            tryGetOperation(context.backend, checkpoint, sendBtcRequest, createUtxosRequest)
         } catch (_: SdkException) {
             throw SdkException.OperationAmbiguous(operationId)
         }
@@ -444,11 +527,13 @@ internal class OperationCoordinator(
     private suspend fun reconcileAfterSubmit(
         backendContext: BackendContext,
         checkpoint: OperationCheckpoint,
+        sendBtcRequest: SendBtcRequest? = null,
+        createUtxosRequest: CreateUtxosRequest? = null,
     ): BackendOperationResult {
         val operationId = checkpoint.operationId
             ?: throw SdkException.InternalInvariantViolation("submitting checkpoint has no operation ID")
         return when (val status = try {
-            tryGetOperation(backendContext, operationId)
+            tryGetOperation(backendContext, checkpoint, sendBtcRequest, createUtxosRequest)
         } catch (_: SdkException) {
             throw SdkException.OperationAmbiguous(operationId)
         }) {
@@ -471,9 +556,23 @@ internal class OperationCoordinator(
 
     private suspend fun tryGetOperation(
         context: BackendContext,
-        operationId: com.utexo.rgb.sdk.OperationId,
+        checkpoint: OperationCheckpoint,
+        sendBtcRequest: SendBtcRequest?,
+        createUtxosRequest: CreateUtxosRequest?,
     ): BackendOperationStatus {
-        val status = backendCall { backend.getOperation(context, operationId) }
+        val operationId = checkpoint.operationId
+            ?: throw SdkException.InternalInvariantViolation("recovery checkpoint has no operation ID")
+        val status = backendCall {
+            if (backend is RgbLightningNodeGatewayBackend) {
+                when {
+                    sendBtcRequest != null -> backend.getOperationForRecovery(context, checkpoint, sendBtcRequest)
+                    createUtxosRequest != null -> backend.getOperationForRecovery(context, checkpoint, createUtxosRequest)
+                    else -> throw SdkException.Unsupported("gateway recovery for this operation kind")
+                }
+            } else {
+                backend.getOperation(context, operationId)
+            }
+        }
         if (status.operationId != operationId) {
             throw SdkException.BackendProtocolMismatch(
                 reason = "operation status has the wrong operation ID",
@@ -529,8 +628,11 @@ internal class OperationCoordinator(
                 prepared.operationId,
             )
         }
-        request.num?.let { requested ->
-            val valid = if (request.upTo) plan.outputs.size <= requested else plan.outputs.size == requested
+        run {
+            val requested = request.num ?: 5
+            // Native coin selection can create fewer outputs even for upTo=false.
+            // upTo controls subtracting existing slots, not an exact-count guarantee.
+            val valid = plan.outputs.size <= requested
             if (!valid) {
                 throw SdkException.PolicyRejected(
                     "createUtxos output count does not match the caller request",
@@ -538,7 +640,8 @@ internal class OperationCoordinator(
                 )
             }
         }
-        request.size?.let { requestedSize ->
+        run {
+            val requestedSize = request.size ?: com.utexo.rgb.sdk.Satoshis.of(1_000)
             if (plan.outputs.any { it.amount != requestedSize }) {
                 throw SdkException.PolicyRejected(
                     "createUtxos output amount does not match the caller request",
@@ -567,10 +670,12 @@ internal class OperationCoordinator(
         result: BackendOperationResult,
         checkpoint: OperationCheckpoint,
     ): Unit {
-        val prepared = checkpoint.preparedTransaction
-            ?: throw SdkException.InternalInvariantViolation("checkpoint has no preparation")
+        val operationId = checkpoint.operationId
+            ?: throw SdkException.InternalInvariantViolation("checkpoint has no operation ID")
+        fun mismatch(reason: String): SdkException.BackendProtocolMismatch =
+            SdkException.BackendProtocolMismatch(reason, operationId, checkpoint.preparedTransaction?.correlationId)
         if (result.operationId != checkpoint.operationId) {
-            throw protocolMismatch("submission result has the wrong operation ID", prepared)
+            throw mismatch("submission result has the wrong operation ID")
         }
         val variantMatches = when (checkpoint.operationKind) {
             OperationKind.SEND_BTC -> result is BackendOperationResult.SendBtc
@@ -579,7 +684,7 @@ internal class OperationCoordinator(
             OperationKind.INFLATE -> false
         }
         if (!variantMatches) {
-            throw protocolMismatch("submission result has the wrong operation variant", prepared)
+            throw mismatch("submission result has the wrong operation variant")
         }
         val expectedTxid = checkpoint.signedPayload?.validation?.unsignedTxid
             ?: throw SdkException.InternalInvariantViolation("checkpoint has no local validation report")
@@ -589,7 +694,20 @@ internal class OperationCoordinator(
             is BackendOperationResult.OnchainSend -> result.result.txid
         }
         if (actualTxid != expectedTxid) {
-            throw protocolMismatch("backend transaction ID differs from local validation", prepared)
+            throw mismatch("backend transaction ID differs from local validation")
+        }
+        if (result is BackendOperationResult.CreateUtxos) {
+            val plan = checkpoint.preparedTransaction?.createUtxosOutputPlan
+            // A compact authenticated terminal receipt intentionally removes
+            // the PSBT/plan after the first result has passed this comparison.
+            if (plan == null && (checkpoint.phase != OperationPhase.TERMINAL ||
+                checkpoint.signedPayload?.isTerminalReceipt != true)) {
+                throw mismatch("completed createUtxos operation has no retained output plan")
+            }
+            if (result.result.createdUtxoCount !in 1..255 ||
+                (plan != null && result.result.createdUtxoCount != plan.outputs.size)) {
+                throw mismatch("backend created UTXO count differs from the locally validated output plan")
+            }
         }
     }
 

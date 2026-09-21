@@ -92,21 +92,34 @@ public interface WalletBackend {
     public suspend fun listTransactions(context: BackendContext): List<Transaction> =
         unsupportedBackendMethod("listTransactions")
 
+    /**
+     * Filters a complete freshly synchronized snapshot. A backend must override
+     * this method to honor [skipSync]; the default never silently performs a
+     * synchronization the caller asked to skip.
+     */
     public suspend fun listTransactionsByTxid(
         context: BackendContext,
         txid: TransactionId,
         skipSync: Boolean = false,
-    ): List<Transaction> = unsupportedBackendMethod("listTransactionsByTxid")
+    ): List<Transaction> {
+        if (skipSync) unsupportedBackendMethod("listTransactionsByTxid(skipSync=true)")
+        return listTransactions(context).filter { it.txid == txid }
+    }
 
     public suspend fun listTransfers(
         context: BackendContext,
         assetId: AssetId? = null,
     ): List<Transfer> = unsupportedBackendMethod("listTransfers")
 
+    /**
+     * Filters the complete all-assets transfer snapshot. Backends with a
+     * selective endpoint may override this. [listTransfers] must not expose an
+     * unmarked partial page as a complete list.
+     */
     public suspend fun listTransfersByTxid(
         context: BackendContext,
         txid: TransactionId,
-    ): List<Transfer> = unsupportedBackendMethod("listTransfersByTxid")
+    ): List<Transfer> = listTransfers(context, assetId = null).filter { it.txid == txid }
 
     public suspend fun failTransfers(
         context: BackendContext,
@@ -277,9 +290,14 @@ public class PreparedTransaction(
     public val operation: OperationKind,
     public val psbtBase64: String,
     public val expiresAt: UnixSeconds,
-    public val createUtxosOutputPlan: CreateUtxosOutputPlan? = null,
+    createUtxosOutputPlan: CreateUtxosOutputPlan? = null,
     public val correlationId: String? = null,
 ) {
+    /** An immutable snapshot: external SPI lists cannot change retained signing intent. */
+    public val createUtxosOutputPlan: CreateUtxosOutputPlan? = createUtxosOutputPlan?.let {
+        CreateUtxosOutputPlan(java.util.Collections.unmodifiableList(ArrayList(it.outputs)))
+    }
+
     init {
         requireBoundedText("psbt", psbtBase64, 5_400_000)
         correlationId?.let {

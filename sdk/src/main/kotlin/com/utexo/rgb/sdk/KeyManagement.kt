@@ -3,7 +3,9 @@
 package com.utexo.rgb.sdk
 
 import com.utexo.rgb.sdk.internal.toFfi
+import com.utexo.rgb.sdk.internal.NativeRuntime
 import com.utexo.rgb.sdk.internal.toSdkException
+import com.utexo.rgb.sdk.internal.withOwnedDispatcherResult
 import com.utexo.rgb.sdk.internal.ffi.GeneratedKeys as FfiGeneratedKeys
 import com.utexo.rgb.sdk.internal.ffi.SignerException as FfiSignerException
 import com.utexo.rgb.sdk.internal.ffi.deriveKeysFromMnemonic as ffiDeriveKeysFromMnemonic
@@ -18,7 +20,7 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.Arrays
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CancellationException
 
 /**
  * Redacting, closeable BIP39 mnemonic container.
@@ -29,15 +31,16 @@ import kotlinx.coroutines.withContext
  */
 public class SecretMnemonic private constructor(words: CharArray) : AutoCloseable {
     private val lock: Any = Any()
-    private var characters: CharArray? = words.copyOf()
+    private var characters: CharArray? = null
 
     init {
-        if (words.isEmpty() || words.all(Char::isWhitespace)) {
-            throw SdkException.InvalidArgument("mnemonic", "must not be blank")
-        }
         if (words.size > MAX_CHARACTERS) {
             throw SdkException.InvalidArgument("mnemonic", "is too long")
         }
+        if (words.isEmpty() || words.all(Char::isWhitespace)) {
+            throw SdkException.InvalidArgument("mnemonic", "must not be blank")
+        }
+        characters = words.copyOf()
     }
 
     internal fun copyUtf8(): ByteArray = synchronized(lock) {
@@ -94,12 +97,13 @@ public class SecretMnemonic private constructor(words: CharArray) : AutoCloseabl
 /** Redacting container for a root BIP32 extended private key. */
 public class SecretExtendedPrivateKey private constructor(value: CharArray) : AutoCloseable {
     private val lock: Any = Any()
-    private var characters: CharArray? = value.copyOf()
+    private var characters: CharArray? = null
 
     init {
         if (value.isEmpty() || value.size > MAX_CHARACTERS) {
             throw SdkException.InvalidArgument("xpriv", "must be a bounded non-empty key")
         }
+        characters = value.copyOf()
     }
 
     internal fun copyAsString(): String = synchronized(lock) {
@@ -213,18 +217,19 @@ public suspend fun deriveKeysFromMnemonic(
     passphrase: CharArray = charArrayOf(),
 ): GeneratedKeys {
     val mnemonicBytes = mnemonic.copyUtf8()
-    val passphraseBytes = passphrase.copyUtf8("passphrase")
+    var passphraseBytes: ByteArray? = null
     return try {
+        val encodedPassphrase = passphrase.copyUtf8("passphrase").also { passphraseBytes = it }
         nativeKeyCall {
             ffiDeriveKeysFromMnemonic(
                 network.toFfi(),
                 mnemonicBytes,
-                passphraseBytes,
+                encodedPassphrase,
             ).toPublic(expectMnemonic = true)
         }
     } finally {
         Arrays.fill(mnemonicBytes, 0.toByte())
-        Arrays.fill(passphraseBytes, 0.toByte())
+        passphraseBytes?.fill(0)
     }
 }
 
@@ -249,10 +254,11 @@ public suspend fun deriveSeedFromMnemonic(
     passphrase: CharArray = charArrayOf(),
 ): SecretSeed {
     val mnemonicBytes = mnemonic.copyUtf8()
-    val passphraseBytes = passphrase.copyUtf8("passphrase")
+    var passphraseBytes: ByteArray? = null
     return try {
+        val encodedPassphrase = passphrase.copyUtf8("passphrase").also { passphraseBytes = it }
         nativeKeyCall {
-            val derived = ffiDeriveSeedFromMnemonic(mnemonicBytes, passphraseBytes)
+            val derived = ffiDeriveSeedFromMnemonic(mnemonicBytes, encodedPassphrase)
             try {
                 SecretSeed.fromBytes(derived)
             } finally {
@@ -261,7 +267,7 @@ public suspend fun deriveSeedFromMnemonic(
         }
     } finally {
         Arrays.fill(mnemonicBytes, 0.toByte())
-        Arrays.fill(passphraseBytes, 0.toByte())
+        passphraseBytes?.fill(0)
     }
 }
 
@@ -327,19 +333,20 @@ public suspend fun getXprivFromMnemonic(
     passphrase: CharArray = charArrayOf(),
 ): SecretExtendedPrivateKey {
     val mnemonicBytes = mnemonic.copyUtf8()
-    val passphraseBytes = passphrase.copyUtf8("passphrase")
+    var passphraseBytes: ByteArray? = null
     return try {
+        val encodedPassphrase = passphrase.copyUtf8("passphrase").also { passphraseBytes = it }
         nativeKeyCall {
             val generated = ffiDeriveKeysFromMnemonic(
                 network.toFfi(),
                 mnemonicBytes,
-                passphraseBytes,
+                encodedPassphrase,
             )
             generated.xpriv.toCharArray().toSecretExtendedPrivateKey()
         }
     } finally {
         Arrays.fill(mnemonicBytes, 0.toByte())
-        Arrays.fill(passphraseBytes, 0.toByte())
+        passphraseBytes?.fill(0)
     }
 }
 
@@ -364,9 +371,12 @@ public suspend fun deriveKeysFromXpriv(
         .toPublic(expectMnemonic = false)
 }
 
-private suspend fun <T> nativeKeyCall(block: () -> T): T = withContext(Dispatchers.Default) {
+private suspend fun <T> nativeKeyCall(block: () -> T): T = withOwnedDispatcherResult(Dispatchers.Default) {
     try {
+        NativeRuntime.ensureInitialized()
         block()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
     } catch (sdk: SdkException) {
         throw sdk
     } catch (linkage: LinkageError) {

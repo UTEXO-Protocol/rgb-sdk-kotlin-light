@@ -1,6 +1,10 @@
 package com.utexo.rgb.sdk
 
 import java.nio.file.Path
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.io.IOException
+import java.io.RandomAccessFile
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -16,6 +20,49 @@ import kotlin.test.assertNotEquals
 internal class AndroidKeystoreSeedStoreTest {
     @TempDir
     lateinit var directory: Path
+
+    @Test
+    fun `seed envelope reads remain bounded and reject truncated or oversized storage`(): Unit = runBlocking {
+        val path = directory.resolve("seed.bin")
+        val storage = AtomicSeedEnvelopeFile(directory.toFile(), "seed.bin")
+        Files.write(path, ByteArray(AtomicSeedEnvelopeFile.MAX_ENVELOPE_BYTES) { 7 })
+        storage.exclusive { assertEquals(AtomicSeedEnvelopeFile.MAX_ENVELOPE_BYTES, storage.read().size) }
+        RandomAccessFile(path.toFile(), "rw").use { it.setLength(1024L * 1024 * 1024) }
+        storage.exclusive { assertFailsWith<IOException> { storage.read() } }
+        RandomAccessFile(path.toFile(), "rw").use { it.setLength(0) }
+        storage.exclusive { assertFailsWith<IOException> { storage.read() } }
+    }
+
+    @Test
+    fun `seed target lock and temporary path validation occurs before reads writes or recovery deletion`(): Unit = runBlocking {
+        for (suffix in listOf("", ".lock", ".tmp")) {
+            val caseDirectory = Files.createDirectory(directory.resolve("case-${suffix.ifEmpty { "target" }.removePrefix(".")}"))
+            val external = Files.write(caseDirectory.resolve("untouched.bin"), byteArrayOf(1, 2, 3))
+            val link = Files.createSymbolicLink(caseDirectory.resolve("seed.bin$suffix"), external)
+            val storage = AtomicSeedEnvelopeFile(caseDirectory.toFile(), "seed.bin", validateFile = { file ->
+                if (Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS) &&
+                    (!Files.isRegularFile(file.toPath(), LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(file.toPath()))) {
+                    throw IOException("unsafe fixture")
+                }
+            })
+            assertFailsWith<IOException> { storage.exclusive { storage.writeNew(byteArrayOf(5)) } }
+            if (suffix.isEmpty()) {
+                assertFailsWith<IOException> { storage.exclusive { storage.read() } }
+                assertFailsWith<IOException> { storage.exclusive { storage.deleteIfPresent() } }
+            }
+            assertContentEquals(byteArrayOf(1, 2, 3), Files.readAllBytes(external))
+            assertEquals(true, Files.isSymbolicLink(link))
+        }
+    }
+
+    @Test
+    fun `seed directory validation precedes lock creation and no cipher operation is performed`(): Unit = runBlocking {
+        val storage = AtomicSeedEnvelopeFile(directory.toFile(), "seed.bin", secureDirectory = { throw IOException() })
+        var entered = false
+        assertFailsWith<IOException> { storage.exclusive { entered = true } }
+        assertEquals(false, entered)
+        assertEquals(false, Files.exists(directory.resolve("seed.bin.lock")))
+    }
 
     @Test
     fun `AAD binds package wallet network schema and key policy`(): Unit {

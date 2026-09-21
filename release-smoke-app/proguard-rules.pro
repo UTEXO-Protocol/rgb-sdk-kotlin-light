@@ -6,3 +6,5 @@
 # classes from the target APK. R8 cannot see cross-APK runner references while
 # shrinking the target. This fixture-only keep does not retain any SDK classes.
 -keep class kotlin.** { *; }
+-keep class com.utexo.rgb.sdk.releasesmoke.ReleaseTransactionSmoke { public *; }
+-keep class com.utexo.rgb.sdk.releasesmoke.ReleaseGatewaySmoke { public *; }

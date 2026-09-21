@@ -1,6 +1,7 @@
 package com.utexo.rgb.sdk
 
-import android.annotation.TargetApi
+import androidx.annotation.RequiresApi
+import com.utexo.rgb.sdk.internal.withOwnedDispatcherResult
 import android.content.Context
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
@@ -10,6 +11,7 @@ import android.security.keystore.StrongBoxUnavailableException
 import android.security.keystore.UserNotAuthenticatedException
 import android.system.Os
 import android.system.OsConstants
+import android.system.ErrnoException
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -33,7 +35,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 /** Explicit hardware/fallback behavior for Android Keystore key generation. */
 public enum class StrongBoxPolicy(public val wireValue: String) {
@@ -200,12 +201,14 @@ public class AndroidKeystoreSeedStore private constructor(
                 network = network.wireValue,
                 keyPolicy = configuration.policyId(),
             )
-            val directory = File(application.noBackupFilesDir, "utexo-rgb-sdk")
+            val directory = File(application.noBackupFilesDir.canonicalFile, "utexo-rgb-sdk")
             val storage = AtomicSeedEnvelopeFile(
                 directory = directory,
                 fileName = identity.fileName(),
                 secureFile = ::secureOwnerOnly,
                 syncDirectory = ::syncDirectory,
+                validateFile = ::validateRegularOwnerOnly,
+                secureDirectory = ::secureDirectoryOwnerOnly,
             )
             return SeedEnvelopeRepository(
                 identity = identity,
@@ -216,6 +219,21 @@ public class AndroidKeystoreSeedStore private constructor(
 
         private fun secureOwnerOnly(file: File): Unit {
             Os.chmod(file.absolutePath, OsConstants.S_IRUSR or OsConstants.S_IWUSR)
+        }
+
+        private fun validateRegularOwnerOnly(file: File): Unit {
+            val status = try { Os.lstat(file.absolutePath) } catch (failure: ErrnoException) {
+                if (failure.errno != OsConstants.ENOENT) throw failure
+                null
+            }
+            if (status != null && (!OsConstants.S_ISREG(status.st_mode) ||
+                    status.st_nlink != 1L || status.st_uid != Os.getuid())) throw IOException()
+        }
+
+        private fun secureDirectoryOwnerOnly(directory: File): Unit {
+            val status = Os.lstat(directory.absolutePath)
+            if (!OsConstants.S_ISDIR(status.st_mode) || status.st_uid != Os.getuid()) throw IOException()
+            Os.chmod(directory.absolutePath, OsConstants.S_IRWXU)
         }
 
         private fun syncDirectory(directory: File): Unit {
@@ -374,31 +392,45 @@ internal class AtomicSeedEnvelopeFile(
     private val fileName: String,
     private val secureFile: (File) -> Unit = {},
     private val syncDirectory: (File) -> Unit = {},
+    private val validateFile: (File) -> Unit = {},
+    private val secureDirectory: (File) -> Unit = {},
 ) {
     private val target: File = File(directory, fileName)
     private val lockFile: File = File(directory, "$fileName.lock")
     private val processMutex: Mutex = locks.computeIfAbsent(target.absolutePath) { Mutex() }
 
-    suspend fun <T> exclusive(block: () -> T): T = withContext(Dispatchers.IO) {
+    suspend fun <T> exclusive(block: () -> T): T = withOwnedDispatcherResult(Dispatchers.IO) { ownership ->
         processMutex.withLock {
             ensureDirectory()
+            validateFile(lockFile)
             RandomAccessFile(lockFile, "rw").use { randomAccess ->
+                validateFile(lockFile)
                 secureFile(lockFile)
-                randomAccess.channel.lock().use { block() }
+                randomAccess.channel.lock().use { ownership.retain(block()) }
             }
         }
     }
 
-    fun exists(): Boolean = target.isFile
+    fun exists(): Boolean {
+        validateFile(target)
+        return target.isFile
+    }
 
     fun read(): ByteArray {
+        validateFile(target)
         val length = target.length()
         if (length <= 0L || length > MAX_ENVELOPE_BYTES) {
             throw IOException("invalid seed envelope size")
         }
         return FileInputStream(target).use { input ->
-            input.readBytes().also { bytes ->
-                if (bytes.size.toLong() != length) throw IOException("seed envelope changed")
+            val bytes = ByteArray(length.toInt())
+            try {
+                DataInputStream(input).readFully(bytes)
+                if (input.read() != -1) throw IOException("seed envelope changed")
+                bytes
+            } catch (failure: Exception) {
+                bytes.fill(0)
+                throw failure
             }
         }
     }
@@ -407,21 +439,25 @@ internal class AtomicSeedEnvelopeFile(
         if (bytes.isEmpty() || bytes.size > MAX_ENVELOPE_BYTES) {
             throw IOException("invalid seed envelope size")
         }
+        validateFile(target)
         if (target.exists()) {
             throw SdkException.InvalidState("provision seed", "already provisioned")
         }
         val temporary = File(directory, "$fileName.tmp")
+        validateFile(temporary)
         if (temporary.exists() && !temporary.delete()) {
             throw IOException("stale temporary envelope cannot be removed")
         }
         try {
             if (!temporary.createNewFile()) throw IOException("temporary envelope already exists")
+            validateFile(temporary)
             secureFile(temporary)
             FileOutputStream(temporary).use { output ->
                 output.write(bytes)
                 output.flush()
                 output.fd.sync()
             }
+            validateFile(target)
             if (target.exists() || !temporary.renameTo(target)) {
                 throw IOException("seed envelope atomic rename failed")
             }
@@ -433,6 +469,7 @@ internal class AtomicSeedEnvelopeFile(
     }
 
     fun deleteIfPresent(): Unit {
+        validateFile(target)
         if (target.exists() && !target.delete()) {
             throw IOException("seed envelope could not be deleted")
         }
@@ -444,6 +481,7 @@ internal class AtomicSeedEnvelopeFile(
             throw IOException("seed directory cannot be created")
         }
         if (!directory.isDirectory) throw IOException("seed directory is invalid")
+        secureDirectory(directory)
     }
 
     internal companion object {
@@ -456,6 +494,16 @@ internal class AndroidKeystoreSeedCipher(
     private val alias: String,
     private val configuration: AndroidKeystoreSeedStoreConfiguration,
 ) : SeedEnvelopeCipher {
+    fun keyExists(): Boolean = keyStore.containsAlias(alias)
+
+    /** Used for durable state: an existing envelope must never acquire a replacement key. */
+    fun encryptWithExistingKey(plaintext: ByteArray, aad: ByteArray): EncryptedSeed {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, loadExistingKey())
+        cipher.updateAAD(aad)
+        return EncryptedSeed(cipher.iv.copyOf(), cipher.doFinal(plaintext))
+    }
+
     private val keyStore: KeyStore
         get() = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
 
@@ -497,7 +545,7 @@ internal class AndroidKeystoreSeedCipher(
             return existing as? SecretKey ?: throw IOException("invalid Keystore entry")
         }
         return when (configuration.strongBoxPolicy) {
-            StrongBoxPolicy.DISABLED -> generateKey(strongBox = false)
+            StrongBoxPolicy.DISABLED -> generateKey()
             StrongBoxPolicy.REQUIRED -> {
                 if (Build.VERSION.SDK_INT < 28) {
                     throw SdkException.Unsupported("StrongBox requires Android API 28")
@@ -507,17 +555,16 @@ internal class AndroidKeystoreSeedCipher(
             }
             StrongBoxPolicy.PREFERRED_WITH_KEYSTORE_FALLBACK -> {
                 if (Build.VERSION.SDK_INT >= 28) {
-                    Api28.generateStrongBox(::newKeyBuilder) ?: generateKey(strongBox = false)
+                    Api28.generateStrongBox(::newKeyBuilder) ?: generateKey()
                 } else {
-                    generateKey(strongBox = false)
+                    generateKey()
                 }
             }
         }
     }
 
-    private fun generateKey(strongBox: Boolean): SecretKey {
+    private fun generateKey(): SecretKey {
         val builder = newKeyBuilder()
-        if (strongBox) Api28.enableStrongBox(builder)
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         generator.init(builder.build())
         return generator.generateKey()
@@ -565,7 +612,7 @@ internal class AndroidKeystoreSeedCipher(
         const val GCM_TAG_BITS: Int = 128
     }
 
-    @TargetApi(28)
+    @RequiresApi(28)
     private object Api28 {
         fun enableStrongBox(builder: KeyGenParameterSpec.Builder): Unit {
             builder.setIsStrongBoxBacked(true)
@@ -591,7 +638,7 @@ internal class AndroidKeystoreSeedCipher(
         }
     }
 
-    @TargetApi(30)
+    @RequiresApi(30)
     private object Api30 {
         fun setAuthentication(
             builder: KeyGenParameterSpec.Builder,

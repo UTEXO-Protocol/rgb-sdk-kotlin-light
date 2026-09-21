@@ -1,6 +1,7 @@
 package com.utexo.rgb.sdk.internal
 
 import com.utexo.rgb.sdk.AccountKind
+import com.utexo.rgb.sdk.AssetAmount
 import com.utexo.rgb.sdk.CreateUtxosOutputPlan
 import com.utexo.rgb.sdk.CreateUtxosRequest
 import com.utexo.rgb.sdk.LocalSigningPolicy
@@ -24,13 +25,29 @@ internal interface LocalSigningEngine : AutoCloseable {
 
     suspend fun verifyReservedAddress(reservation: ReservedAddress): Unit
 
-    suspend fun decodeRgbInvoice(invoice: RgbInvoice): InvoiceData
+    suspend fun decodeRgbInvoice(invoice: RgbInvoice): LocallyDecodedInvoice
 
     suspend fun validateAndSign(
         prepared: PreparedTransaction,
         intent: LocalOperationIntent,
     ): LocalSigningResult
+
+    /** Revalidates original preparation under today's policy without creating a signature. */
+    suspend fun validateRetainedSigning(
+        prepared: PreparedTransaction,
+        intent: LocalOperationIntent,
+    ): LocalValidationReport
 }
+
+/** Retains raw intent evidence that the compatibility-shaped public projection can omit. */
+internal data class LocallyDecodedInvoice(
+    val data: InvoiceData,
+    val witness: Boolean,
+    val encodedState: InvoiceEncodedState,
+    val encodedAmount: AssetAmount?,
+)
+
+internal enum class InvoiceEncodedState { OMITTED, AMOUNT, NON_FUNGIBLE }
 
 internal sealed interface LocalOperationIntent {
     val network: Network

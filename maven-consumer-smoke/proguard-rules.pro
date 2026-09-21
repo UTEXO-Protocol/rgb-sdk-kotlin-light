@@ -1,0 +1,1 @@
+-keep class com.utexo.rgb.sdk.mavenconsumer.PackagedConsumer { public *; }

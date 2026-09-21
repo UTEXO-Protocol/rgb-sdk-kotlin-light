@@ -9,6 +9,35 @@ import kotlin.test.assertIs
 
 internal class OperationCheckpointCodecTest {
     @Test
+    fun `compact terminal receipt matches cross-platform v2 golden and cannot revive`(): Unit {
+        val expected = Base64.getDecoder().decode(
+            "VVRYT1BDSEsAAAACAAAACHdhbGxldC0xAAAADWlkZW1wb3RlbmN5LTEAAABAZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZAAAAAdzZW5kQnRjAAAACHRlcm1pbmFsAAAAC29wZXJhdGlvbi0xAAMAAAALb3BlcmF0aW9uLTFSUNDMLn6hpZ09w6zr8hXk1Do4zIX1dfSNTTTvNeq6jQ==",
+        )
+        val receipt = OperationCheckpoint(
+            WalletId.of("wallet-1"), IdempotencyKey.of("idempotency-1"), RequestHash.ofLowercaseHex("d".repeat(64)),
+            OperationKind.SEND_BTC, OperationPhase.TERMINAL, OperationId.of("operation-1"),
+            terminalOutcome = OperationTerminalOutcome.Expired(OperationId.of("operation-1")),
+        )
+        assertContentEquals(expected, OperationCheckpointCodec.encode(receipt))
+        assertEquals(receipt, OperationCheckpointCodec.decode(expected))
+        assertFailsWith<SdkException.InvalidArgument> { receipt.copy(phase = OperationPhase.SUBMITTING, terminalOutcome = null) }
+    }
+
+    @Test
+    fun `compact successful receipt retains transaction validation and rejects mismatched txid`(): Unit {
+        val compact = signedCheckpoint(OperationTerminalOutcome.Succeeded(
+            BackendOperationResult.SendBtc(TEST_OPERATION_ID, TEST_TXID),
+        )).compactTerminal()
+        val decoded = OperationCheckpointCodec.decode(OperationCheckpointCodec.encode(compact))
+        assertEquals(testValidation(), decoded.signedPayload?.validation)
+        assertEquals("", decoded.signedPayload?.signedPsbtBase64)
+        assertFailsWith<SdkException.InvalidArgument> {
+            decoded.copy(terminalOutcome = OperationTerminalOutcome.Succeeded(
+                BackendOperationResult.SendBtc(TEST_OPERATION_ID, TransactionId.of("e".repeat(64))),
+            ))
+        }
+    }
+    @Test
     fun `created checkpoint encoding matches the cross-platform golden vector`(): Unit {
         val checkpoint = OperationCheckpoint(
             walletId = WalletId.of("wallet-1"),

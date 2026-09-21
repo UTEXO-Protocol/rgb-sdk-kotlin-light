@@ -1,12 +1,18 @@
 package com.utexo.rgb.sdk
 
+import android.content.Context
 import com.utexo.rgb.sdk.internal.EpochSecondsSource
 import com.utexo.rgb.sdk.internal.LocalSigningEngine
+import com.utexo.rgb.sdk.internal.LocallyDecodedInvoice
+import com.utexo.rgb.sdk.internal.InvoiceEncodedState
 import com.utexo.rgb.sdk.internal.LocalSigningEngineFactory
+import com.utexo.rgb.sdk.internal.GatewaySigningContext
 import com.utexo.rgb.sdk.internal.OperationCoordinator
 import com.utexo.rgb.sdk.internal.UniFfiLocalSigningEngineFactory
 import com.utexo.rgb.sdk.internal.backendCall
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /**
  * High-level wallet facade matching the semantic surface of `rgb-sdk-rn`.
@@ -23,6 +29,46 @@ public class UTEXOWallet internal constructor(
     private val signingEngineFactory: LocalSigningEngineFactory,
     epochSecondsSource: EpochSecondsSource,
 ) {
+    public companion object {
+        /**
+         * Creates an app-facing wallet with Keystore seed custody, an authenticated durable journal,
+         * and exclusive storage ownership. Call [init], then [unlock]. Provision the seed first using
+         * [AndroidKeystoreSeedStore] with the same wallet identity and storage policy. Always call
+         * [destroy] before opening a replacement instance; shutdown intentionally retains ownership.
+         */
+        public suspend fun create(
+            context: Context,
+            configuration: WalletConfiguration,
+            service: WalletServiceConfiguration,
+            storage: WalletStorageConfiguration = WalletStorageConfiguration(),
+        ): UTEXOWallet {
+            val gatewayConfiguration = service.gatewayConfiguration(configuration.network)
+            val journal = EncryptedOperationJournal.open(
+                configuration,
+                ProtectedWalletFile.forAndroid(
+                    context, configuration.walletId, configuration.network, "journal", protectRollback = true,
+                    authenticatedServiceOrigin = gatewayConfiguration.baseUrl,
+                ),
+            )
+            try {
+                val backend = RgbLightningNodeGatewayBackend(gatewayConfiguration).apply {
+                    configureCredentials(service.apiKeyProvider, journal::bindServiceIdentity)
+                }
+                return UTEXOWallet(
+                    configuration = configuration,
+                    backend = backend,
+                    keyProvider = AndroidKeystoreSeedStore(
+                        context, configuration.walletId, configuration.network, storage.seedStoreConfiguration,
+                    ),
+                    operationJournal = journal,
+                )
+            } catch (failure: Exception) {
+                journal.close()
+                throw failure
+            }
+        }
+    }
+
     private enum class Lifecycle {
         NEW,
         INITIALIZED,
@@ -32,6 +78,7 @@ public class UTEXOWallet internal constructor(
     }
 
     private val gate: Mutex = Mutex()
+    private val now: EpochSecondsSource = epochSecondsSource
     private val operationCoordinator: OperationCoordinator = OperationCoordinator(
         configuration = configuration,
         backend = backend,
@@ -116,7 +163,9 @@ public class UTEXOWallet internal constructor(
     public suspend fun shutdown(): Unit = exclusive { shutdownLocked(dispose = false) }
 
     /** Idempotently closes this instance. This does not delete wallet or backend data. */
-    public suspend fun destroy(): Unit = exclusive { shutdownLocked(dispose = true) }
+    public suspend fun destroy(): Unit = withContext(NonCancellable) {
+        exclusive { shutdownLocked(dispose = true) }
+    }
 
     /** RN compatibility alias for [destroy]. */
     public suspend fun dispose(): Unit = destroy()
@@ -139,18 +188,23 @@ public class UTEXOWallet internal constructor(
 
     public suspend fun estimateFeeRate(blocks: BlockCount): FeeEstimate =
         withUnlocked("estimateFeeRate") { context, _ ->
-            backendCall { backend.estimateFeeRate(context, blocks) }
+            if (blocks.value !in 1..1_008) {
+                throw SdkException.InvalidArgument("blocks", "must be between 1 and 1008")
+            }
+            val estimate = backendCall { backend.estimateFeeRate(context, blocks) }
+            if (estimate.targetBlocks != blocks) {
+                throw SdkException.BackendProtocolMismatch("fee estimate has a different confirmation target")
+            }
+            estimate
         }
 
     public suspend fun sendBtc(request: SendBtcRequest): TransactionId =
         withUnlocked("sendBtc") { context, signer ->
-            requireLocalSigning(signer, OperationKind.SEND_BTC)
             operationCoordinator.sendBtc(context, signer, request)
         }
 
     public suspend fun createUtxos(request: CreateUtxosRequest = CreateUtxosRequest()): CreateUtxosResult =
         withUnlocked("createUtxos") { context, signer ->
-            requireLocalSigning(signer, OperationKind.CREATE_UTXOS)
             operationCoordinator.createUtxos(context, signer, request)
         }
 
@@ -176,25 +230,27 @@ public class UTEXOWallet internal constructor(
     public suspend fun blindReceive(request: InvoiceRequest): InvoiceReceiveData =
         withUnlocked("blindReceive") { context, signer ->
             requireLocalRgbInvoiceParsing(signer)
+            val started = invoiceClock()
             val response = backendCall { backend.blindReceive(context, request) }
             val decoded = signer.decodeRgbInvoice(response.invoice)
-            verifyReceivedInvoice(request, response, decoded)
+            verifyReceivedInvoice(request, response, decoded, witness = false, started, invoiceClock())
             response
         }
 
     public suspend fun witnessReceive(request: InvoiceRequest): InvoiceReceiveData =
         withUnlocked("witnessReceive") { context, signer ->
             requireLocalRgbInvoiceParsing(signer)
+            val started = invoiceClock()
             val response = backendCall { backend.witnessReceive(context, request) }
             val decoded = signer.decodeRgbInvoice(response.invoice)
-            verifyReceivedInvoice(request, response, decoded)
+            verifyReceivedInvoice(request, response, decoded, witness = true, started, invoiceClock())
             response
         }
 
     public suspend fun decodeRgbInvoice(invoice: RgbInvoice): InvoiceData =
         withUnlocked("decodeRgbInvoice") { _, signer ->
             requireLocalRgbInvoiceParsing(signer)
-            signer.decodeRgbInvoice(invoice).also { verifyInvoiceNetwork(it) }
+            signer.decodeRgbInvoice(invoice).data.also { verifyInvoiceNetwork(it) }
         }
 
     /** RN acronym-compatible alias; prefer [decodeRgbInvoice] in new Kotlin code. */
@@ -203,23 +259,25 @@ public class UTEXOWallet internal constructor(
     public suspend fun onchainReceive(request: OnchainReceiveRequest): OnchainReceiveResponse =
         withUnlocked("onchainReceive") { context, signer ->
             requireLocalRgbInvoiceParsing(signer)
+            val started = invoiceClock()
             val response = backendCall { backend.onchainReceive(context, request) }
             val decoded = signer.decodeRgbInvoice(response.invoice)
-            verifyOnchainReceive(request, response, decoded)
+            verifyOnchainReceive(request, response, decoded, started, invoiceClock())
             response
         }
 
     public suspend fun onchainSend(request: OnchainSendRequest): OnchainSendResponse =
         withUnlocked("onchainSend") { context, signer ->
-            requireLocalSigning(signer, OperationKind.ONCHAIN_SEND)
-            requireLocalRgbInvoiceParsing(signer)
-            verifyOutgoingInvoice(request, signer.decodeRgbInvoice(request.invoice))
-            operationCoordinator.onchainSend(context, signer, request)
+            operationCoordinator.onchainSend(context, signer, request) {
+                requireLocalRgbInvoiceParsing(signer)
+                verifyOutgoingInvoice(request, signer.decodeRgbInvoice(request.invoice))
+            }
         }
 
     /**
      * RN-parity inflation entry point. It intentionally fails closed until the
-     * native core and backend expose an exact inflation transition contract.
+     * native core and backend expose an exact Bitcoin authorization and
+     * durable inflation-operation contract. Full RGB validation is separate.
      */
     public suspend fun inflate(request: InflateRequest): TransactionId =
         withUnlocked("inflate") { _, signer ->
@@ -227,7 +285,7 @@ public class UTEXOWallet internal constructor(
             val boundedRequest = request
             requireLocalSigning(signer, OperationKind.INFLATE)
             throw SdkException.Unsupported(
-                "backend-bound inflation preparation and RGB transition validation",
+                "backend-bound inflation preparation, local Bitcoin authorization, and durable completion",
             )
         }
 
@@ -354,6 +412,7 @@ public class UTEXOWallet internal constructor(
             validateCapabilities(candidate.capabilities)
             val identity = candidate.identity()
             validateIdentity(identity)
+            (operationJournal as? EncryptedOperationJournal)?.bindIdentity(identity)
             backendCall {
                 backend.registerWallet(
                     RegisterWalletRequest(
@@ -411,6 +470,13 @@ public class UTEXOWallet internal constructor(
             localSigningOperations = emptySet(),
         )
         lifecycle = if (dispose) Lifecycle.DISPOSED else Lifecycle.SHUTDOWN
+        if (dispose) {
+            try {
+                (operationJournal as? EncryptedOperationJournal)?.close()
+            } catch (exception: Exception) {
+                failure = failure ?: exception
+            }
+        }
         failure?.let { throw it }
     }
 
@@ -418,7 +484,7 @@ public class UTEXOWallet internal constructor(
         if (capabilities.derivationProfile != WalletCapabilities.DERIVATION_PROFILE_V1) {
             throw SdkException.BackendProtocolMismatch("local derivation profile is incompatible")
         }
-        if (capabilities.signingProfile != WalletCapabilities.SIGNING_PROFILE_V1) {
+        if (capabilities.signingProfile !in setOf(WalletCapabilities.SIGNING_PROFILE_V1, GatewaySigningContext.PROFILE)) {
             throw SdkException.BackendProtocolMismatch("local signing profile is incompatible")
         }
     }
@@ -461,9 +527,16 @@ public class UTEXOWallet internal constructor(
     private fun verifyReceivedInvoice(
         request: InvoiceRequest,
         response: InvoiceReceiveData,
-        decoded: InvoiceData,
+        local: LocallyDecodedInvoice,
+        witness: Boolean,
+        started: Long,
+        finished: Long,
     ): Unit {
-        verifyInvoiceIntent(request, decoded)
+        val decoded = local.data
+        verifyInvoiceIntent(request, local, started, finished)
+        if (local.witness != witness || decoded.invoice != response.invoice) {
+            throw SdkException.BackendProtocolMismatch("received invoice mode or encoded value does not match")
+        }
         if (decoded.recipientId != response.recipientId) {
             throw SdkException.BackendProtocolMismatch("received invoice recipient ID does not match")
         }
@@ -475,10 +548,16 @@ public class UTEXOWallet internal constructor(
     private fun verifyOnchainReceive(
         request: OnchainReceiveRequest,
         response: OnchainReceiveResponse,
-        decoded: InvoiceData,
+        local: LocallyDecodedInvoice,
+        started: Long,
+        finished: Long,
     ): Unit {
-        verifyInvoiceIntent(request.asInvoiceRequest(), decoded)
-        if (response.recipientId != null && decoded.recipientId != response.recipientId) {
+        val decoded = local.data
+        verifyInvoiceIntent(request.asInvoiceRequest(), local, started, finished)
+        if (local.witness != request.witness || decoded.invoice != response.invoice) {
+            throw SdkException.BackendProtocolMismatch("onchain invoice mode or encoded value does not match")
+        }
+        if (response.recipientId == null || decoded.recipientId != response.recipientId) {
             throw SdkException.BackendProtocolMismatch("onchain invoice recipient ID does not match")
         }
         if (response.expirationTimestamp != null &&
@@ -488,30 +567,82 @@ public class UTEXOWallet internal constructor(
         }
     }
 
-    private fun verifyOutgoingInvoice(request: OnchainSendRequest, decoded: InvoiceData): Unit {
+    private fun verifyOutgoingInvoice(request: OnchainSendRequest, local: LocallyDecodedInvoice): Unit {
+        val decoded = local.data
         verifyInvoiceNetwork(decoded)
-        if (request.assetId != null && request.assetId != decoded.assetId) {
+        if (decoded.invoice != request.invoice) {
+            throw SdkException.PolicyRejected("locally decoded RGB invoice differs from the request")
+        }
+        if (decoded.expirationTimestamp?.value?.let { it <= invoiceClock() } == true) {
+            throw SdkException.PolicyRejected("RGB invoice has expired")
+        }
+        if (decoded.assignment.type !in setOf(AssignmentType.FUNGIBLE, AssignmentType.ANY) ||
+            (decoded.assignmentName != null && decoded.assignmentName != "assetOwner")) {
+            throw SdkException.PolicyRejected("RGB invoice assignment is not a fungible payment")
+        }
+        if (request.assetId == null && decoded.assetId == null) {
+            throw SdkException.PolicyRejected("RGB send requires an explicit asset in the request or invoice")
+        }
+        if (request.assetId != null && decoded.assetId != null && request.assetId != decoded.assetId) {
             throw SdkException.PolicyRejected("RGB invoice asset does not match the caller request")
         }
-        decoded.assignment.amount?.let { invoiceAmount ->
-            if (invoiceAmount != request.amount) {
-                throw SdkException.PolicyRejected("RGB invoice amount does not match the caller request")
-            }
+        // The RN-shaped projection is lossy: omitted amounts can look like
+        // Fungible(0), and explicit generic amounts can look like Any/null.
+        val amountMatches = when (local.encodedState) {
+            InvoiceEncodedState.OMITTED -> local.encodedAmount == null
+            InvoiceEncodedState.AMOUNT -> local.encodedAmount == request.amount
+            InvoiceEncodedState.NON_FUNGIBLE -> false
+        }
+        if (!amountMatches) {
+            throw SdkException.PolicyRejected("RGB invoice amount does not match the caller request")
+        }
+        if (!local.witness && request.witnessData != null) {
+            throw SdkException.PolicyRejected("blind RGB recipient cannot have witness payment data")
         }
     }
 
-    private fun verifyInvoiceIntent(request: InvoiceRequest, decoded: InvoiceData): Unit {
+    private fun verifyInvoiceIntent(request: InvoiceRequest, local: LocallyDecodedInvoice, started: Long, finished: Long): Unit {
+        val decoded = local.data
         verifyInvoiceNetwork(decoded)
-        if (request.assetId != null && request.assetId != decoded.assetId) {
+        if (request.assetId != decoded.assetId || (request.assetId == null && decoded.assetSchema != null)) {
             throw SdkException.BackendProtocolMismatch("invoice asset does not match the receive request")
         }
-        if (request.amount != null && request.amount != decoded.assignment.amount) {
+        if (decoded.assignmentName != null && decoded.assignmentName != "assetOwner") {
+            throw SdkException.BackendProtocolMismatch("invoice assignment does not match the receive request")
+        }
+        // RGB-lib's public projection can show Any/null for an explicitly encoded
+        // amount, or Fungible(0) for an omitted amount under an NIA schema. Bind
+        // the original encoded state, never reverse-engineer it from that projection.
+        val amountMatches = if (request.amount == null) {
+            local.encodedState == InvoiceEncodedState.OMITTED && local.encodedAmount == null
+        } else {
+            local.encodedState == InvoiceEncodedState.AMOUNT && local.encodedAmount == request.amount &&
+                decoded.assignment.type == AssignmentType.FUNGIBLE && decoded.assignment.amount == request.amount
+        }
+        if (!amountMatches) {
             throw SdkException.BackendProtocolMismatch("invoice amount does not match the receive request")
         }
+        val expiration = decoded.expirationTimestamp?.value
+        if (finished < started || expiration?.let { it <= finished } == true) {
+            throw SdkException.BackendProtocolMismatch("received invoice is expired or local clock changed")
+        }
+        val duration = request.duration?.value ?: 86_400L
+        if (duration > Long.MAX_VALUE - finished || expiration == null ||
+            expiration !in (started + duration)..(finished + duration)) {
+            throw SdkException.BackendProtocolMismatch("invoice expiration does not match the receive request")
+        }
+    }
+
+    private fun invoiceClock(): Long = now.now().also {
+        if (it < 0) throw SdkException.InternalInvariantViolation("local invoice clock is invalid")
     }
 
     private fun verifyInvoiceNetwork(decoded: InvoiceData): Unit {
-        if (decoded.network != configuration.network) {
+        // RGB invoice wire syntax names the chain, not the application-level
+        // UTEXO alias. Preserve the decoded Signet label while accepting only
+        // this one documented alias; testnet/testnet4/regtest stay distinct.
+        if (decoded.network != configuration.network &&
+            !(configuration.network == Network.UTEXO && decoded.network == Network.SIGNET)) {
             throw SdkException.WrongNetwork(configuration.network, decoded.network)
         }
     }

@@ -19,13 +19,21 @@ public enum class OperationPhase(public val wireValue: String) {
  * encrypt it at rest and must never log or index [signedPsbtBase64].
  */
 @WalletInfrastructureApi
-public class SignedOperationPayload(
+public class SignedOperationPayload private constructor(
     public val signedPsbtBase64: String,
     public val validation: LocalValidationReport,
+    private val compactReceipt: Boolean,
 ) {
+    public constructor(signedPsbtBase64: String, validation: LocalValidationReport) :
+        this(signedPsbtBase64, validation, false)
+
     init {
-        requireBoundedText("signedPsbt", signedPsbtBase64, 5_400_000)
+        if (!compactReceipt) requireBoundedText("signedPsbt", signedPsbtBase64, 5_400_000)
     }
+
+    internal val isTerminalReceipt: Boolean get() = compactReceipt
+
+    internal fun terminalReceipt(): SignedOperationPayload = SignedOperationPayload("", validation, true)
 
     override fun toString(): String =
         "SignedOperationPayload(unsignedTxid=${validation.unsignedTxid}, signedPsbt=[REDACTED])"
@@ -90,8 +98,10 @@ public sealed interface OperationTerminalOutcome {
  * Durable recovery state for a single caller intent.
  *
  * PREPARED and later checkpoints retain the exact backend preparation.
- * SIGNED and later checkpoints retain the exact signed bytes. This prevents a
+ * SIGNED and SUBMITTING checkpoints retain the exact signed bytes. This prevents a
  * process restart from preparing, signing, or submitting a different payment.
+ * Definitive terminal receipts may discard both PSBTs but retain identity,
+ * outcome and local validation forever; they can never become submit-capable.
  */
 @WalletInfrastructureApi
 public data class OperationCheckpoint(
@@ -110,14 +120,15 @@ public data class OperationCheckpoint(
         get() = (terminalOutcome as? OperationTerminalOutcome.Succeeded)?.result
 
     init {
-        val requiresPrepared = phase != OperationPhase.CREATED
+        val compactTerminal = phase == OperationPhase.TERMINAL && preparedTransaction == null
+        val requiresPrepared = phase != OperationPhase.CREATED && !compactTerminal
         if (requiresPrepared != (preparedTransaction != null)) {
             throw SdkException.InvalidArgument(
                 "preparedTransaction",
                 "must be present after the created phase",
             )
         }
-        if (requiresPrepared != (operationId != null)) {
+        if ((phase != OperationPhase.CREATED) != (operationId != null)) {
             throw SdkException.InvalidArgument(
                 "operationId",
                 "must be present after the created phase",
@@ -132,6 +143,11 @@ public data class OperationCheckpoint(
                 "signedPayload",
                 "does not match the checkpoint phase and terminal outcome",
             )
+        }
+        if ((signedPayload?.isTerminalReceipt == true && !compactTerminal) ||
+            (compactTerminal && signedPayload != null && !signedPayload.isTerminalReceipt)
+        ) {
+            throw SdkException.InvalidArgument("signedPayload", "compact receipt requires a terminal checkpoint")
         }
         if ((phase == OperationPhase.TERMINAL) != (terminalOutcome != null)) {
             throw SdkException.InvalidArgument(
@@ -175,6 +191,12 @@ public data class OperationCheckpoint(
     }
 }
 
+internal fun OperationCheckpoint.compactTerminal(): OperationCheckpoint =
+    if (phase != OperationPhase.TERMINAL || preparedTransaction == null) this else copy(
+        preparedTransaction = null,
+        signedPayload = signedPayload?.terminalReceipt(),
+    )
+
 /**
  * Persistence boundary for crash-safe idempotency. Production implementations
  * must commit [save] atomically and encrypt storage according to app policy.
@@ -208,7 +230,7 @@ public class InMemoryOperationJournal : OperationJournal {
         val current = checkpoints[key]
         if (current != null) {
             if (current.phase == OperationPhase.TERMINAL) {
-                if (sameCheckpoint(current, checkpoint)) return@withLock
+                if (sameCheckpoint(current.compactTerminal(), checkpoint.compactTerminal())) return@withLock
                 throw SdkException.InternalInvariantViolation(
                     "terminal operation checkpoint is immutable",
                 )
@@ -256,6 +278,8 @@ private fun sameCheckpoint(left: OperationCheckpoint, right: OperationCheckpoint
         left.operationKind == right.operationKind &&
         left.phase == right.phase &&
         left.operationId == right.operationId &&
+        (left.preparedTransaction == null) == (right.preparedTransaction == null) &&
+        (left.signedPayload == null) == (right.signedPayload == null) &&
         samePreparedTransaction(left.preparedTransaction, right.preparedTransaction) &&
         sameSignedPayload(left.signedPayload, right.signedPayload) &&
         left.terminalOutcome == right.terminalOutcome

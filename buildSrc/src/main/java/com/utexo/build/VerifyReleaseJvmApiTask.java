@@ -172,6 +172,23 @@ public abstract class VerifyReleaseJvmApiTask extends DefaultTask {
                 secretAccessor.exitCode != 0,
                 "Gateway bearer-token accessor is callable"
         );
+
+        CompileResult recoveryBypass = compile(
+                compiler,
+                classpath,
+                "GatewayRecoveryProbe",
+                "import com.utexo.rgb.sdk.*;\n" +
+                        "final class GatewayRecoveryProbe {\n" +
+                        "  Object recover(RgbLightningNodeGatewayBackend backend, BackendContext context,\n" +
+                        "                 OperationCheckpoint checkpoint, SendBtcRequest request) {\n" +
+                        "    return backend.getOperationForRecovery$sdk(context, checkpoint, request, null);\n" +
+                        "  }\n" +
+                        "}\n"
+        );
+        requireResult(
+                recoveryBypass.exitCode != 0,
+                "Internal checkpoint-aware recovery is callable from Java"
+        );
     }
 
     private void verifyRootInternalInventory() throws IOException {

@@ -1,5 +1,7 @@
 package com.utexo.rgb.sdk
 
+import com.utexo.rgb.sdk.internal.RequestHasher
+import com.utexo.rgb.sdk.internal.GatewayCreateUtxosPlanExtractor
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -8,6 +10,8 @@ import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -51,10 +55,11 @@ public class RgbLightningNodeGatewayConfiguration(
     /** Enables HTTP only for loopback and the Android emulator host alias. */
     public val allowInsecureLocalDevelopment: Boolean = false,
     /**
-     * Enables the provisional PR #174 send-BTC prepare/complete mapping.
+     * Enables provisional PR #174 BTC/create-UTXO transport qualification.
      *
-     * Keep this false in production until UTEXO freezes the exact PSBT profile,
-     * publishes canonical fixtures, and resolves gateway idempotency semantics.
+     * Keep this false in production until the actual deployment is qualified
+     * and gateway completion/idempotency durability is resolved. Create also
+     * requires the private additive local signing profile, not the app factory.
      * Read-only gateway operations do not require this opt-in.
      */
     public val allowUnverifiedPsbtProfile: Boolean = false,
@@ -162,20 +167,28 @@ public class RgbLightningNodeGatewayConfiguration(
  *
  * The current adapter enables only response shapes that map without inventing
  * missing data: initialization, xpub registration, BTC/asset balances, and
- * BTC send prepare/complete only when
+ * BTC/create prepare/complete only when
  * [RgbLightningNodeGatewayConfiguration.allowUnverifiedPsbtProfile] is
- * explicitly enabled. Address, UTXO, transfer, receive, sync/refresh,
- * issuance, RGB send, and create-UTXO calls retain the
- * fail-closed defaults on [WalletBackend]. The gateway currently has no
- * operation-status route, so [getOperation] also fails closed.
+ * explicitly enabled. Sync/refresh await the gateway's combined BTC/RGB sync.
+ * Onchain receive returns exact server state for local invoice validation.
+ * Address, UTXO, transfer, lower-level blind/witness receive,
+ * issuance and RGB send calls retain the fail-closed defaults on [WalletBackend].
+ * BTC/create outcome recovery uses the
+ * operation-status route only with retained journal evidence and the original
+ * request; the evidence-free [getOperation] entry point remains unsupported.
  */
 @WalletInfrastructureApi
 public class RgbLightningNodeGatewayBackend private constructor(
     private val configuration: RgbLightningNodeGatewayConfiguration,
     private val httpClient: OkHttpClient,
     private val nowMillis: () -> Long,
+    private val createUtxosPlanExtractor: suspend (String, Network) -> CreateUtxosOutputPlan,
 ) : WalletBackend {
+    private var apiKeyProvider: WalletAPIKeyProvider? = null
+    private var bindServiceIdentity: (suspend (String, String) -> Unit)? = null
     private val sessionGate: Mutex = Mutex()
+    private val credentialGate: Mutex = Mutex()
+    private var validatedAuthorizationHash: String? = null
 
     @Volatile
     private var boundWalletId: WalletId? = null
@@ -190,11 +203,22 @@ public class RgbLightningNodeGatewayBackend private constructor(
         configuration,
         newHttpClient(configuration),
         System::currentTimeMillis,
+        GatewayCreateUtxosPlanExtractor::extract,
     )
+
+    @JvmSynthetic
+    internal fun configureCredentials(
+        apiKeyProvider: WalletAPIKeyProvider,
+        bindServiceIdentity: (suspend (String, String) -> Unit)? = null,
+    ): Unit {
+        check(this.apiKeyProvider == null && activeSession == null)
+        this.apiKeyProvider = apiKeyProvider
+        this.bindServiceIdentity = bindServiceIdentity
+    }
 
     public override suspend fun preflightOperation(operation: OperationKind): Unit {
         when (operation) {
-            OperationKind.SEND_BTC -> requireUnverifiedPsbtProfileEnabled()
+            OperationKind.SEND_BTC, OperationKind.CREATE_UTXOS -> requireUnverifiedPsbtProfileEnabled()
             else -> throw SdkException.Unsupported(
                 "PR #174 gateway ${operation.wireValue}",
             )
@@ -261,6 +285,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
                     )
                 }
             }
+            bindServiceIdentity?.invoke(configuration.baseUrl, userId)
             boundWalletId = request.walletId
             boundGatewayUserId = userId
 
@@ -347,6 +372,89 @@ public class RgbLightningNodeGatewayBackend private constructor(
         return response.body.requiredObject("btc").toBtcBalance(response.correlationId)
     }
 
+    /** Both facade methods await the gateway's combined BTC sync and RGB refresh. */
+    override suspend fun syncWallet(context: BackendContext): SyncResult {
+        requireContext(context)
+        val response = requestJson(
+            method = "POST", path = "/v1/wallet/sync", expectedStatusCode = 200,
+            body = buildJsonObject { },
+        )
+        response.body.requireKeys("sync", setOf("status"))
+        if (response.body.requiredString("status", 16) != "ok") {
+            throw SdkException.BackendProtocolMismatch("gateway did not confirm completed sync", correlationId = response.correlationId)
+        }
+        val completedMillis = nowMillis()
+        if (completedMillis !in 0L..MAX_SAFE_JSON_INTEGER_VALUE) {
+            throw SdkException.InternalInvariantViolation("local completion clock is invalid")
+        }
+        // The route awaits both operations but returns no chain height/server timestamp.
+        return SyncResult(completedAt = UnixSeconds.of(completedMillis / 1_000), tipHeight = null)
+    }
+
+    override suspend fun refreshWallet(context: BackendContext): SyncResult = syncWallet(context)
+
+    /**
+     * Creates receive state in the trusted gateway wallet. The facade validates the
+     * returned invoice locally; this DTO cannot prove beneficiary ownership by seed.
+     */
+    override suspend fun onchainReceive(
+        context: BackendContext,
+        request: OnchainReceiveRequest,
+    ): OnchainReceiveResponse {
+        requireContext(context)
+        val duration = request.duration?.value ?: 86_400L
+        if (duration !in 60L..2_592_000L) {
+            throw SdkException.Unsupported("gateway receive duration outside 60..2592000 seconds")
+        }
+        if (request.minConfirmations.value !in 0..100) {
+            throw SdkException.Unsupported("gateway receive minConfirmations outside 0..100")
+        }
+        val amount = request.amount?.decimal?.toLongOrNull()
+        if (request.amount != null && (amount == null || amount !in 1..MAX_SAFE_JSON_INTEGER_VALUE)) {
+            throw SdkException.Unsupported("lossless gateway receive amounts above the safe JSON integer range")
+        }
+        val mode = if (request.witness) "witness" else "blind"
+        val started = receiveClock()
+        val response = requestJson(
+            method = "POST", path = "/v1/wallet/receive", expectedStatusCode = 201,
+            body = buildJsonObject {
+                put("mode", mode)
+                request.assetId?.let { put("assetId", it.value) }
+                amount?.let { put("amount", it) }
+                put("durationSeconds", duration)
+                put("minConfirmations", request.minConfirmations.value)
+            },
+        )
+        val finished = receiveClock()
+        val body = response.body
+        body.requireKeys("receive", setOf("invoice", "recipientId", "expirationTimestamp", "mode"))
+        if (body.requiredString("mode", 16) != mode || finished < started) {
+            throw SdkException.BackendProtocolMismatch("gateway receive mode or local clock changed")
+        }
+        // The wire key is required, but its schema permits null. Do not invent a
+        // timestamp: the facade always requires and validates the invoice's expiry.
+        val expiration = if (body["expirationTimestamp"] == JsonNull) null
+            else body.requiredLong("expirationTimestamp", 0, MAX_SAFE_JSON_INTEGER_VALUE)
+        if (expiration != null && (expiration !in (started + duration)..(finished + duration) || expiration <= finished)) {
+            throw SdkException.BackendProtocolMismatch("gateway receive expiration does not match requested duration and local clock")
+        }
+        return OnchainReceiveResponse(
+            invoice = RgbInvoice.of(body.requiredString("invoice", 16_384)),
+            recipientId = body.requiredString("recipientId", 1_024),
+            expirationTimestamp = expiration?.let(UnixSeconds::of),
+            batchTransferIdx = if (body.containsKey("batchTransferIdx") && body["batchTransferIdx"] != JsonNull)
+                body.requiredLong("batchTransferIdx", 0, MAX_SAFE_JSON_INTEGER_VALUE) else null,
+        )
+    }
+
+    private fun receiveClock(): Long {
+        val value = nowMillis()
+        if (value !in 0..MAX_SAFE_JSON_INTEGER_VALUE) {
+            throw SdkException.InternalInvariantViolation("local receive clock is invalid")
+        }
+        return value / 1_000L
+    }
+
     override suspend fun getAssetBalance(
         context: BackendContext,
         assetId: AssetId,
@@ -386,10 +494,9 @@ public class RgbLightningNodeGatewayBackend private constructor(
     override suspend fun prepareSendBtc(request: PrepareSendBtcRequest): PreparedTransaction {
         requireUnverifiedPsbtProfileEnabled()
         requireOperationContext(request.context)
-        if (request.request.skipSync) {
-            throw SdkException.Unsupported("PR #174 gateway sendBtc skipSync")
-        }
+        validateRequest(request.request)
         val feeRate = requireWholeGatewayFeeRate(request.request.feeRate)
+        val startedAtMillis = preparationClock()
         val requestBody = buildJsonObject {
             put("address", request.request.address.value)
             put("amountSat", request.request.amount.value)
@@ -426,10 +533,10 @@ public class RgbLightningNodeGatewayBackend private constructor(
             operationId = OperationId.of(operationIdValue),
             correlationId = response.correlationId,
         )
-        val expiresAtMillis = response.body.requiredLong("expiresAt", minimum = 1_000L)
-        val receivedAtMillis = nowMillis()
+        val expiresAtMillis = response.body.requiredLong("expiresAt", 1_000L, MAX_SAFE_JSON_INTEGER_VALUE)
+        val receivedAtMillis = preparationClock()
         val maximumTtlMillis = configuration.maximumPreparationTtlSeconds * 1_000L
-        if (receivedAtMillis < 0L || expiresAtMillis <= receivedAtMillis ||
+        if (receivedAtMillis < startedAtMillis || expiresAtMillis <= receivedAtMillis ||
             expiresAtMillis - receivedAtMillis > maximumTtlMillis
         ) {
             throw SdkException.BackendProtocolMismatch(
@@ -452,8 +559,135 @@ public class RgbLightningNodeGatewayBackend private constructor(
         )
     }
 
+    /** Deterministic gateway-domain checks, performed before journaling or acquiring credentials. */
+    @JvmSynthetic
+    internal fun validateRequest(request: SendBtcRequest): Unit {
+        requireWholeGatewayFeeRate(request.feeRate)
+        if (request.skipSync) throw SdkException.Unsupported("PR #174 gateway sendBtc skipSync")
+        if (request.amount.value < 294L) {
+            throw SdkException.InvalidArgument("amount", "gateway requires at least 294 satoshis")
+        }
+    }
+
+    @JvmSynthetic
+    internal fun validateRequest(request: CreateUtxosRequest): Unit {
+        requireWholeGatewayFeeRate(request.feeRate)
+        if (request.skipSync) throw SdkException.Unsupported("PR #174 gateway createUtxos skipSync")
+        if ((request.num ?: 5) !in 1..50) {
+            throw SdkException.InvalidArgument("num", "gateway accepts between 1 and 50 create outputs")
+        }
+        // The service accepts 294 but these owned outputs are P2TR: the local
+        // signer requires the 330-satoshi dust floor, without rounding the request.
+        if ((request.size?.value ?: 1_000L) !in 330L..4_294_967_295L) {
+            throw SdkException.InvalidArgument("size", "gateway P2TR create outputs require 330..4294967295 satoshis")
+        }
+    }
+
+    private fun preparationClock(): Long = nowMillis().also {
+        if (it !in 1L..MAX_SAFE_JSON_INTEGER_VALUE) {
+            throw SdkException.InternalInvariantViolation("local preparation clock is invalid")
+        }
+    }
+
+    override suspend fun prepareCreateUtxos(request: PrepareCreateUtxosRequest): PreparedTransaction {
+        requireUnverifiedPsbtProfileEnabled()
+        requireOperationContext(request.context)
+        validateRequest(request.request)
+        val started = preparationClock()
+        val response = requestJson(
+            method = "POST", path = "/v1/onchain/create-utxos/prepare", expectedStatusCode = 201,
+            body = buildJsonObject {
+                put("num", request.request.num ?: 5)
+                put("size", request.request.size?.value ?: 1_000L)
+                put("upTo", request.request.upTo)
+                put("feeRateSatPerVb", requireWholeGatewayFeeRate(request.request.feeRate))
+            },
+            idempotencyKey = provisionalStagedIdempotencyKey(request.context.idempotencyKey, "prepare"),
+            logicalIdempotencyKey = request.context.idempotencyKey,
+        )
+        response.body.requireKeys("preparedCreateUtxos", setOf("opId", "psbt", "intent", "expiresAt"))
+        validateCreateUtxosIntent(response, request.request)
+        val operationIdText = response.body.requiredString("opId", 36)
+        if (!CANONICAL_UUID.matches(operationIdText)) {
+            throw SdkException.BackendProtocolMismatch("gateway returned a non-canonical operation ID")
+        }
+        val operationId = OperationId.of(operationIdText)
+        val psbt = response.body.requiredString("psbt", MAX_PREPARED_PSBT_CHARACTERS)
+        requireCanonicalBase64(psbt, "prepared PSBT", operationId, response.correlationId)
+        val expiry = response.body.requiredLong("expiresAt", 1_000L, MAX_SAFE_JSON_INTEGER_VALUE)
+        val finished = preparationClock()
+        if (finished < started || expiry <= finished ||
+            expiry - finished > configuration.maximumPreparationTtlSeconds * 1_000L) {
+            throw SdkException.BackendProtocolMismatch(
+                "gateway preparation expiry is stale or exceeds the configured maximum TTL", operationId,
+            )
+        }
+        // Extraction supplies untrusted derivation hints, not authorization.
+        // The coordinator and signer must validate the exact plan against the
+        // original request, local seed and every PSBT output before signing.
+        val plan = createUtxosPlanExtractor(psbt, configuration.expectedNetwork)
+        currentCoroutineContext().ensureActive()
+        requireOperationContext(request.context)
+        validateCreateUtxosPlan(request.request, plan)
+        return PreparedTransaction(
+            operationId = operationId, idempotencyKey = request.context.idempotencyKey,
+            requestHash = request.context.requestHash, network = configuration.expectedNetwork,
+            operation = OperationKind.CREATE_UTXOS, psbtBase64 = psbt,
+            expiresAt = UnixSeconds.of(expiry / 1_000L), createUtxosOutputPlan = plan,
+            correlationId = response.correlationId,
+        )
+    }
+
+    private fun validateCreateUtxosIntent(response: GatewayJsonResponse, request: CreateUtxosRequest): Unit {
+        val intent = response.body.requiredObject("intent")
+        intent.requireKeys("intent", setOf("kind", "feeRateSatPerVb", "recipients", "asset", "utxos"))
+        val utxos = intent.requiredObject("utxos")
+        utxos.requireKeys("intent.utxos", setOf("upTo", "num", "size"))
+        if (intent.requiredString("kind", 32) != "create_utxos" ||
+            intent.requiredLong("feeRateSatPerVb", 1L, MAX_GATEWAY_FEE_RATE) != requireWholeGatewayFeeRate(request.feeRate) ||
+            intent.requiredArray("recipients").isNotEmpty() || intent["asset"] !== JsonNull ||
+            utxos.requiredBoolean("upTo") != request.upTo ||
+            utxos.requiredLong("num", 1L, 50L) != (request.num ?: 5).toLong() ||
+            utxos.requiredLong("size", 330L, 4_294_967_295L) != (request.size?.value ?: 1_000L)) {
+            throw SdkException.BackendProtocolMismatch("gateway create-UTXOs intent does not match the request")
+        }
+    }
+
+    private fun validateCreateUtxosPlan(request: CreateUtxosRequest, plan: CreateUtxosOutputPlan): Unit {
+        if (plan.outputs.size !in 1..(request.num ?: 5) ||
+            plan.outputs.any { it.account != AccountKind.COLORED || it.keychain != Keychain.EXTERNAL ||
+                it.amount.value != (request.size?.value ?: 1_000L) } ||
+            plan.outputs.map { it.index }.distinct().size != plan.outputs.size) {
+            throw SdkException.BackendProtocolMismatch("gateway create-UTXOs PSBT plan does not match the request")
+        }
+    }
+
     override suspend fun submitSignedTransaction(
         request: SignedTransactionSubmission,
+    ): BackendOperationResult = submitSignedTransactionImpl(request, null)
+
+    /** Route selection is bound to the retained preparation, never an ephemeral operation map. */
+    @JvmSynthetic
+    internal suspend fun submitSignedTransaction(
+        request: SignedTransactionSubmission,
+        prepared: PreparedTransaction,
+    ): BackendOperationResult {
+        if (prepared.operationId != request.operationId ||
+            prepared.idempotencyKey != request.context.idempotencyKey ||
+            prepared.requestHash != request.context.requestHash ||
+            prepared.network != request.context.backend.network ||
+            prepared.psbtBase64.decodeBase64()?.sha256()?.hex() != request.validation.psbtSha256) {
+            throw SdkException.BackendProtocolMismatch("submission does not match retained preparation", request.operationId)
+        }
+        if (prepared.operation !in setOf(OperationKind.SEND_BTC, OperationKind.CREATE_UTXOS)) {
+            throw SdkException.Unsupported("gateway submission for this operation kind")
+        }
+        return submitSignedTransactionImpl(request, prepared.createUtxosOutputPlan)
+    }
+
+    private suspend fun submitSignedTransactionImpl(
+        request: SignedTransactionSubmission,
+        createPlan: CreateUtxosOutputPlan?,
     ): BackendOperationResult {
         requireUnverifiedPsbtProfileEnabled()
         requireOperationContext(request.context)
@@ -474,7 +708,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
         }
         val response = requestJson(
             method = "POST",
-            path = "/v1/onchain/send-btc/complete",
+            path = if (createPlan == null) "/v1/onchain/send-btc/complete" else "/v1/onchain/create-utxos/complete",
             expectedStatusCode = 200,
             body = body,
             idempotencyKey = provisionalStagedIdempotencyKey(
@@ -485,15 +719,19 @@ public class RgbLightningNodeGatewayBackend private constructor(
             operationId = request.operationId,
         )
         return try {
-            response.body.requireKeys("completedSendBtc", setOf("txid"))
-            val txid = TransactionId.of(response.body.requiredString("txid", 64))
-            if (txid != request.validation.unsignedTxid) {
+            response.body.requireKeys("completedTransaction", setOf("txid"))
+            val rawTxid = response.body.requiredString("txid", 64)
+            val txid = TransactionId.of(rawTxid)
+            if (rawTxid != txid.hex || txid != request.validation.unsignedTxid) {
                 throw SdkException.OperationAmbiguous(request.operationId)
             }
-            BackendOperationResult.SendBtc(
-                operationId = request.operationId,
-                txid = txid,
-            )
+            if (createPlan == null) {
+                BackendOperationResult.SendBtc(operationId = request.operationId, txid = txid)
+            } else {
+                val count = response.body.requiredLong("utxosCreated", 1L, 50L).toInt()
+                if (count != createPlan.outputs.size) throw SdkException.OperationAmbiguous(request.operationId)
+                BackendOperationResult.CreateUtxos(request.operationId, CreateUtxosResult(txid, count))
+            }
         } catch (ambiguous: SdkException.OperationAmbiguous) {
             throw ambiguous
         } catch (_: SdkException) {
@@ -501,6 +739,121 @@ public class RgbLightningNodeGatewayBackend private constructor(
             // was broadcast even when its response cannot be trusted.
             throw SdkException.OperationAmbiguous(request.operationId)
         }
+    }
+
+    /** Read-only recovery; no signing-profile opt-in is needed to resolve an existing submission. */
+    @JvmSynthetic
+    internal suspend fun getOperationForRecovery(
+        context: BackendContext,
+        checkpoint: OperationCheckpoint,
+        request: SendBtcRequest,
+    ): BackendOperationStatus {
+        validateRequest(request)
+        return getOperationForRecoveryImpl(
+            context, checkpoint, OperationKind.SEND_BTC, "send_btc", request.idempotencyKey,
+            RequestHasher.sendBtc(context.network, request),
+            validateIntent = { validateSendBtcIntent(it, request, requireWholeGatewayFeeRate(request.feeRate)) },
+            result = { operationId, txid -> BackendOperationResult.SendBtc(operationId, txid) },
+        )
+    }
+
+    @JvmSynthetic
+    internal suspend fun getOperationForRecovery(
+        context: BackendContext,
+        checkpoint: OperationCheckpoint,
+        request: CreateUtxosRequest,
+    ): BackendOperationStatus {
+        validateRequest(request)
+        val plan = checkpoint.preparedTransaction?.createUtxosOutputPlan
+            ?: throw SdkException.BackendProtocolMismatch("create recovery has no retained output plan")
+        validateCreateUtxosPlan(request, plan)
+        return getOperationForRecoveryImpl(
+            context, checkpoint, OperationKind.CREATE_UTXOS, "create_utxos", request.idempotencyKey,
+            RequestHasher.createUtxos(context.network, request),
+            validateIntent = { validateCreateUtxosIntent(it, request) },
+            result = { operationId, txid ->
+                // Status has no count. After authoritative completed+matching txid,
+                // the authenticated locally validated output plan supplies it.
+                BackendOperationResult.CreateUtxos(operationId, CreateUtxosResult(txid, plan.outputs.size))
+            },
+        )
+    }
+
+    private suspend fun getOperationForRecoveryImpl(
+        context: BackendContext,
+        checkpoint: OperationCheckpoint,
+        kind: OperationKind,
+        wireKind: String,
+        idempotencyKey: IdempotencyKey,
+        requestHash: RequestHash,
+        validateIntent: (GatewayJsonResponse) -> Unit,
+        result: (OperationId, TransactionId) -> BackendOperationResult,
+    ): BackendOperationStatus {
+        requireContext(context)
+        val operationId = checkpoint.operationId
+            ?: throw SdkException.BackendProtocolMismatch("recovery has no retained operation ID")
+        fun mismatch(): Nothing = throw SdkException.BackendProtocolMismatch(
+            "gateway operation status does not match retained local evidence",
+            operationId,
+        )
+        val prepared = checkpoint.preparedTransaction ?: mismatch()
+        val signed = checkpoint.signedPayload ?: mismatch()
+        if (checkpoint.phase != OperationPhase.SUBMITTING ||
+            checkpoint.walletId != context.walletId ||
+            checkpoint.operationKind != kind || prepared.operation != kind ||
+            prepared.network != context.network ||
+            checkpoint.idempotencyKey != idempotencyKey ||
+            checkpoint.requestHash != requestHash ||
+            !CANONICAL_UUID.matches(operationId.value)
+        ) mismatch()
+        requireCanonicalBase64(prepared.psbtBase64, "retained prepared PSBT", operationId)
+        requireCanonicalBase64(signed.signedPsbtBase64, "retained signed PSBT", operationId)
+        val preparedDigest = prepared.psbtBase64.decodeBase64()?.sha256()?.hex() ?: mismatch()
+        if (preparedDigest != signed.validation.psbtSha256) mismatch()
+        val response = requestJson(
+            method = "GET",
+            path = "/v1/onchain/operations/${operationId.value}",
+            expectedStatusCode = 200,
+            operationId = operationId,
+        )
+        val body = response.body
+        body.requireKeys(
+            "operationStatus",
+            setOf("opId", "kind", "state", "txid", "mayHaveBroadcast", "intent", "createdAt", "expiresAt"),
+        )
+        if (body.requiredString("opId", 36) != operationId.value ||
+            body.requiredString("kind", 32) != wireKind
+        ) mismatch()
+        validateIntent(response)
+        val createdAt = body.requiredLong("createdAt", 1L, MAX_SAFE_JSON_INTEGER_VALUE)
+        val expiresAt = body.requiredLong("expiresAt", 1_000L, MAX_SAFE_JSON_INTEGER_VALUE)
+        if (createdAt >= expiresAt ||
+            expiresAt - createdAt > configuration.maximumPreparationTtlSeconds * 1_000L ||
+            expiresAt / 1_000L != prepared.expiresAt.value
+        ) mismatch()
+        val state = body.requiredString("state", 16)
+        if (state !in setOf("pending", "completed", "expired")) mismatch()
+        val txidHex = body.optionalString("txid", 64)
+        val txid = txidHex?.let {
+            if (it.length != 64 || it.any { char -> char !in "0123456789abcdef" }) mismatch()
+            TransactionId.of(it).also { parsed ->
+                if (parsed != signed.validation.unsignedTxid) mismatch()
+            }
+        }
+        val mayHaveBroadcast = body["mayHaveBroadcast"] as? JsonPrimitive ?: mismatch()
+        if (mayHaveBroadcast.isString || mayHaveBroadcast.content !in setOf("true", "false") ||
+            (mayHaveBroadcast.content == "true") != (state != "completed" && txid != null)
+        ) mismatch()
+        if (state == "completed") {
+            return BackendOperationStatus.Succeeded(
+                operationId,
+                result(operationId, txid ?: mismatch()),
+            )
+        }
+        // GET deliberately bypasses the wallet queue. Even expired + null txid can race an
+        // already running complete call or a crash after broadcast and before durable bookkeeping.
+        // Never convert this observation into a definitive expiry or automatically submit again.
+        return BackendOperationStatus.Pending(operationId, state)
     }
 
     private suspend fun walletBalances(): GatewayJsonResponse {
@@ -596,7 +949,15 @@ public class RgbLightningNodeGatewayBackend private constructor(
         idempotencyKey: String? = null,
         logicalIdempotencyKey: IdempotencyKey? = null,
         operationId: OperationId? = null,
+        authorizationOverride: String? = null,
     ): GatewayJsonResponse {
+        val expectedSession = activeSession
+        fun requireUnchangedSession(): Unit {
+            if (activeSession !== expectedSession) {
+                if (operationId != null) throw SdkException.OperationAmbiguous(operationId)
+                throw SdkException.InvalidState("gateway request", "session changed while the request was suspended")
+            }
+        }
         if ((idempotencyKey == null) != (logicalIdempotencyKey == null)) {
             throw SdkException.InternalInvariantViolation(
                 "gateway wire and logical idempotency keys must be supplied together",
@@ -605,10 +966,16 @@ public class RgbLightningNodeGatewayBackend private constructor(
         val url = configuration.resolvedBaseUrl().resolve(path.removePrefix("/"))
             ?: throw SdkException.InternalInvariantViolation("gateway route could not be resolved")
         val encodedBody = body?.toString()
+        val authorization = authorizationOverride ?: authorizationHeader()
+        requireUnchangedSession()
+        if (apiKeyProvider != null && authorizationOverride == null && path != "/v1/me") {
+            verifyCredentialBinding(authorization)
+            requireUnchangedSession()
+        }
         val builder = Request.Builder()
             .url(url)
             .header("Accept", JSON_MEDIA_TYPE_VALUE)
-            .header("Authorization", "Bearer ${configuration.authorizationValue()}")
+            .header("Authorization", authorization)
             .header("User-Agent", USER_AGENT)
         idempotencyKey?.let { builder.header("Idempotency-Key", it) }
         when (method) {
@@ -621,6 +988,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
         }
 
         val raw = execute(builder.build(), operationId)
+        requireUnchangedSession()
         val correlationId = raw.correlationId
         if (raw.statusCode != expectedStatusCode) {
             if (raw.statusCode in 200..299) {
@@ -643,6 +1011,35 @@ public class RgbLightningNodeGatewayBackend private constructor(
             throw successfulResponseProtocolFailure(operationId, correlationId)
         }
         return GatewayJsonResponse(parsed, correlationId)
+    }
+
+    private suspend fun authorizationHeader(): String {
+        val provider = apiKeyProvider ?: return "Bearer ${configuration.authorizationValue()}"
+        return try {
+            provider.loadAPIKey().use { "Bearer ${it.authorizationValue()}" }
+        } catch (cancellation: kotlinx.coroutines.CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            throw SdkException.KeyAccessFailed(retryable = true)
+        }
+    }
+
+    private suspend fun verifyCredentialBinding(authorization: String): Unit {
+        credentialGate.lock()
+        try {
+            val hash = ProtectedWalletFile.digest(authorization.toByteArray(Charsets.UTF_8))
+            if (validatedAuthorizationHash == hash) return
+            val expected = boundGatewayUserId ?: throw SdkException.InvalidState("authenticate request", "uninitialized")
+            val response = requestJson("GET", "/v1/me", 200, authorizationOverride = authorization)
+            response.body.requireKeys("me", setOf("userId", "createdAt"))
+            if (response.body.requiredString("userId", 128) != expected) {
+                throw SdkException.BackendProtocolMismatch("gateway credential resolved to a different user identity")
+            }
+            response.body.requiredLong("createdAt", minimum = 0L)
+            validatedAuthorizationHash = hash
+        } finally {
+            credentialGate.unlock()
+        }
     }
 
     private fun successfulResponseProtocolFailure(
@@ -729,18 +1126,18 @@ public class RgbLightningNodeGatewayBackend private constructor(
     ): SdkException {
         val backendCode = parseGatewayErrorCode(body)
         return when {
-            statusCode in 300..399 && operationId != null ->
+            // operationId identifies complete or submitted-operation recovery requests.
+            // No redirect or current 4xx proves that this operation never broadcast,
+            // including kind/idempotency conflicts and intermediary auth failures.
+            // Classify by phase before inspecting a code that is definitive at prepare.
+            statusCode in 300..499 && operationId != null ->
                 SdkException.OperationAmbiguous(operationId)
-            statusCode == 410 && backendCode == "OP_EXPIRED" && operationId != null ->
-                SdkException.OperationExpired(operationId)
             statusCode == 409 && backendCode == "OP_KIND_MISMATCH" ->
                 SdkException.BackendProtocolMismatch(
                     "gateway operation kind does not match its completion route",
                     operationId,
                     correlationId,
                 )
-            statusCode == 409 && backendCode == "OP_ALREADY_COMPLETED" && operationId != null ->
-                SdkException.OperationAmbiguous(operationId)
             statusCode == 409 && backendCode == "IDEMPOTENCY_KEY_REUSED" &&
                 logicalIdempotencyKey != null -> SdkException.OperationConflict(
                 logicalIdempotencyKey,
@@ -761,8 +1158,6 @@ public class RgbLightningNodeGatewayBackend private constructor(
             statusCode == 408 || statusCode == 425 || statusCode == 429 || statusCode >= 500 ||
                 backendCode == "IDEMPOTENCY_IN_FLIGHT" ->
                 SdkException.BackendUnavailable(correlationId)
-            statusCode == 409 && operationId != null ->
-                SdkException.OperationAmbiguous(operationId)
             statusCode in 400..499 -> SdkException.BackendRejected(
                 safeMessage = gatewaySafeMessage(backendCode),
                 retryable = false,
@@ -779,6 +1174,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
     }
 
     private fun parseGatewayErrorCode(body: String): String? = try {
+        com.utexo.rgb.sdk.internal.BoundedJson.check(body)
         val root = JSON.parseToJsonElement(body).jsonObject
         val primitive = root["error"]?.jsonObject?.get("code") as? JsonPrimitive
         val code = primitive?.takeIf { it.isString }?.content
@@ -806,8 +1202,9 @@ public class RgbLightningNodeGatewayBackend private constructor(
     }
 
     /**
-     * Temporary wire mapping only. The public logical key remains authoritative;
-     * this derivation must not be treated as a frozen backend contract.
+     * The gateway requires distinct prepare/complete wire keys. Preserve the original domain
+     * and derivation across upgrades: changing them would lose existing idempotency identities.
+     * The public logical key remains authoritative; durable prepare persistence is still a gate.
      */
     private fun provisionalStagedIdempotencyKey(key: IdempotencyKey, stage: String): String {
         if (stage != "prepare" && stage != "complete") {
@@ -927,6 +1324,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
             operationId: OperationId?,
             correlationId: String?,
         ): JsonObject = try {
+            com.utexo.rgb.sdk.internal.BoundedJson.check(body)
             JSON.parseToJsonElement(body).jsonObject
         } catch (_: Exception) {
             throw SdkException.BackendProtocolMismatch(
@@ -991,6 +1389,15 @@ private fun JsonObject.requiredObject(field: String): JsonObject =
 
 private fun JsonObject.requiredArray(field: String): JsonArray = get(field) as? JsonArray
     ?: throw SdkException.BackendProtocolMismatch("gateway field $field must be an array")
+
+private fun JsonObject.requiredBoolean(field: String): Boolean {
+    val primitive = get(field) as? JsonPrimitive
+        ?: throw SdkException.BackendProtocolMismatch("gateway field $field must be a boolean")
+    if (primitive.isString || primitive.content !in setOf("true", "false")) {
+        throw SdkException.BackendProtocolMismatch("gateway field $field must be a boolean")
+    }
+    return primitive.content == "true"
+}
 
 private fun JsonObject.requiredString(field: String, maximumBytes: Int): String {
     val primitive = get(field) as? JsonPrimitive

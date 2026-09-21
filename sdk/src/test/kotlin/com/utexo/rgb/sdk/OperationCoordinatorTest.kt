@@ -16,6 +16,28 @@ import kotlin.test.assertNotNull
 
 internal class OperationCoordinatorTest {
     @Test
+    fun `ambiguous error for another operation does not trigger reconciliation or replace identity`(): Unit = runBlocking {
+        val backend = FakeBackend().apply {
+            submitFailure = SdkException.OperationAmbiguous(OperationId.of("other-operation"))
+            status = BackendOperationStatus.Succeeded(
+                TEST_OPERATION_ID,
+                BackendOperationResult.SendBtc(TEST_OPERATION_ID, TEST_TXID),
+            )
+        }
+        val journal = InMemoryOperationJournal()
+        val wallet = testWallet(backend, FakeSigningEngine(), journal)
+        wallet.init()
+        wallet.unlock()
+        val error = assertFailsWith<SdkException.OperationAmbiguous> { wallet.sendBtc(testSendRequest()) }
+        assertEquals(TEST_OPERATION_ID, error.operationId)
+        assertEquals(0, backend.statusCalls)
+        assertEquals(1, backend.submitCalls)
+        val checkpoint = journal.load(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY)
+        assertEquals(OperationPhase.SUBMITTING, checkpoint?.phase)
+        assertEquals(TEST_OPERATION_ID, checkpoint?.operationId)
+    }
+
+    @Test
     fun `preflight failures are sanitized before journal creation`(): Unit = runBlocking {
         val backend = object : FakeBackend() {
             override suspend fun preflightOperation(operation: OperationKind): Unit {
@@ -214,6 +236,78 @@ internal class OperationCoordinatorTest {
     }
 
     @Test
+    fun `createUtxos omitted parameters bind native defaults before signing`(): Unit = runBlocking {
+        val cases = listOf(Triple(6, 1_000L, true), Triple(1, 2_000L, true), Triple(6, 1_000L, false))
+        for ((count, size, upTo) in cases) {
+            val backend = FakeBackend().apply {
+                createPlan = CreateUtxosOutputPlan((0 until count).map {
+                    ExpectedWalletOutput(AccountKind.COLORED, Keychain.EXTERNAL, it, Satoshis.of(size))
+                })
+            }
+            val signer = FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS)))
+            val wallet = testWallet(backend, signer)
+            wallet.init()
+            wallet.unlock()
+            try {
+                assertFailsWith<SdkException.PolicyRejected> { wallet.createUtxos(CreateUtxosRequest(upTo = upTo)) }
+                assertEquals(0, signer.signCalls)
+                assertEquals(0, backend.submitCalls)
+            } finally {
+                wallet.destroy()
+            }
+        }
+    }
+
+    @Test
+    fun `completed create count must match the signed output plan and cannot become terminal on mismatch`(): Unit = runBlocking {
+        val backend = object : FakeBackend() {
+            override suspend fun submitSignedTransaction(request: SignedTransactionSubmission): BackendOperationResult =
+                BackendOperationResult.CreateUtxos(request.operationId, CreateUtxosResult(TEST_TXID, 2))
+        }
+        val signer = FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS)))
+        val journal = InMemoryOperationJournal()
+        val wallet = testWallet(backend, signer, journal)
+        wallet.init()
+        wallet.unlock()
+        try {
+            val request = CreateUtxosRequest(num = 1, idempotencyKey = TEST_IDEMPOTENCY_KEY)
+            assertFailsWith<SdkException.OperationAmbiguous> { wallet.createUtxos(request) }
+            assertEquals(OperationPhase.SUBMITTING, journal.load(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY)?.phase)
+            assertEquals(1, signer.signCalls)
+        } finally {
+            wallet.destroy()
+        }
+    }
+
+    @Test
+    fun `validated create count remains replayable from compact terminal receipt without new work`(): Unit = runBlocking {
+        // Native can create fewer than num even with upTo=false when funds are limited.
+        val request = CreateUtxosRequest(upTo = false, num = 5, idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val journal = InMemoryOperationJournal()
+        val wallet = testWallet(FakeBackend(), FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS))), journal)
+        wallet.init()
+        wallet.unlock()
+        val result = try { wallet.createUtxos(request) } finally { wallet.destroy() }
+        assertEquals(1, result.createdUtxoCount)
+        val compact = assertNotNull(journal.load(testConfiguration().walletId, request.idempotencyKey)).compactTerminal()
+        assertEquals(null, compact.preparedTransaction)
+        val reopenedJournal = InMemoryOperationJournal().apply { save(compact) }
+        val backend = FakeBackend()
+        val signer = FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS)))
+        val reopened = testWallet(backend, signer, reopenedJournal)
+        reopened.init()
+        reopened.unlock()
+        try {
+            assertEquals(result, reopened.createUtxos(request))
+            assertEquals(0, backend.prepareCreateCalls)
+            assertEquals(0, backend.submitCalls)
+            assertEquals(0, signer.signCalls)
+        } finally {
+            reopened.destroy()
+        }
+    }
+
+    @Test
     fun `wallet serializes concurrent money moving calls`(): Unit = runBlocking {
         val active = AtomicInteger(0)
         val maximum = AtomicInteger(0)
@@ -308,8 +402,56 @@ internal class OperationCoordinatorTest {
             assertEquals(TEST_TXID, resumedWallet.sendBtc(request))
             assertEquals(1, backend.prepareSendCalls)
             assertEquals(0, resumedSigner.signCalls)
+            assertEquals(1, resumedSigner.retainedValidationCalls)
             assertEquals("signed-psbt", backend.submissions.single().signedPsbtBase64)
         }
+
+    @Test
+    fun `stricter policy blocks first submission of retained signature without replacing evidence`(): Unit = runBlocking {
+        val journal = InMemoryOperationJournal()
+        val backend = FakeBackend()
+        val first = testWallet(backend, FakeSigningEngine(), FailOnceBeforePhaseJournal(journal, OperationPhase.SUBMITTING))
+        first.init()
+        first.unlock()
+        val request = testSendRequest()
+        assertFailsWith<SdkException.OperationJournalUnavailable> { first.sendBtc(request) }
+        val original = assertNotNull(journal.load(testConfiguration().walletId, request.idempotencyKey))
+        val signer = FakeSigningEngine()
+        val strict = testWallet(
+            backend, signer, journal,
+            configuration = testConfiguration().copy(signingPolicy = LocalSigningPolicy(maximumAbsoluteFee = Satoshis.of(999))),
+        )
+        strict.init()
+        strict.unlock()
+        assertFailsWith<SdkException.PolicyRejected> { strict.sendBtc(request) }
+        assertEquals(0, backend.submitCalls)
+        assertEquals(0, signer.signCalls)
+        assertEquals(1, signer.retainedValidationCalls)
+        assertEquals(original, journal.load(testConfiguration().walletId, request.idempotencyKey))
+    }
+
+    @Test
+    fun `stricter policy never blocks recovery of a potentially submitted operation`(): Unit = runBlocking {
+        val journal = InMemoryOperationJournal()
+        val backend = FakeBackend().apply { submitFailure = CancellationException("stop waiting") }
+        val first = testWallet(backend, FakeSigningEngine(), journal)
+        first.init()
+        first.unlock()
+        val request = testSendRequest()
+        assertFailsWith<CancellationException> { first.sendBtc(request) }
+        backend.status = BackendOperationStatus.Succeeded(TEST_OPERATION_ID, BackendOperationResult.SendBtc(TEST_OPERATION_ID, TEST_TXID))
+        val signer = FakeSigningEngine().apply { retainedValidationFailure = SdkException.PolicyRejected("disabled") }
+        val strict = testWallet(
+            backend, signer, journal,
+            configuration = testConfiguration().copy(signingPolicy = LocalSigningPolicy(maximumAbsoluteFee = Satoshis.of(999))),
+        )
+        strict.init()
+        strict.unlock()
+        assertEquals(TEST_TXID, strict.sendBtc(request))
+        assertEquals(0, signer.retainedValidationCalls)
+        assertEquals(1, backend.submitCalls)
+        assertEquals(1, backend.statusCalls)
+    }
 
     @Test
     fun `expiry reached during local signing is persisted before submit`(): Unit = runBlocking {

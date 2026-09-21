@@ -37,8 +37,9 @@ public value class Satoshis private constructor(public val value: Long) : Compar
 /**
  * Exact fee rate stored as milli-satoshis per virtual byte.
  *
- * The integer representation means the RN default of 1.5 sat/vB is exactly
- * 1500 msat/vB; floating-point values never cross the signing boundary.
+ * Fractions remain exact (1.5 sat/vB is 1500 msat/vB); floating-point values
+ * never cross the signing boundary. The lightweight default is 2 sat/vB,
+ * compatible with the gateway's whole-sat/vB request contract.
  */
 @JvmInline
 public value class FeeRate private constructor(public val milliSatsPerVbyte: Long) : Comparable<FeeRate> {
@@ -49,7 +50,7 @@ public value class FeeRate private constructor(public val milliSatsPerVbyte: Lon
         BigDecimal.valueOf(milliSatsPerVbyte, 3).stripTrailingZeros().toPlainString() + " sat/vB"
 
     public companion object {
-        public val DEFAULT: FeeRate = FeeRate(1_500)
+        public val DEFAULT: FeeRate = FeeRate(2_000)
         /** Absolute representable ceiling; wallet signing policy is intentionally stricter. */
         public val MAX_SUPPORTED: FeeRate = FeeRate(10_000_000)
 
@@ -64,10 +65,16 @@ public value class FeeRate private constructor(public val milliSatsPerVbyte: Lon
         }
 
         public fun satPerVbyte(value: String): FeeRate {
+            if (value.length !in 1..128 || value.any { it !in '0'..'9' && it !in ".eE+-" }) {
+                throw SdkException.InvalidArgument("feeRate", "must be a bounded ASCII decimal number")
+            }
             val parsed = try {
                 BigDecimal(value)
             } catch (_: NumberFormatException) {
                 throw SdkException.InvalidArgument("feeRate", "must be a decimal number")
+            }
+            if (parsed.scale() !in -128..128) {
+                throw SdkException.InvalidArgument("feeRate", "decimal exponent exceeds supported range")
             }
             return fromDecimal(parsed)
         }
@@ -120,13 +127,16 @@ public value class AssetAmount private constructor(public val decimal: String) :
         }
 
         public fun parse(value: String): AssetAmount {
-            if (value.isEmpty() || value.any { !it.isDigit() }) {
+            if (value.length !in 1..128 || value.any { it !in '0'..'9' }) {
                 throw SdkException.InvalidArgument(
                     "assetAmount",
                     "must be an unsigned base-10 integer",
                 )
             }
             val canonical = value.trimStart('0').ifEmpty { "0" }
+            if (canonical.length > MAX_VALUE.length) {
+                throw SdkException.InvalidArgument("assetAmount", "exceeds unsigned 64-bit range")
+            }
             val parsed = BigInteger(canonical)
             if (parsed > max) {
                 throw SdkException.InvalidArgument("assetAmount", "exceeds unsigned 64-bit range")

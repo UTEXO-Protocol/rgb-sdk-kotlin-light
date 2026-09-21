@@ -1,0 +1,11 @@
+{
+  "description": "Public BIP86 mnemonic; synthetic nonexistent prevouts; two vanilla external inputs at child indices 2 and 3. Never fund this wallet.",
+  "feeSats": 500,
+  "inputCount": 2,
+  "maximumInputChild": 3,
+  "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+  "psbt": "cHNidP8BALICAAAAAgcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHAAAAAAD9////CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgAAAAAAP3///8CMHUAAAAAAAAiUSCoLymUTWW4aua15cx14pTq1sWTkaHtxeAW40mMZ/x7uxyWAgAAAAAAIlEgiC105dBXLVqBbO8AQalrbB3oMvb5Z22WBcRNXpqX09wAAAAAAAEBK6CGAQAAAAAAIlEge147kJMD+u6XZ8AHgZ00mYBo9corqj5Thdkjd8EkRMUhFqcwojzotHJIpd37Mu73UmLZHwtVsITdH/DS+eAy4OUzGQBzxdoKVgAAgAAAAIAAAACAAAAAAAIAAAABFyCnMKI86LRySKXd+zLu91Ji2R8LVbCE3R/w0vngMuDlMwABASughgEAAAAAACJRICPYMlj9ByAtUILnGkChDIOFbAXL7w4Hwlt8F4W7gXm+IRYG7UNK4A2OS0yJ3Uuv4IH6G7xtsKvxfGBrGoZcpQMJoxkAc8XaClYAAIAAAACAAAAAgAAAAAADAAAAARcgBu1DSuANjktMid1Lr+CB+hu8bbCr8XxgaxqGXKUDCaMAAAEFIDmfGy9Dk/KaGMk3hZxd2KdzUBAxV+uIDwLowIIUJ3zvIQc5nxsvQ5PymhjJN4WcXdinc1AQMVfriA8C6MCCFCd87xkAc8XaClYAAIAAAACAAAAAgAEAAAAAAAAAAA==",
+  "recipient": "bc1p4qhjn9zdvkux4e44uhx8tc55attvtyu358kutcqkudyccelu0was9fqzwh",
+  "txid": "3487ab7ad4f305d0e2adab22afc48b850aba1728276c55dfc1dc748cdd3b60a6",
+  "vbytes": 212
+}
