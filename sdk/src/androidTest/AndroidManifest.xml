@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Test-only manifest. It is merged into the androidTest APK, never into the
+  published library, so it cannot relax any consuming app's policy.
+
+  Android blocks cleartext HTTP from API 28 on. The opt-in exists solely so the
+  instrumented end-to-end tests can reach a gateway running on the developer's
+  host (`10.0.2.2` from the emulator). It is scoped to loopback and the emulator
+  host alias — the same hosts `RgbLightningNodeGatewayConfiguration` permits with
+  `allowInsecureLocalDevelopment = true` — so a test still cannot talk plaintext
+  to anything off the machine.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:networkSecurityConfig="@xml/utexo_test_network_security_config" />
+</manifest>

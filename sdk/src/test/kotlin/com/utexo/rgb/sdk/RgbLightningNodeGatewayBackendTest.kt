@@ -2,6 +2,7 @@ package com.utexo.rgb.sdk
 
 import com.utexo.rgb.sdk.internal.EpochSecondsSource
 import com.utexo.rgb.sdk.internal.OperationCoordinator
+import com.utexo.rgb.sdk.internal.GatewayRgbRecipient
 import com.utexo.rgb.sdk.internal.RequestHasher
 import com.utexo.rgb.sdk.internal.LocalSigningEngine
 import com.utexo.rgb.sdk.internal.LocalSigningEngineFactory
@@ -22,6 +23,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -36,6 +38,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 internal class RgbLightningNodeGatewayBackendTest {
@@ -327,7 +330,178 @@ internal class RgbLightningNodeGatewayBackendTest {
     }
 
     @Test
-    fun `all eighteen unsupported business methods and ordinary send gate refuse without business HTTP`(): Unit = runBlocking {
+    fun `listUnspents maps authoritative wire state and refuses a response missing it`(): Unit = runBlocking {
+        val body = """{"unspents":[{"txid":"${"ab".repeat(32)}","vout":2,"amountSat":9999,
+            "colorable":true,"exists":true,"pendingBlinded":3,
+            "allocations":[{"assetId":"rgb:a1","amount":42,
+              "assignment":{"kind":"Fungible","amount":42},"settled":true},
+             {"assetId":null,"amount":null,
+              "assignment":{"kind":"Any","amount":null},"settled":false}]}]}"""
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        val unspents = backend.listUnspents(context)
+        assertEquals(1, unspents.size)
+        val only = unspents.single()
+        assertEquals("ab".repeat(32), only.utxo.outpoint.txid.hex)
+        assertEquals(2, only.utxo.outpoint.vout)
+        assertEquals(9999L, only.utxo.btcAmount.value)
+        assertTrue(only.utxo.colorable)
+        // Authoritative backend state, never defaulted.
+        assertTrue(only.utxo.exists)
+        assertEquals(3, only.pendingBlinded)
+        assertEquals(2, only.rgbAllocations.size)
+        assertEquals(AssignmentType.FUNGIBLE, only.rgbAllocations[0].assignment.type)
+        assertEquals("42", only.rgbAllocations[0].assignment.amount?.decimal)
+        assertEquals(AssetId.of("rgb:a1"), only.rgbAllocations[0].assetId)
+        // A unit variant keeps its name and carries no amount.
+        assertEquals(AssignmentType.ANY, only.rgbAllocations[1].assignment.type)
+        assertNull(only.rgbAllocations[1].assignment.amount)
+        assertNull(only.rgbAllocations[1].assetId)
+    }
+
+    @Test
+    fun `listUnspents rejects a response that omits exists`(): Unit = runBlocking {
+        // `exists` says whether the creating transaction was broadcast; it cannot
+        // be inferred, so an older gateway must fail loudly rather than default.
+        val body = """{"unspents":[{"txid":"${"ab".repeat(32)}","vout":0,"amountSat":1,
+            "colorable":false,"pendingBlinded":0,"allocations":[]}]}"""
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        assertFailsWith<SdkException.BackendProtocolMismatch> { backend.listUnspents(context) }
+    }
+
+    @Test
+    fun `onchainSend binds the invoice recipient and verifies the returned intent`(): Unit = runBlocking {
+        val recipient = GatewayRgbRecipient(
+            recipientId = "utxob:recipient-1",
+            assetId = AssetId.of("rgb:asset-1"),
+            transportEndpoints = listOf("rpc://proxy.example/json-rpc"),
+            witness = false,
+            network = Network.SIGNET,
+        )
+        val intent = """{"kind":"send_asset","feeRateSatPerVb":2,"recipients":[],"utxos":null,
+            "asset":{"assetId":"rgb:asset-1","amount":40,"recipientId":"utxob:recipient-1",
+              "witnessAmountSat":null,"transportEndpoints":["rpc://proxy.example/json-rpc"]}}"""
+        val prepared = """{"opId":"$TEST_OPERATION_ID","psbt":"$TEST_PSBT_BASE64",
+            "intent":$intent,"expiresAt":2000123}"""
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, prepared))
+        val backend = testBackend(transport, rgbInvoiceDecoder = { recipient })
+        val context = initializedContext(backend)
+        val request = OnchainSendRequest(
+            invoice = RgbInvoice.of("rgb:~/~/~/sb:utxob:recipient-1"),
+            amount = AssetAmount.of(40),
+            feeRate = FeeRate.satPerVbyte("2"),
+            idempotencyKey = TEST_IDEMPOTENCY_KEY,
+        )
+        val result = backend.prepareOnchainSend(
+            PrepareOnchainSendRequest(
+                OperationRequestContext(
+                    context,
+                    request.idempotencyKey,
+                    RequestHasher.onchainSend(Network.SIGNET, request),
+                ),
+                request,
+            ),
+        )
+        assertEquals(OperationKind.ONCHAIN_SEND, result.operation)
+        // The recipient sent to the gateway came from the INVOICE, not the caller.
+        val sent = Json.parseToJsonElement(transport.requests[1].bodyUtf8()).jsonObject
+        assertEquals("utxob:recipient-1", sent["recipientId"]?.jsonPrimitive?.content)
+        assertEquals("rgb:asset-1", sent["assetId"]?.jsonPrimitive?.content)
+        assertEquals("40", sent["amount"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `onchainSend rejects an intent that alters the asset amount or recipient`(): Unit = runBlocking {
+        val recipient = GatewayRgbRecipient(
+            recipientId = "utxob:recipient-1",
+            assetId = AssetId.of("rgb:asset-1"),
+            transportEndpoints = listOf("rpc://proxy.example/json-rpc"),
+            witness = false,
+            network = Network.SIGNET,
+        )
+        // Each tampered field must be caught on its own.
+        val tampered = listOf(
+            """"assetId":"rgb:other","amount":40,"recipientId":"utxob:recipient-1"""",
+            """"assetId":"rgb:asset-1","amount":41,"recipientId":"utxob:recipient-1"""",
+            """"assetId":"rgb:asset-1","amount":40,"recipientId":"utxob:attacker"""",
+        )
+        for (asset in tampered) {
+            val intent = """{"kind":"send_asset","feeRateSatPerVb":2,"recipients":[],"utxos":null,
+                "asset":{$asset,"witnessAmountSat":null,
+                  "transportEndpoints":["rpc://proxy.example/json-rpc"]}}"""
+            val transport = QueueInterceptor(
+                queuedResponse(200, TEST_ME_JSON),
+                queuedResponse(201, """{"opId":"$TEST_OPERATION_ID","psbt":"$TEST_PSBT_BASE64",
+                    "intent":$intent,"expiresAt":2000123}"""),
+            )
+            val backend = testBackend(transport, rgbInvoiceDecoder = { recipient })
+            val context = initializedContext(backend)
+            val request = OnchainSendRequest(
+                invoice = RgbInvoice.of("rgb:~/~/~/sb:utxob:recipient-1"),
+                amount = AssetAmount.of(40),
+                feeRate = FeeRate.satPerVbyte("2"),
+                idempotencyKey = TEST_IDEMPOTENCY_KEY,
+            )
+            assertFailsWith<SdkException.BackendProtocolMismatch>(asset) {
+                backend.prepareOnchainSend(
+                    PrepareOnchainSendRequest(
+                        OperationRequestContext(
+                            context,
+                            request.idempotencyKey,
+                            RequestHasher.onchainSend(Network.SIGNET, request),
+                        ),
+                        request,
+                    ),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `onchainSend refuses witness data that contradicts the invoice`(): Unit = runBlocking {
+        // rgb-lib rejects a witness beneficiary without sats and a blind one with
+        // them; the mismatch is caught locally rather than at the gateway.
+        for (witnessInvoice in listOf(true, false)) {
+            val recipient = GatewayRgbRecipient(
+                recipientId = if (witnessInvoice) "wvout:recipient" else "utxob:recipient",
+                assetId = AssetId.of("rgb:asset-1"),
+                transportEndpoints = emptyList(),
+                witness = witnessInvoice,
+                network = Network.SIGNET,
+            )
+            val backend = testBackend(
+                QueueInterceptor(queuedResponse(200, TEST_ME_JSON)),
+                rgbInvoiceDecoder = { recipient },
+            )
+            val context = initializedContext(backend)
+            // Deliberately the WRONG pairing for this invoice kind.
+            val request = OnchainSendRequest(
+                invoice = RgbInvoice.of("rgb:~/~/~/sb:recipient"),
+                amount = AssetAmount.of(1),
+                witnessData = if (witnessInvoice) null else WitnessData(Satoshis.of(1_000)),
+                feeRate = FeeRate.satPerVbyte("2"),
+                idempotencyKey = TEST_IDEMPOTENCY_KEY,
+            )
+            assertFailsWith<SdkException.InvalidArgument> {
+                backend.prepareOnchainSend(
+                    PrepareOnchainSendRequest(
+                        OperationRequestContext(
+                            context,
+                            request.idempotencyKey,
+                            RequestHasher.onchainSend(Network.SIGNET, request),
+                        ),
+                        request,
+                    ),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `all seventeen unsupported business methods and ordinary send gate refuse without business HTTP`(): Unit = runBlocking {
         val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
             queuedResponse(201, "{\"fingerprint\":\"deadbeef\",\"address\":\"fixture-address\"}"))
         val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
@@ -345,7 +519,6 @@ internal class RgbLightningNodeGatewayBackendTest {
         val unavailable = listOf(
             method("getAddress") { wallet.getAddress() },
             method("rotateVanillaAddress") { wallet.rotateVanillaAddress() },
-            method("listUnspents") { wallet.listUnspents() },
             method("estimateFeeRate") { wallet.estimateFeeRate(BlockCount.of(6)) },
             method("createUtxos") { wallet.createUtxos() },
             method("listAssets") { wallet.listAssets() },
@@ -363,7 +536,7 @@ internal class RgbLightningNodeGatewayBackendTest {
             method("failTransfers") { wallet.failTransfers(FailTransfersRequest()) },
         )
         try {
-            assertEquals(18, unavailable.size)
+            assertEquals(17, unavailable.size)
             for ((name, call) in unavailable) {
                 assertFailsWith<SdkException.Unsupported>(name) { call() }
                 assertEquals(2, transport.requests.size, "$name must not issue business HTTP")
@@ -1936,6 +2109,9 @@ internal class RgbLightningNodeGatewayBackendTest {
         createPlanExtractor: suspend (String, Network) -> CreateUtxosOutputPlan = { _, _ ->
             throw AssertionError("unexpected native create-plan extraction in JVM transport test")
         },
+        rgbInvoiceDecoder: suspend (RgbInvoice) -> GatewayRgbRecipient = {
+            throw AssertionError("unexpected native RGB invoice decoding in JVM transport test")
+        },
     ): RgbLightningNodeGatewayBackend {
         val configuration = gatewayConfiguration(
             allowUnverifiedPsbtProfile = allowUnverifiedPsbtProfile,
@@ -1951,9 +2127,10 @@ internal class RgbLightningNodeGatewayBackendTest {
             OkHttpClient::class.java,
             Function0::class.java,
             Function3::class.java,
+            Function2::class.java,
         )
         constructor.isAccessible = true
-        return constructor.newInstance(configuration, client, clock, createPlanExtractor)
+        return constructor.newInstance(configuration, client, clock, createPlanExtractor, rgbInvoiceDecoder)
             as RgbLightningNodeGatewayBackend
     }
 

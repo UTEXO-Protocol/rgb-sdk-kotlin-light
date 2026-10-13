@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "rgb-sdk-kotlin-light"
 include(":sdk")
 include(":release-smoke-app")
+include(":example-app")
