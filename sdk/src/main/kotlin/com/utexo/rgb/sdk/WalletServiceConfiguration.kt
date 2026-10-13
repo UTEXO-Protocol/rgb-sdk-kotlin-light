@@ -40,6 +40,24 @@ public fun interface WalletAPIKeyProvider {
     public suspend fun loadAPIKey(): WalletAPIKey
 }
 
+/** Chain tip obtained independently of a gateway's proposed transaction. */
+public data class WalletChainContext(
+    public val network: Network,
+    public val tipHeight: Int,
+    public val observedAt: UnixSeconds,
+) {
+    init {
+        if (tipHeight !in 0..499_999_999) {
+            throw SdkException.InvalidArgument("tipHeight", "must be a Bitcoin block height below 500000000")
+        }
+    }
+}
+
+/** Supply a trusted node/indexer tip, never a height copied from the prepared PSBT. */
+public fun interface WalletChainContextProvider {
+    public suspend fun loadChainContext(network: Network): WalletChainContext
+}
+
 /** Public service configuration shared by the lightweight and future full wallet entry point. */
 public class WalletServiceConfiguration(
     public val baseUrl: String,
@@ -48,6 +66,8 @@ public class WalletServiceConfiguration(
     public val readTimeoutMillis: Long = 30_000L,
     public val callTimeoutMillis: Long = 45_000L,
     public val allowInsecureLocalDevelopment: Boolean = false,
+    /** Required for new spending; read-only use and submitted-operation recovery do not need it. */
+    public val chainContextProvider: WalletChainContextProvider? = null,
 ) {
     init {
         // Reuse the transport's exact validation, without loading any credential or making requests.
@@ -63,7 +83,7 @@ public class WalletServiceConfiguration(
             readTimeoutMillis = readTimeoutMillis,
             callTimeoutMillis = callTimeoutMillis,
             allowInsecureLocalDevelopment = allowInsecureLocalDevelopment,
-            allowUnverifiedPsbtProfile = false,
+            allowUnverifiedPsbtProfile = true,
         )
 
     override fun toString(): String = "WalletServiceConfiguration(baseUrl=$baseUrl, apiKeyProvider=[REDACTED])"

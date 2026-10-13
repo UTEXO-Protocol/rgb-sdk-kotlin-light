@@ -20,6 +20,37 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 public class GatewayNativeProfileTest {
     @Test
+    public fun gatewayReservedAddressesAreIndependentlyBoundToAddressIndexAndScript(): Unit = runBlocking {
+        val publicSeed = ByteArray(64) { 29 }
+        SecretSeed.fromBytes(publicSeed).use { seed ->
+            UniFfiLocalSigningEngineFactory.open(Network.SIGNET, seed).use { signer ->
+                com.utexo.rgb.sdk.internal.ffi.LocalSigner.fromSeed(
+                    com.utexo.rgb.sdk.internal.ffi.Network.SIGNET, publicSeed,
+                ).use { native ->
+                    val derived = native.deriveAddress(com.utexo.rgb.sdk.internal.ffi.AccountKind.VANILLA,
+                        com.utexo.rgb.sdk.internal.ffi.Keychain.EXTERNAL, 7u)
+                    val different = native.deriveAddress(com.utexo.rgb.sdk.internal.ffi.AccountKind.VANILLA,
+                        com.utexo.rgb.sdk.internal.ffi.Keychain.EXTERNAL, 8u)
+                    val valid = ReservedAddress(BitcoinAddress.of(derived.address), AccountKind.VANILLA,
+                        Keychain.EXTERNAL, 7, derived.scriptPubkeyHex)
+                    signer.verifyReservedAddress(valid)
+                    // Legacy SPI adapters may omit script evidence; local address derivation still applies.
+                    signer.verifyReservedAddress(valid.copy(scriptPubkeyHex = null))
+                    for (invalid in listOf(valid.copy(index = 8),
+                        valid.copy(address = BitcoinAddress.of(different.address)),
+                        valid.copy(scriptPubkeyHex = different.scriptPubkeyHex))) {
+                        var rejected = false
+                        try { signer.verifyReservedAddress(invalid) }
+                        catch (_: SdkException.BackendProtocolMismatch) { rejected = true }
+                        check(rejected) { "Native adapter accepted inconsistent reserved address evidence" }
+                    }
+                }
+            }
+        }
+        publicSeed.fill(0)
+    }
+
+    @Test
     public fun untouchedBtcAndCreateFixturesUseExplicitAdditiveProfileAndIndependentFeeCaps(): Unit = runBlocking {
         val fixtures = fixtures()
         SecretMnemonic.fromWords(fixtures[0].getString("mnemonic").toCharArray()).use { mnemonic ->

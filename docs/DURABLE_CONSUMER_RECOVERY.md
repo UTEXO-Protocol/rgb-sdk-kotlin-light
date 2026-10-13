@@ -1,9 +1,10 @@
 # Durable consumer payment recovery
 
-Fresh payment submission remains disabled in the ordinary factory. This contract
-describes the integration needed before enabling it, and the existing same-request
-status-only recovery behavior. It is not permission to enable the provisional
-profile, and it does not make an unfrozen backend operation contract durable.
+Fresh BTC, create-UTXO and RGB payments are enabled in the ordinary factory when
+an application-supplied trusted chain context is configured. Known gateway
+crash/TTL durability gaps remain accepted operational risks; SDK enablement does
+not resolve them. This contract preserves same-request status-only recovery,
+which does not require a current chain provider or an unexpired RGB invoice.
 
 The SDK's encrypted journal protects signing/submission evidence. It intentionally
 does not expose PSBTs or enumerate application payment intents. The application
@@ -90,3 +91,13 @@ database implementation, real gateway acceptance or a funded transaction. Separa
 gateway adapter tests exercise completed, pending, unavailable and mismatched
 status with the production adapter; physical-device/app-database and real gateway
 restart qualification remain release gates.
+
+`PackagedReleaseAarSignerTest.minifiedOrdinaryFactorySignsAllGatewayOperationsAndReplaysWithoutChainProvider`
+also exercises the published ordinary factory and packaged native signer under R8
+on Android. A bounded loopback HTTP fixture supplies untouched historical BTC,
+create-UTXO and RGB PSBTs; actual Keystore-backed storage is closed and reopened.
+BTC/create replay the terminal receipt, while RGB recovers its original SUBMITTING
+operation by status only, all without a chain provider on reopening. It verifies
+one preparation and one submission per original request. This demonstrates the
+client/transport/native/storage integration, not real backend crash durability or
+network broadcast.

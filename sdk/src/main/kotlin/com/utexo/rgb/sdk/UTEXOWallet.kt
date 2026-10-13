@@ -61,6 +61,11 @@ public class UTEXOWallet internal constructor(
                         context, configuration.walletId, configuration.network, storage.seedStoreConfiguration,
                     ),
                     operationJournal = journal,
+                    signingEngineFactory = LocalSigningEngineFactory { network, seed ->
+                        UniFfiLocalSigningEngineFactory.openGateway(network, seed,
+                            GatewaySigningContext.supplied(network, service.chainContextProvider))
+                    },
+                    epochSecondsSource = EpochSecondsSource { System.currentTimeMillis() / 1_000L },
                 )
             } catch (failure: Exception) {
                 journal.close()
@@ -178,8 +183,10 @@ public class UTEXOWallet internal constructor(
         backendCall { backend.getBtcBalance(context) }
     }
 
+    /** Allocates a fresh locally verified address with the gateway; no reuse/pinning is implied. */
     public suspend fun getAddress(): BitcoinAddress = reserveAddress(rotate = false)
 
+    /** Allocates another fresh verified address; the lightweight gateway does not persist a pinned address. */
     public suspend fun rotateVanillaAddress(): BitcoinAddress = reserveAddress(rotate = true)
 
     public suspend fun listUnspents(): List<Unspent> = withUnlocked("listUnspents") { context, _ ->

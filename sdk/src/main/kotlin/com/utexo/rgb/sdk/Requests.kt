@@ -128,10 +128,10 @@ public data class OnchainSendRequest(
 
 public data class OnchainSendResponse(
     public val txid: TransactionId,
-    public val batchTransferIdx: Long,
+    public val batchTransferIdx: Long? = null,
 ) {
     init {
-        if (batchTransferIdx < 0L) {
+        if (batchTransferIdx != null && batchTransferIdx < 0L) {
             throw SdkException.InvalidArgument("batchTransferIdx", "must not be negative")
         }
     }

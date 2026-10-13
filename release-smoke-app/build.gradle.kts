@@ -41,6 +41,8 @@ android {
     }
 
     testBuildType = "release"
+    // Public, unfunded, captured PSBT fixtures only; never production wallet data.
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("sdk/src/androidTest/assets"))
 
     buildFeatures {
         buildConfig = false

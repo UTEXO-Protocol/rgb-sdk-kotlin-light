@@ -9,6 +9,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 public class PackagedReleaseAarSignerTest {
     @Test
+    public fun minifiedOrdinaryFactorySignsAllGatewayOperationsAndReplaysWithoutChainProvider() {
+        assertTrue(ReleaseGatewaySpendingSmoke.verifiesAllSpendingAndDurableReplay(InstrumentationRegistry.getInstrumentation().targetContext))
+    }
+    @Test
     public fun minifiedOrdinaryFactoryValidatesReceiveWithRealNativeParser() {
         assertTrue(ReleaseGatewaySmoke.validatesReceiveWithNativeParserThroughOrdinaryFactory(InstrumentationRegistry.getInstrumentation().targetContext))
     }

@@ -13,9 +13,9 @@ transactions. Raw RLN and PSBT operations are not application API.
 ## Current safety status
 
 See [the RN-driven remediation and verification](docs/assurance/KOTLIN_RN_REMEDIATION_2026-09-21.md)
-for the current fixes and remaining gates. The [September 20 report](docs/assurance/KOTLIN_REMEDIATION_2026-09-20.md)
+for the September 21 audit snapshot. The [September 20 report](docs/assurance/KOTLIN_REMEDIATION_2026-09-20.md)
 and [independent audit](docs/assurance/KOTLIN_INDEPENDENT_REAUDIT_2026-09-19.md)
-explains the pre-fix findings. Earlier [closure evidence](SDK_CLOSURE_2026-09-19.md)
+explain the pre-fix findings. Earlier [closure evidence](SDK_CLOSURE_2026-09-19.md)
 is historical, not a claim that only backend blockers remain or that this is an RC.
 
 This is an implementation foundation awaiting the production backend and its
@@ -29,21 +29,34 @@ The only concrete remote adapter shipped in this phase is
 infrastructure seam for tests and future adapters; it is not a second
 application-facing integration path.
 
-The ordinary factory retains the legacy BTC-only signing profile. The additive
-internal RGB-lib profile now implements Bitcoin authorization/signing for BTC
-send, create-UTXOs and RGB send, with tests against untouched real gateway PSBTs.
-It is not selected by the public factory: fresh spending remains gated.
-The current create-UTXO wire adapter, extracted output hints and status-only
-recovery are implemented for internal qualification; durable backend crash
-recovery still blocks release. RGB send still needs its full result contract.
+The ordinary factory uses the RGB-lib Bitcoin authorization/signing profile for
+`sendBtc`, `createUtxos`, and `onchainSend`. Configure a `WalletChainContextProvider`
+on `WalletServiceConfiguration` for new spending: it must obtain a trusted tip
+independently of the proposed PSBT. Results are network-bound, at most 300 seconds
+old, and no more than 30 seconds in the future. Reads need no provider. Local
+signing capabilities remain disabled when it is absent. The tip is refreshed
+before risky transitions and enforced again immediately before submission.
+
+Spending is enabled despite known gateway crash/TTL recovery and RGB-input
+reservation risks. This is not a backend durability or production-readiness
+certification. An uncertain payment stays uncertain: retry only the original
+request/key, never create an automatic replacement. RGB send returns a nullable
+batch index because the gateway currently returns only its txid.
+
+The provider contract is `suspend loadChainContext(network): WalletChainContext`;
+return the requested network, independently observed `tipHeight`, and its
+`observedAt: UnixSeconds`. Fetch from the application's trusted node/indexer;
+never derive the height from a gateway PSBT. The current gateway has no tip route.
+The provider may cache a still-fresh observation, but must not relabel old data
+with a new observation timestamp. Provider failures are redacted and fail closed.
 Inflation lacks a gateway primitive and qualified local
 authorization profile. Local capability/intent checks run before risky
 transitions, while terminal replay and status-only recovery remain available
 without requiring a signing capability or an unexpired RGB invoice.
 
 Local RGB invoice decoding and validated `onchainReceive` are implemented;
-`onchainSend` remains unavailable through the current public gateway adapter;
-that is distinct from the implemented internal Bitcoin policy. Lightweight v1 cannot independently
+`onchainSend` prepares remotely, signs locally, and completes/reconciles the same
+operation. Lightweight v1 cannot independently
 validate the RGB state transition: it can protect Bitcoin ownership and fee
 policy, but it must trust the backend for RGB input selection, recipient
 assignment, RGB change, and consignment state.
@@ -146,7 +159,7 @@ try {
     wallet.init()
     wallet.unlock()
     val balance = wallet.getBtcBalance()
-    // sendBtc(request) remains gated until the backend PSBT/recovery contract is verified.
+    // Configure service.chainContextProvider before using sendBtc/createUtxos/onchainSend.
 } finally {
     wallet.destroy() // releases exclusive ownership; never deletes wallet data
 }
@@ -293,13 +306,13 @@ unmapped errors never fabricate a terminal receipt or automatically resubmit.
 ## Public behavior inherited from RN—and corrected
 
 Kotlin data-class constructors and `copy` retain their public shape. Bounded
-stored text (asset ticker/name, recipient IDs, endpoints and MIME/reference
+stored protocol text (asset ticker, recipient IDs, endpoints and MIME/reference
 metadata) rejects surrounding whitespace so validation cannot inspect a
 trimmed value while storing a different value. Value-wrapper factories such
 as `WalletId.of` keep their documented normalization. Asset precision is
-0–18 and IFA supply fields cannot exceed maximum supply. Unlike Kotlin's
-strict stored-text constructors, Swift normalizes the corresponding strings;
-each platform must preserve its own behavior in a future full SDK.
+0–18 and known IFA supply fields cannot exceed a known maximum supply. Asset
+names and descriptions are display metadata: they are bounded and preserved
+verbatim, including surrounding whitespace and description line breaks.
 
 | Kotlin method | RN semantic | Deliberate correction |
 |---|---|---|
@@ -368,21 +381,40 @@ terminalized. The gate does not hide a terminal result already in the journal,
 and a SUBMITTING checkpoint may still use status-only recovery; it can never
 issue another prepare or complete.
 
-The remaining gateway routes are deliberately not adapted when they cannot
-populate the SDK model without guessing. In particular, gateway addresses do
-not carry derivation branch/index evidence. The gateway already has an address
-route; maintaining the SDK's local ownership guarantee needs that evidence or
-a separately reviewed durable discovery/recovery design. A fixed scan window
-would introduce a wallet-lifetime limit and could abandon remote reservations
-on failure, so it is not used as an apparent fix. UTXOs omit `pendingBlinded`;
-transfers omit the authoritative batch index and assignment list; assets omit
-issuance/timestamp fields. Lower `blindReceive` / `witnessReceive` return models
-require an authoritative batch index that the gateway does not supply; they
-remain unsupported. Complete history snapshots can share local txid filters;
-the default transaction filter rejects `skipSync = true` unless the backend
-implements it explicitly. These aliases do not invent missing gateway history.
-`estimateFeeRate` validates RN's 1–1008 block target locally, but still needs a
-real estimator route. `CreateUtxosRequest.num` is 1–255 when specified, matching
+Gateway revision `bf50f88b7259653a18d845e0eaee8dd01ad4f799` supports the read/receive
+adapters below through normal wallet initialization, without enabling spending:
+
+- `getAddress` and `rotateVanillaAddress` both allocate a **fresh** vanilla address.
+  There is no pinned reuse mode. The SDK checks the supplied BIP86 path and derives
+  the address and output script locally; null or mismatching derivation evidence
+  fails closed. The gateway's address-attribution window can still prevent
+  allocation recovery for a restored/high-index wallet; the SDK never guesses.
+- `listUnspents` preserves typed allocations and pending blind receives.
+  `Utxo.exists` is nullable because the gateway does not expose it. Null means
+  unknown, not true or false. These records alone do not authorize safe spending.
+- `listAssets` maps NIA/CFA/UDA/IFA. The three IFA supply fields are nullable when
+  unavailable; wallet balance is never substituted for supply. Unknown schemas
+  fail explicitly rather than silently omitting assets.
+- `listTransfers`, `listTransfersByTxid`, and `listOnchainTransfers` return actual
+  assignment arrays. The scalar amount is not a typed requested assignment.
+  Batch IDs, expiration, receive/change outpoints and transport metadata remain
+  null when unavailable. Supplied additive outpoints/transports and the native
+  `expirationTimestamp` alias are validated and preserved. No implicit sync occurs.
+- `blindReceive` and `witnessReceive` use the same receive route and local invoice
+  intent validation as `onchainReceive`; the strict wrappers require its actual
+  batch index. The unified receive result still allows null batch metadata.
+- `estimateFeeRate` accepts 1–1008 blocks and preserves the requested target.
+  It rejects a slower source target, and rejects the ambiguous 1,000 sat/vB
+  backend ceiling because that value may conceal a higher raw estimate. No
+  estimate time is invented. Valid lower rates come from the gateway estimator.
+
+These nullable result changes are intentional pre-release API changes. Consumers
+must preserve unknown state; a future full SDK may fill it with local data. This
+is not evidence that package-only full-SDK replacement has been qualified.
+Complete Bitcoin transaction history still has no gateway route; transfer
+history is not its substitute. The default transaction filter rejects
+`skipSync = true` unless a backend implements it explicitly.
+`CreateUtxosRequest.num` is 1–255 when specified, matching
 the native u8 domain rather than wrapping 256 to zero; `size` is 1–4,294,967,295
 satoshis (native u32). Native selection can produce fewer than `num` even with
 `upTo = false`; the actual count must still equal the locally authorized exact
@@ -426,7 +458,7 @@ any future drop-in full SDK, or separately versioned if that contract changes.
 
 Backend revision `7f318a80372ae3bdc7e2f54cd6cd4b7b5d734d9d` adds authenticated
 `GET /v1/onchain/operations/{opId}`. The coordinator now uses that read-only
-route for a retained SUBMITTING BTC or create-UTXO checkpoint, including after restart and
+route for a retained SUBMITTING BTC, create-UTXO or RGB checkpoint, including after restart and
 with the development signing opt-in disabled. It checks the operation ID,
 original request/intent, kind, bounded timestamps and retained preparation
 expiry, broadcast flag consistency, and a canonical transaction ID equal to
@@ -447,15 +479,15 @@ operation; a missing count field alone is not an independent server blocker.
 The create adapter derives the actual count from the authenticated, locally
 validated output plan only after that completed response. Initial completion
 counts must match the same plan. Null/mismatched transaction IDs and counts
-remain ambiguous. RGB recovery remains unavailable; no batch indices are
+remain ambiguous. RGB recovery follows the same retained-evidence rules; batch indices are not
 fabricated and local output counting is never proof of completion.
 
 Create preparation explicitly sends `upTo`, `num` (default 5), `size` (default
 1,000 sats) and the exact whole-sat/vB fee. The current gateway domain is 1–50
 outputs and the local P2TR dust floor is 330 sats. `skipSync=true` is rejected.
 Extracted branch-0 colored output metadata is untrusted: it is independently
-checked against the request and locally re-derived by the signer. This private
-qualification path does not enable create spending through the ordinary factory.
+checked against the request and locally re-derived by the signer. This
+path is selected by the ordinary factory when a trusted chain context is configured.
 
 The adapter currently derives distinct prepare/complete HTTP idempotency keys
 from the caller's durable logical key. The updated backend documentation now
@@ -481,7 +513,7 @@ This public wiring does not relax the legacy `utexo.psbt.bip86.v1` profile or
 change the identity of retained operations. Its zero-locktime/branch-1 change
 rules remain intact for that explicitly named profile.
 
-An additive, **internal qualification path** implements
+The additive gateway signing profile implements
 `utexo.psbt.rgb-lib.v1`: branch-0 vanilla/colored derivation, version 2, RBF,
 height locktime bounded by separately trusted context, and operation-specific
 BTC/create-UTXO/RGB Bitcoin authorization. The requested fee is a target with
@@ -493,10 +525,10 @@ output plan. RGB authorization binds the original invoice's raw encoded state,
 asset, amount, Bitcoin witness payment where present, and selected request
 options; it does **not** validate RGB transitions or consignments locally.
 
-The ordinary factory does not select this path and fresh gateway spending
-remains disabled. A trusted height source, exact deployed native profile/options,
-durable server recovery, complete results and end-to-end deployment qualification
-are still required. Passing offline public-key fixtures is not evidence that a
+The ordinary factory selects this path with an application-supplied trusted
+height source. Deployed native profile/options, durable server recovery,
+and end-to-end deployment qualification remain release risks; they are not hard
+SDK feature gates. Passing offline public-key fixtures is not evidence that a
 gateway completion/broadcast/restart round trip is safe.
 
 ## Building
@@ -538,6 +570,14 @@ storage using real Android Keystore. Both the SDK and the minified release
 consumer sign a synthetic BIP86 PSBT and verify its finalized Taproot witness.
 The release signing test opts into test-only backend SPI and supplies a fixed
 public vector with a nonexistent prevout; it never contacts a server or broadcasts.
+An additional minified consumer test uses the ordinary public factory, real native
+signer, Android Keystore and encrypted journal against a bounded loopback HTTP
+fixture for all three gateway spending operations. It uses the untouched historical
+gateway PSBT vectors, checks unavailable/stale/wrong-network/insufficient-height
+chain context rejection, and reopens without a chain provider for terminal replay
+and pending RGB status-only recovery. Only the response expiry envelope is refreshed;
+the prepared PSBT bytes are unchanged. This is not a live backend, broadcast,
+process-kill, power-loss or funded-payment qualification.
 With an Android API 24+
 device or emulator connected, run the complete packaged-artifact gate with:
 

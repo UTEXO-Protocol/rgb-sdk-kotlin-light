@@ -219,9 +219,14 @@ public data class ReservedAddress(
     public val account: AccountKind,
     public val keychain: Keychain,
     public val index: Int,
+    /** Optional gateway evidence, compared with the locally derived output script. */
+    public val scriptPubkeyHex: String? = null,
 ) {
     init {
         if (index < 0) throw SdkException.InvalidArgument("addressIndex", "must not be negative")
+        if (scriptPubkeyHex != null && !Regex("5120[0-9a-f]{64}").matches(scriptPubkeyHex)) {
+            throw SdkException.InvalidArgument("scriptPubkeyHex", "must be a canonical BIP86 output script")
+        }
     }
 }
 

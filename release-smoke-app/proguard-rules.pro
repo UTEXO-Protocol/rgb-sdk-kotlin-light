@@ -8,3 +8,6 @@
 -keep class kotlin.** { *; }
 -keep class com.utexo.rgb.sdk.releasesmoke.ReleaseTransactionSmoke { public *; }
 -keep class com.utexo.rgb.sdk.releasesmoke.ReleaseGatewaySmoke { public *; }
+-keep class com.utexo.rgb.sdk.releasesmoke.ReleaseGatewaySpendingSmoke {
+    public *;
+}

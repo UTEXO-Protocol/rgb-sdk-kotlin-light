@@ -21,6 +21,9 @@ import com.utexo.rgb.sdk.WalletIdentity
 internal interface LocalSigningEngine : AutoCloseable {
     val capabilities: WalletCapabilities
 
+    /** Refreshes trusted local authorization context before any new remote preparation. */
+    suspend fun prepareSigningContext(): Unit = Unit
+
     suspend fun identity(): WalletIdentity
 
     suspend fun verifyReservedAddress(reservation: ReservedAddress): Unit

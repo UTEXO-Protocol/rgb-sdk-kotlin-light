@@ -97,12 +97,13 @@ internal class UniFfiLocalSigningEngine(
     override val capabilities: WalletCapabilities = WalletCapabilities(
         localKeyDerivation = true,
         localTransactionValidation = true,
-        localTransactionSigning = true,
+        localTransactionSigning = gatewayContext?.canSign ?: true,
         localRgbInvoiceParsing = true,
         localRgbValidation = false,
         // The additive profile authorizes Bitcoin intent, not RGB transitions.
         // Backend gates are independent; this is not gateway readiness.
-        localSigningOperations = if (gatewayContext == null) setOf(OperationKind.SEND_BTC)
+        localSigningOperations = if (gatewayContext != null && !gatewayContext.canSign) emptySet()
+            else if (gatewayContext == null) setOf(OperationKind.SEND_BTC)
             else setOf(OperationKind.SEND_BTC, OperationKind.CREATE_UTXOS, OperationKind.ONCHAIN_SEND),
         derivationProfile = WalletCapabilities.DERIVATION_PROFILE_V1,
         signingProfile = if (gatewayContext == null) WalletCapabilities.SIGNING_PROFILE_V1 else GatewaySigningContext.PROFILE,
@@ -121,6 +122,8 @@ internal class UniFfiLocalSigningEngine(
         )
     }
 
+    override suspend fun prepareSigningContext(): Unit { gatewayContext?.validated() }
+
     override suspend fun verifyReservedAddress(reservation: ReservedAddress): Unit = nativeCall {
         val derived = signer.deriveAddress(
             reservation.account.toFfi(),
@@ -128,7 +131,8 @@ internal class UniFfiLocalSigningEngine(
             reservation.index.toUInt(),
         )
         val expected = BitcoinAddress.of(derived.address)
-        if (expected != reservation.address) {
+        if (expected != reservation.address || (reservation.scriptPubkeyHex != null &&
+                reservation.scriptPubkeyHex != derived.scriptPubkeyHex)) {
             throw SdkException.BackendProtocolMismatch(
                 "reserved address does not match its local BIP86 derivation",
             )
@@ -176,19 +180,21 @@ internal class UniFfiLocalSigningEngine(
     override suspend fun validateAndSign(
         prepared: PreparedTransaction,
         intent: LocalOperationIntent,
-    ): LocalSigningResult = nativeCall {
-        val context = gatewayContext
-        if (context != null) {
-            val result = signer.signGatewayPsbt(prepared.psbtBase64, gatewayIntent(prepared, intent, context))
-            LocalSigningResult(result.signedPsbtBase64, result.validation.toPublic())
-        } else when (intent) {
-            is LocalOperationIntent.SendBtc -> signSendBtc(prepared, intent)
-            is LocalOperationIntent.CreateUtxos -> throw SdkException.Unsupported(
-                "complete local createUtxos intent validation and signing",
-            )
-            is LocalOperationIntent.OnchainSend -> throw SdkException.Unsupported(
-                "complete local onchainSend Bitcoin intent validation and signing",
-            )
+    ): LocalSigningResult {
+        val context = gatewayContext?.validated()
+        return nativeCall {
+            if (context != null) {
+                val result = signer.signGatewayPsbt(prepared.psbtBase64, gatewayIntent(prepared, intent, context))
+                LocalSigningResult(result.signedPsbtBase64, result.validation.toPublic())
+            } else when (intent) {
+                is LocalOperationIntent.SendBtc -> signSendBtc(prepared, intent)
+                is LocalOperationIntent.CreateUtxos -> throw SdkException.Unsupported(
+                    "complete local createUtxos intent validation and signing",
+                )
+                is LocalOperationIntent.OnchainSend -> throw SdkException.Unsupported(
+                    "complete local onchainSend Bitcoin intent validation and signing",
+                )
+            }
         }
     }
 
@@ -206,15 +212,17 @@ internal class UniFfiLocalSigningEngine(
     override suspend fun validateRetainedSigning(
         prepared: PreparedTransaction,
         intent: LocalOperationIntent,
-    ): LocalValidationReport = nativeCall {
-        val context = gatewayContext
-        if (context != null) {
-            signer.validateGatewayPsbt(prepared.psbtBase64, gatewayIntent(prepared, intent, context)).toPublic()
-        } else when (intent) {
-            is LocalOperationIntent.SendBtc -> signer.validatePsbt(
-                prepared.psbtBase64, sendBtcIntent(prepared, intent),
-            ).toPublic()
-            else -> throw SdkException.Unsupported("retained operation policy validation")
+    ): LocalValidationReport {
+        val context = gatewayContext?.validated()
+        return nativeCall {
+            if (context != null) {
+                signer.validateGatewayPsbt(prepared.psbtBase64, gatewayIntent(prepared, intent, context)).toPublic()
+            } else when (intent) {
+                is LocalOperationIntent.SendBtc -> signer.validatePsbt(
+                    prepared.psbtBase64, sendBtcIntent(prepared, intent),
+                ).toPublic()
+                else -> throw SdkException.Unsupported("retained operation policy validation")
+            }
         }
     }
 
