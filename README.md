@@ -20,11 +20,6 @@ wallet and Lightning infrastructure; this SDK connects through a wallet gateway
 rather than exposing the full RLN API. **This build has no public Lightning
 payment, BOLT11 invoice, or channel-management API.**
 
-The gateway contract is provisional, with known crash/expiry recovery and RGB
-input-reservation limitations. Confirm deployment and recovery expectations with
-UTEXO before using real funds; this integration has not been qualified as
-production-ready.
-
 ## Before you integrate
 
 You need:
@@ -132,11 +127,6 @@ The SDK loads and closes a fresh `WalletAPIKey` for every HTTP request. Rotating
 UTEXO account: wallet storage is bound to its gateway account and origin, and
 rejects switching either under an existing wallet ID. Never embed an API key in
 source code, `BuildConfig`, logs, or a public example.
-
-The current gateway associates one vanilla/colored account-xpub pair with each
-gateway user. Do not reuse that user's credential for independently generated
-wallets; changing `WalletId` alone does not create another gateway user. Ask UTEXO
-about per-user credential provisioning when integrating a multi-user app.
 
 ### Create a new wallet or import a recovery phrase
 
@@ -484,7 +474,5 @@ journal limit is 64 MiB or 100,000 records, whichever is reached first. Never
 delete it to regain capacity or clear an uncertain payment; plan ongoing
 recovery/storage support with UTEXO.
 
-See [native artifact documentation](NATIVE_ARTIFACTS.md), [security reporting](SECURITY.md),
-and [verification notes](docs/assurance/KOTLIN_RN_REMEDIATION_2026-09-21.md) for
-implementation and release evidence. The [Swift lightweight SDK](https://github.com/UTEXO-Protocol/rgb-sdk-swift-light)
+The [Swift lightweight SDK](https://github.com/UTEXO-Protocol/rgb-sdk-swift-light)
 is the companion integration for Apple platforms.
