@@ -27,9 +27,9 @@ internal class WalletModelValidationTest {
             UnixSeconds.of(0), UnixSeconds.of(0), AssetBalance(),
         )
         assertFailsWith<SdkException.InvalidArgument> { asset.copy(precision = 19) }
-        assertFailsWith<SdkException.InvalidArgument> { asset.copy(name = " Test ") }
+        assertEquals(" Test ", asset.copy(name = " Test ").name)
         assertFailsWith<SdkException.InvalidArgument> { asset.copy(ticker = "x".repeat(17)) }
-        assertFailsWith<SdkException.InvalidArgument> { asset.copy(details = "x".repeat(4097)) }
+        assertFailsWith<SdkException.InvalidArgument> { asset.copy(details = "x".repeat(65536)) }
         assertFailsWith<SdkException.InvalidArgument> { Media(reference = " ref ") }
     }
 

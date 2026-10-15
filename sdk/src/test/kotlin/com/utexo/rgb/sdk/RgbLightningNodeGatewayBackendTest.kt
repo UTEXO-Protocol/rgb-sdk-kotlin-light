@@ -2,12 +2,12 @@ package com.utexo.rgb.sdk
 
 import com.utexo.rgb.sdk.internal.EpochSecondsSource
 import com.utexo.rgb.sdk.internal.OperationCoordinator
-import com.utexo.rgb.sdk.internal.GatewayRgbRecipient
 import com.utexo.rgb.sdk.internal.RequestHasher
 import com.utexo.rgb.sdk.internal.LocalSigningEngine
 import com.utexo.rgb.sdk.internal.LocalSigningEngineFactory
 import com.utexo.rgb.sdk.internal.LocalOperationIntent
 import com.utexo.rgb.sdk.internal.LocalSigningResult
+import com.utexo.rgb.sdk.internal.GatewayRgbInvoice
 import java.lang.reflect.Modifier
 import java.util.ArrayDeque
 import java.util.concurrent.CountDownLatch
@@ -23,7 +23,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -38,10 +37,399 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 internal class RgbLightningNodeGatewayBackendTest {
+    @Test
+    fun `RGB gateway coordinator routes exact request and recovers original operation without signing again`(): Unit = runBlocking {
+        val request = rgbSendRequest()
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, preparedRgbJson()),
+            queuedResponse(503, "{\"error\":{\"code\":\"UNAVAILABLE\"}}"),
+            queuedResponse(200, rgbStatusJson("pending")), queuedResponse(200, rgbStatusJson("completed")))
+        val backend = testBackend(transport, invoiceDecoder = { rgbDecodedInvoice() })
+        val context = initializedContext(backend)
+        val journal = InMemoryOperationJournal()
+        val report = testValidation().copy(psbtSha256 = TEST_PSBT_BASE64.decodeBase64()!!.sha256().hex())
+        var signatures = 0
+        var validations = 0
+        var invoiceChecks = 0
+        var chainAvailable = true
+        val signer = object : LocalSigningEngine by FakeSigningEngine(testCapabilities(setOf(OperationKind.ONCHAIN_SEND))) {
+            override suspend fun prepareSigningContext() { check(chainAvailable) }
+            override suspend fun validateAndSign(prepared: PreparedTransaction, intent: LocalOperationIntent): LocalSigningResult {
+                signatures++; return LocalSigningResult(TEST_PSBT_BASE64, report)
+            }
+            override suspend fun validateRetainedSigning(prepared: PreparedTransaction, intent: LocalOperationIntent): LocalValidationReport {
+                validations++; return report
+            }
+        }
+        val coordinator = OperationCoordinator(gatewayWalletConfiguration(), backend, journal, EpochSecondsSource { TEST_NOW })
+        assertFailsWith<SdkException.OperationAmbiguous> {
+            coordinator.onchainSend(context, signer, request) { invoiceChecks++ }
+        }
+        assertEquals(OperationPhase.SUBMITTING, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
+        chainAvailable = false
+        val checks = invoiceChecks
+        val result = coordinator.onchainSend(context, signer, request) { error("recovery must not revalidate expired invoice") }
+        assertEquals(OnchainSendResponse(TEST_TXID, null), result)
+        assertEquals(result, coordinator.onchainSend(context, signer, request) { error("terminal replay cannot require invoice or chain") })
+        assertEquals(checks, invoiceChecks)
+        assertEquals(1, signatures)
+        assertEquals(1, validations)
+        assertEquals(listOf("/v1/me", "/v1/onchain/send-asset/prepare", "/v1/onchain/send-asset/complete",
+            "/v1/onchain/operations/$TEST_OPERATION_ID", "/v1/onchain/operations/$TEST_OPERATION_ID"), transport.requests.map { it.url.encodedPath })
+        val body = Json.parseToJsonElement(transport.requests[1].bodyUtf8()).jsonObject
+        assertEquals(JsonPrimitive("fixture-asset"), body["assetId"])
+        assertEquals(JsonPrimitive(40), body["amount"])
+        assertEquals(JsonPrimitive(false), body["donation"])
+        assertEquals(JsonPrimitive(1), body["minConfirmations"])
+        assertEquals(null, body["witnessAmountSat"])
+        assertEquals(Json.parseToJsonElement("[\"rpc://proxy.example/json-rpc\"]"), body["transportEndpoints"])
+        assertNotEquals(transport.requests[1].header("Idempotency-Key"), transport.requests[2].header("Idempotency-Key"))
+    }
+
+    @Test
+    fun `RGB prepare rejects altered intent before signing and unsupported native options before journal mutation`(): Unit = runBlocking {
+        for (body in listOf(preparedRgbJson().replace("send_asset", "send_btc"),
+            preparedRgbJson().replace("\"amount\":40", "\"amount\":41"),
+            preparedRgbJson().replace("fixture-asset", "other-asset"),
+            preparedRgbJson().replace("recipient-fixture", "other-recipient"),
+            preparedRgbJson().replace("\"witnessAmountSat\":null", "\"witnessAmountSat\":500"),
+            preparedRgbJson().replace("proxy.example", "evil.example"),
+            preparedRgbJson().replace("\"utxos\":null", "\"utxos\":{}"))) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, body))
+            val backend = testBackend(transport, invoiceDecoder = { rgbDecodedInvoice() })
+            val context = initializedContext(backend)
+            val request = rgbSendRequest()
+            assertFailsWith<SdkException.BackendProtocolMismatch> {
+                backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(context,
+                    request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+            }
+        }
+        val backend = testBackend(QueueInterceptor(), invoiceDecoder = { rgbDecodedInvoice() })
+        for (request in listOf(rgbSendRequest().copy(skipSync = true),
+            rgbSendRequest().copy(witnessData = WitnessData(Satoshis.of(500), 1)),
+            rgbSendRequest().copy(amount = AssetAmount.parse("9007199254740992")),
+            rgbSendRequest().copy(minConfirmations = BlockCount.of(101)))) {
+            val journal = InMemoryOperationJournal()
+            assertFailsWith<SdkException.Unsupported> {
+                OperationCoordinator(gatewayWalletConfiguration(), backend, journal).onchainSend(inactiveContext(),
+                    FakeSigningEngine(testCapabilities(setOf(OperationKind.ONCHAIN_SEND))), request) { }
+            }
+            assertEquals(null, journal.load(TEST_WALLET_ID, request.idempotencyKey))
+        }
+    }
+
+    @Test
+    fun `RGB prepare refuses witness data that contradicts the invoice recipient mode`(): Unit = runBlocking {
+        // rgb-lib rejects a witness beneficiary without sats and a blind one with
+        // them; the mismatch is caught locally rather than at the gateway.
+        for (witnessInvoice in listOf(true, false)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+            val backend = testBackend(transport, invoiceDecoder = { rgbDecodedInvoice().copy(witness = witnessInvoice) })
+            val context = initializedContext(backend)
+            // Deliberately the WRONG pairing for this invoice kind.
+            val request = rgbSendRequest().copy(witnessData = if (witnessInvoice) null else WitnessData(Satoshis.of(1_000)))
+            assertFailsWith<SdkException.InvalidArgument> {
+                backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(context,
+                    request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+            }
+            assertEquals(1, transport.requests.size)
+        }
+    }
+
+    private fun rgbSendRequest(): OnchainSendRequest = OnchainSendRequest(RgbInvoice.of("rgb:fixture"),
+        AssetAmount.of(40), AssetId.of("fixture-asset"), idempotencyKey = TEST_IDEMPOTENCY_KEY)
+
+    private fun rgbDecodedInvoice(): GatewayRgbInvoice = GatewayRgbInvoice(Network.SIGNET, "fixture-asset",
+        "recipient-fixture", false, listOf("rpc://proxy.example/json-rpc"))
+
+    private fun preparedRgbJson(): String = """{"opId":"$TEST_OPERATION_ID","psbt":"$TEST_PSBT_BASE64","expiresAt":2000123,"intent":{"kind":"send_asset","feeRateSatPerVb":2,"recipients":[],"utxos":null,"asset":{"assetId":"fixture-asset","amount":40,"recipientId":"recipient-fixture","witnessAmountSat":null,"transportEndpoints":["rpc://proxy.example/json-rpc"]}}}"""
+
+    private fun rgbStatusJson(state: String): String {
+        val intent = Json.parseToJsonElement(preparedRgbJson()).jsonObject.getValue("intent")
+        return """{"opId":"$TEST_OPERATION_ID","kind":"send_asset","state":"$state","txid":${if (state == "completed") "\"${TEST_TXID.hex}\"" else "null"},"mayHaveBroadcast":false,"intent":$intent,"createdAt":1000000,"expiresAt":2000123}"""
+    }
+    @Test
+    fun `gateway newly supported public facade methods preserve missing metadata and never sync implicitly`(): Unit = runBlocking {
+        val address = """{"address":"${TEST_GATEWAY_ADDRESS.value}","derivation":{"account":"vanilla","keychain":0,"index":7,"derivationPath":"m/86'/1'/0'/0/7","scriptHex":"5120${"a".repeat(64)}"}}"""
+        val unspents = unspentsJson()
+        val transfers = transfersJson()
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(201, "{\"fingerprint\":\"deadbeef\",\"address\":\"fixture-address\"}"),
+            queuedResponse(200, address), queuedResponse(200, address), queuedResponse(200, unspents),
+            queuedResponse(200, "{\"blocks\":6,\"sourceBlocks\":3,\"feeRateSatPerVb\":2}"),
+            queuedResponse(200, assetsJson()), queuedResponse(200, transfers), queuedResponse(200, transfers),
+            queuedResponse(200, transfers), queuedResponse(201, receiveJson("blind")), queuedResponse(201, receiveJson("witness")))
+        val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
+        val signer = FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), InvoiceData(
+            RgbInvoice.of("rgb:fixture"), "recipient-fixture", network = Network.SIGNET,
+            assignment = Assignment(AssignmentType.ANY), expirationTimestamp = UnixSeconds.of(87_900)))
+        val engine = object : LocalSigningEngine by signer {
+            override suspend fun identity(): WalletIdentity = gatewayIdentity()
+            override suspend fun verifyReservedAddress(reservation: ReservedAddress) {
+                assertEquals(7, reservation.index)
+                assertEquals("5120${"a".repeat(64)}", reservation.scriptPubkeyHex)
+                signer.verifyReservedAddress(reservation)
+            }
+        }
+        val wallet = UTEXOWallet(gatewayWalletConfiguration(), backend,
+            WalletKeyProvider { SecretSeed.fromBytes(ByteArray(64) { 1 }) }, InMemoryOperationJournal(),
+            LocalSigningEngineFactory { _, _ -> engine }, EpochSecondsSource { 1_500L })
+        wallet.initialize(); wallet.unlock()
+        try {
+            assertEquals(TEST_GATEWAY_ADDRESS, wallet.getAddress())
+            assertEquals(TEST_GATEWAY_ADDRESS, wallet.rotateVanillaAddress())
+            assertEquals(2, signer.addressChecks)
+            val unspent = wallet.listUnspents().single()
+            assertEquals(null, unspent.utxo.exists)
+            assertEquals(2, unspent.pendingBlinded)
+            assertEquals(Assignment(AssignmentType.FUNGIBLE, AssetAmount.of(7)), unspent.rgbAllocations.single().assignment)
+            assertEquals(FeeRate.satPerVbyte("2"), wallet.estimateFeeRate(BlockCount.of(6)).feeRate)
+            val assets = wallet.listAssets()
+            assertEquals(AssetAmount.of(100), assets.nia.single().issuedSupply)
+            assertEquals(null, assets.ifa.single().initialSupply)
+            assertEquals(null, assets.ifa.single().maxSupply)
+            assertEquals(null, assets.ifa.single().knownCirculatingSupply)
+            val listed = wallet.listTransfers(AssetId.of("fixture-asset")).single()
+            assertEquals(null, listed.batchTransferIdx)
+            assertEquals(null, listed.requestedAssignment)
+            assertEquals(null, listed.transportEndpoints)
+            assertEquals(null, listed.expiration)
+            assertEquals(AssetAmount.of(7), listed.assignments.single().amount)
+            assertEquals(listOf(listed), wallet.listTransfersByTxid(TEST_TXID))
+            assertEquals(listOf(listed), wallet.listOnchainTransfers())
+            signer.decodedWitness = false
+            assertEquals(42L, wallet.blindReceive(InvoiceRequest()).batchTransferIdx)
+            signer.decodedWitness = true
+            assertEquals(42L, wallet.witnessReceive(InvoiceRequest()).batchTransferIdx)
+            assertEquals(12, transport.requests.size)
+            assertFalse(transport.requests.any { it.url.encodedPath.endsWith("/sync") })
+            assertEquals("fixture-asset", transport.requests[7].url.queryParameter("assetId"))
+            assertEquals(null, transport.requests[8].url.queryParameter("assetId"))
+            assertEquals(0, signer.signCalls)
+        } finally { wallet.destroy() }
+    }
+
+    @Test
+    fun `address derivation malformed or unattributed cannot become a deposit address`(): Unit = runBlocking {
+        val valid = """{"address":"${TEST_GATEWAY_ADDRESS.value}","derivation":{"account":"vanilla","keychain":0,"index":7,"derivationPath":"m/86'/1'/0'/0/7","scriptHex":"5120${"a".repeat(64)}"}}"""
+        for (body in listOf("{\"address\":\"bad\",\"derivation\":null}", valid.replace("m/86'/1'", "m/86'/0'"),
+            valid.replace("\"keychain\":0", "\"keychain\":1"), valid.replace("\"index\":7", "\"index\":2147483648"),
+            valid.replace("5120", "0014"), valid.replace("vanilla", "colored"))) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch> { backend.reserveAddress(ReserveAddressRequest(context, rotate = false)) }
+        }
+    }
+
+    @Test
+    fun `fee source targets and backend cap never silently weaken requested estimate`(): Unit = runBlocking {
+        for ((body, unsupported) in listOf(
+            "{\"blocks\":1,\"sourceBlocks\":6,\"feeRateSatPerVb\":2}" to true,
+            "{\"blocks\":1,\"sourceBlocks\":1,\"feeRateSatPerVb\":1000}" to true,
+            "{\"blocks\":2,\"sourceBlocks\":1,\"feeRateSatPerVb\":2}" to false,
+            "{\"blocks\":1,\"sourceBlocks\":1,\"feeRateSatPerVb\":1.5}" to false,
+            "{\"blocks\":1,\"sourceBlocks\":0,\"feeRateSatPerVb\":2}" to false)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            if (unsupported) assertFailsWith<SdkException.Unsupported> { backend.estimateFeeRate(context, BlockCount.of(1)) }
+            else assertFailsWith<SdkException.BackendProtocolMismatch> { backend.estimateFeeRate(context, BlockCount.of(1)) }
+            assertEquals("1", transport.requests.last().url.queryParameter("blocks"))
+        }
+    }
+
+    @Test
+    fun `unspents require exact typed assignments and reject malformed states and duplicate outpoints`(): Unit = runBlocking {
+        val valid = unspentsJson()
+        val entry = Json.parseToJsonElement(valid).jsonObject["unspents"] as kotlinx.serialization.json.JsonArray
+        val bad = listOf(valid.replace("\"pendingBlinded\":2", "\"pendingBlinded\":-1"),
+            valid.replace("\"colorable\":true", "\"colorable\":\"true\""),
+            valid.replace("\"amountSat\":1000", "\"amountSat\":2100000000000001"),
+            valid.replace("\"kind\":\"Fungible\",\"amount\":7", "\"kind\":\"Fungible\",\"amount\":null"),
+            valid.replace("\"amount\":7,\"assignment\"", "\"amount\":null,\"assignment\""),
+            valid.replace("Fungible", "NonFungible"), valid.replace("\"exists\":null", "\"exists\":1"),
+            "{\"unspents\":[${entry.single()},${entry.single()}]}")
+        for (body in bad) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch>(body) { backend.listUnspents(context) }
+        }
+    }
+
+    @Test
+    fun `unspents map every wire field including reported existence and unit assignments`(): Unit = runBlocking {
+        val body = """{"unspents":[{"txid":"${"ab".repeat(32)}","vout":2,"amountSat":9999,
+            "colorable":true,"exists":true,"pendingBlinded":3,
+            "allocations":[{"assetId":"rgb:a1","amount":42,
+              "assignment":{"kind":"Fungible","amount":42},"settled":true},
+             {"assetId":null,"amount":null,
+              "assignment":{"kind":"Any","amount":null},"settled":false}]}]}"""
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+        val backend = testBackend(transport)
+        val only = backend.listUnspents(initializedContext(backend)).single()
+        assertEquals(Outpoint(TransactionId.of("ab".repeat(32)), 2), only.utxo.outpoint)
+        assertEquals(9999L, only.utxo.btcAmount.value)
+        assertTrue(only.utxo.colorable)
+        assertEquals(true, only.utxo.exists)
+        assertEquals(3, only.pendingBlinded)
+        assertEquals(RgbAllocation(AssetId.of("rgb:a1"), Assignment(AssignmentType.FUNGIBLE, AssetAmount.of(42)), true),
+            only.rgbAllocations[0])
+        // A unit variant keeps its name and carries no amount.
+        assertEquals(RgbAllocation(null, Assignment(AssignmentType.ANY), false), only.rgbAllocations[1])
+    }
+
+    @Test
+    fun `asset decoder rejects malformed supplies and unknown schemas without hiding assets`(): Unit = runBlocking {
+        for (body in listOf(assetsJson().replace("\"schema\":\"nia\"", "\"schema\":\"future\""),
+            assetsJson().replace("\"issuedSupply\":100", "\"issuedSupply\":null"),
+            assetsJson().replace("\"issuedSupply\":100", "\"issuedSupply\":9007199254740992"),
+            assetsJson().replace("\"precision\":0", "\"precision\":19"),
+            assetsJson().replace("\"timestamp\":1", "\"timestamp\":-1"),
+            assetsJson().replace("ifa-asset", "nia-asset"))) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch>(body) { backend.listAssets(context) }
+        }
+    }
+
+    @Test
+    fun `asset display data preserves whitespace and Unicode while protocol identifiers remain strict`(): Unit = runBlocking {
+        val body = assetsJson().replace("\"name\":\"Fixture\"", "\"name\":\" Fixture \"")
+            .replace("\"details\":null", "\"details\":\"  Caf\\u00e9\\nnotes  \"")
+        val backend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body)))
+        val result = backend.listAssets(initializedContext(backend)).nia.single()
+        assertEquals(" Fixture ", result.name)
+        assertEquals("  Café\nnotes  ", result.details)
+    }
+
+    @Test
+    fun `display metadata bounds are UTF8 byte limits with exact boundary accepted`(): Unit = runBlocking {
+        val name = "é".repeat(128)
+        val details = "é".repeat(32_767) + "a"
+        fun body(nameValue: String, detailsValue: String): String = assetsJson()
+            .replace("\"name\":\"Fixture\"", "\"name\":\"$nameValue\"")
+            .replace("\"details\":null", "\"details\":\"$detailsValue\"")
+        val backend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body(name, details))))
+        val result = backend.listAssets(initializedContext(backend)).nia.single()
+        assertEquals(name, result.name)
+        assertEquals(details, result.details)
+        for (bad in listOf(body(name + "a", details), body(name, details + "a"), body("", details), body(name, ""))) {
+            val invalid = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, bad)))
+            val context = initializedContext(invalid)
+            assertFailsWith<SdkException.BackendProtocolMismatch> { invalid.listAssets(context) }
+        }
+    }
+
+    @Test
+    fun `additive known IFA supplies and existence state are retained rather than discarded`(): Unit = runBlocking {
+        val body = assetsJson().replace("\"schema\":\"ifa\"", "\"schema\":\"ifa\",\"initialSupply\":100,\"maxSupply\":200,\"knownCirculatingSupply\":150")
+        val backend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body),
+            queuedResponse(200, unspentsJson().replace("\"exists\":null", "\"exists\":false"))))
+        val context = initializedContext(backend)
+        val result = backend.listAssets(context).ifa.single()
+        assertEquals(AssetAmount.of(100), result.initialSupply)
+        assertEquals(AssetAmount.of(200), result.maxSupply)
+        assertEquals(AssetAmount.of(150), result.knownCirculatingSupply)
+        assertEquals(false, backend.listUnspents(context).single().utxo.exists)
+        for (bad in listOf(body.replace("\"maxSupply\":200", "\"maxSupply\":99"),
+            body.replace("\"initialSupply\":100", "\"initialSupply\":\"100\""))) {
+            val invalid = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, bad)))
+            val invalidContext = initializedContext(invalid)
+            assertFailsWith<SdkException.BackendProtocolMismatch> { invalid.listAssets(invalidContext) }
+        }
+    }
+
+    @Test
+    fun `transfers preserve actual assignments and reject malformed history rather than inventing results`(): Unit = runBlocking {
+        for (body in listOf(transfersJson().replace("\"updatedAt\":2", "\"updatedAt\":0"),
+            transfersJson().replace("\"batchTransferIdx\":null", "\"batchTransferIdx\":-1"),
+            transfersJson().replace("\"amount\":7}", "\"amount\":null}"),
+            transfersJson().replace("\"assignments\":[", "\"assignments\":null,\"other\":["),
+            transfersJson().replace("\"expiration\":null", "\"expiration\":1.5"))) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch>(body) { backend.listTransfers(context) }
+        }
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, transfersJson()))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        assertFailsWith<SdkException.BackendProtocolMismatch> { backend.listTransfers(context, AssetId.of("other & asset")) }
+        assertEquals("other & asset", transport.requests.last().url.queryParameter("assetId"))
+    }
+
+    @Test
+    fun `strict receives require actual batch identity but unified receive remains compatible`(): Unit = runBlocking {
+        for (mode in listOf("blind", "witness")) for (batch in listOf("null", "-1", "9007199254740992", "\"42\"")) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
+                receiveJson(mode).replace("\"batchTransferIdx\":42", "\"batchTransferIdx\":$batch")))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendProtocolMismatch> {
+                if (mode == "blind") backend.blindReceive(context, InvoiceRequest()) else backend.witnessReceive(context, InvoiceRequest())
+            }
+            assertEquals(2, transport.requests.size)
+        }
+    }
+
+    private fun unspentsJson(): String = """{"unspents":[{"txid":"${TEST_TXID.hex}","vout":0,"amountSat":1000,"colorable":true,"exists":null,"pendingBlinded":2,"allocations":[{"assetId":null,"amount":7,"assignment":{"kind":"Fungible","amount":7},"settled":false}]}]}"""
+
+    private fun assetsJson(): String {
+        fun asset(schema: String): String = """{"assetId":"$schema-asset","schema":"$schema","ticker":"TEST","name":"Fixture","details":null,"precision":0,"issuedSupply":${if (schema == "nia") "100" else "null"},"timestamp":1,"addedAt":2,"balance":{"settled":0,"future":7,"spendable":0}}"""
+        return """{"btc":{"vanilla":{"settled":0,"future":0,"spendable":0},"colored":{"settled":0,"future":0,"spendable":0}},"assets":[${asset("nia")},${asset("ifa")}]}"""
+    }
+
+    private fun transfersJson(): String = """{"transfers":[{"idx":1,"batchTransferIdx":null,"assetId":"fixture-asset","amount":99,"assignments":[{"kind":"Fungible","amount":7}],"kind":"Send","status":"Settled","txid":"${TEST_TXID.hex}","recipientId":null,"expiration":null,"createdAt":1,"updatedAt":2}]}"""
+
+    private fun receiveJson(mode: String): String = """{"invoice":"rgb:fixture","recipientId":"recipient-fixture","mode":"$mode","expirationTimestamp":87900,"batchTransferIdx":42}"""
+
+    @Test
+    fun `additive transfer metadata is preserved with absent and explicit empty distinguished`(): Unit = runBlocking {
+        val extra = """"expirationTimestamp":50,"receiveUtxo":{"txid":"${TEST_TXID.hex}","vout":2},"changeUtxo":null,"transportEndpoints":[{"endpoint":"https://proxy.example","transportType":"JsonRpc","used":true}],"expiration":null"""
+        val body = transfersJson().replace("\"expiration\":null", extra)
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body),
+            queuedResponse(200, transfersJson().replace("\"expiration\":null", "\"expiration\":null,\"transportEndpoints\":[]")))
+        val backend = testBackend(transport)
+        val context = initializedContext(backend)
+        val result = backend.listTransfers(context).single()
+        assertEquals(UnixSeconds.of(50), result.expiration)
+        assertEquals(Outpoint(TEST_TXID, 2), result.receiveUtxo)
+        assertEquals(listOf(TransferTransportEndpoint("https://proxy.example", "JsonRpc", true)), result.transportEndpoints)
+        assertEquals(emptyList(), backend.listTransfers(context).single().transportEndpoints)
+        for (bad in listOf(body.replace("\"expiration\":null", "\"expiration\":51"),
+            body.replace("\"vout\":2", "\"vout\":-1"), body.replace("\"used\":true", "\"used\":1"))) {
+            val badBackend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, bad)))
+            val badContext = initializedContext(badBackend)
+            assertFailsWith<SdkException.BackendProtocolMismatch> { badBackend.listTransfers(badContext) }
+        }
+    }
+
+    @Test
+    fun `read adapters propagate server and stale session failures without automatic retry`(): Unit = runBlocking {
+        val operations: List<suspend (RgbLightningNodeGatewayBackend, BackendContext) -> Unit> = listOf(
+            { backend, context -> backend.reserveAddress(ReserveAddressRequest(context, rotate = false)) },
+            { backend, context -> backend.listUnspents(context) },
+            { backend, context -> backend.listAssets(context) },
+            { backend, context -> backend.listTransfers(context) },
+            { backend, context -> backend.estimateFeeRate(context, BlockCount.of(6)) },
+        )
+        for (operation in operations) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(503, "{\"error\":{\"code\":\"UNAVAILABLE\"}}"))
+            val backend = testBackend(transport)
+            val context = initializedContext(backend)
+            assertFailsWith<SdkException.BackendUnavailable> { operation(backend, context) }
+            assertEquals(2, transport.requests.size)
+            backend.shutdown(context.session)
+            assertFailsWith<SdkException.InvalidState> { operation(backend, context) }
+            assertEquals(2, transport.requests.size)
+        }
+    }
+
     @Test
     fun `gateway request-domain failures do not create a journal entry or acquire credentials`(): Unit = runBlocking {
         val transport = QueueInterceptor()
@@ -108,6 +496,8 @@ internal class RgbLightningNodeGatewayBackendTest {
         val journal = InMemoryOperationJournal()
         var signed = 0
         val signer = object : LocalSigningEngine by FakeSigningEngine(testCapabilities(setOf(OperationKind.CREATE_UTXOS))) {
+            override suspend fun validateRetainedSigning(prepared: PreparedTransaction, intent: LocalOperationIntent): LocalValidationReport =
+                testValidation().copy(psbtSha256 = TEST_PSBT_BASE64.decodeBase64()!!.sha256().hex())
             override suspend fun validateAndSign(prepared: PreparedTransaction, intent: LocalOperationIntent): LocalSigningResult {
                 signed++
                 assertEquals(OperationPhase.PREPARED, journal.load(TEST_WALLET_ID, request.idempotencyKey)?.phase)
@@ -330,178 +720,7 @@ internal class RgbLightningNodeGatewayBackendTest {
     }
 
     @Test
-    fun `listUnspents maps authoritative wire state and refuses a response missing it`(): Unit = runBlocking {
-        val body = """{"unspents":[{"txid":"${"ab".repeat(32)}","vout":2,"amountSat":9999,
-            "colorable":true,"exists":true,"pendingBlinded":3,
-            "allocations":[{"assetId":"rgb:a1","amount":42,
-              "assignment":{"kind":"Fungible","amount":42},"settled":true},
-             {"assetId":null,"amount":null,
-              "assignment":{"kind":"Any","amount":null},"settled":false}]}]}"""
-        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
-        val backend = testBackend(transport)
-        val context = initializedContext(backend)
-        val unspents = backend.listUnspents(context)
-        assertEquals(1, unspents.size)
-        val only = unspents.single()
-        assertEquals("ab".repeat(32), only.utxo.outpoint.txid.hex)
-        assertEquals(2, only.utxo.outpoint.vout)
-        assertEquals(9999L, only.utxo.btcAmount.value)
-        assertTrue(only.utxo.colorable)
-        // Authoritative backend state, never defaulted.
-        assertTrue(only.utxo.exists)
-        assertEquals(3, only.pendingBlinded)
-        assertEquals(2, only.rgbAllocations.size)
-        assertEquals(AssignmentType.FUNGIBLE, only.rgbAllocations[0].assignment.type)
-        assertEquals("42", only.rgbAllocations[0].assignment.amount?.decimal)
-        assertEquals(AssetId.of("rgb:a1"), only.rgbAllocations[0].assetId)
-        // A unit variant keeps its name and carries no amount.
-        assertEquals(AssignmentType.ANY, only.rgbAllocations[1].assignment.type)
-        assertNull(only.rgbAllocations[1].assignment.amount)
-        assertNull(only.rgbAllocations[1].assetId)
-    }
-
-    @Test
-    fun `listUnspents rejects a response that omits exists`(): Unit = runBlocking {
-        // `exists` says whether the creating transaction was broadcast; it cannot
-        // be inferred, so an older gateway must fail loudly rather than default.
-        val body = """{"unspents":[{"txid":"${"ab".repeat(32)}","vout":0,"amountSat":1,
-            "colorable":false,"pendingBlinded":0,"allocations":[]}]}"""
-        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
-        val backend = testBackend(transport)
-        val context = initializedContext(backend)
-        assertFailsWith<SdkException.BackendProtocolMismatch> { backend.listUnspents(context) }
-    }
-
-    @Test
-    fun `onchainSend binds the invoice recipient and verifies the returned intent`(): Unit = runBlocking {
-        val recipient = GatewayRgbRecipient(
-            recipientId = "utxob:recipient-1",
-            assetId = AssetId.of("rgb:asset-1"),
-            transportEndpoints = listOf("rpc://proxy.example/json-rpc"),
-            witness = false,
-            network = Network.SIGNET,
-        )
-        val intent = """{"kind":"send_asset","feeRateSatPerVb":2,"recipients":[],"utxos":null,
-            "asset":{"assetId":"rgb:asset-1","amount":40,"recipientId":"utxob:recipient-1",
-              "witnessAmountSat":null,"transportEndpoints":["rpc://proxy.example/json-rpc"]}}"""
-        val prepared = """{"opId":"$TEST_OPERATION_ID","psbt":"$TEST_PSBT_BASE64",
-            "intent":$intent,"expiresAt":2000123}"""
-        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, prepared))
-        val backend = testBackend(transport, rgbInvoiceDecoder = { recipient })
-        val context = initializedContext(backend)
-        val request = OnchainSendRequest(
-            invoice = RgbInvoice.of("rgb:~/~/~/sb:utxob:recipient-1"),
-            amount = AssetAmount.of(40),
-            feeRate = FeeRate.satPerVbyte("2"),
-            idempotencyKey = TEST_IDEMPOTENCY_KEY,
-        )
-        val result = backend.prepareOnchainSend(
-            PrepareOnchainSendRequest(
-                OperationRequestContext(
-                    context,
-                    request.idempotencyKey,
-                    RequestHasher.onchainSend(Network.SIGNET, request),
-                ),
-                request,
-            ),
-        )
-        assertEquals(OperationKind.ONCHAIN_SEND, result.operation)
-        // The recipient sent to the gateway came from the INVOICE, not the caller.
-        val sent = Json.parseToJsonElement(transport.requests[1].bodyUtf8()).jsonObject
-        assertEquals("utxob:recipient-1", sent["recipientId"]?.jsonPrimitive?.content)
-        assertEquals("rgb:asset-1", sent["assetId"]?.jsonPrimitive?.content)
-        assertEquals("40", sent["amount"]?.jsonPrimitive?.content)
-    }
-
-    @Test
-    fun `onchainSend rejects an intent that alters the asset amount or recipient`(): Unit = runBlocking {
-        val recipient = GatewayRgbRecipient(
-            recipientId = "utxob:recipient-1",
-            assetId = AssetId.of("rgb:asset-1"),
-            transportEndpoints = listOf("rpc://proxy.example/json-rpc"),
-            witness = false,
-            network = Network.SIGNET,
-        )
-        // Each tampered field must be caught on its own.
-        val tampered = listOf(
-            """"assetId":"rgb:other","amount":40,"recipientId":"utxob:recipient-1"""",
-            """"assetId":"rgb:asset-1","amount":41,"recipientId":"utxob:recipient-1"""",
-            """"assetId":"rgb:asset-1","amount":40,"recipientId":"utxob:attacker"""",
-        )
-        for (asset in tampered) {
-            val intent = """{"kind":"send_asset","feeRateSatPerVb":2,"recipients":[],"utxos":null,
-                "asset":{$asset,"witnessAmountSat":null,
-                  "transportEndpoints":["rpc://proxy.example/json-rpc"]}}"""
-            val transport = QueueInterceptor(
-                queuedResponse(200, TEST_ME_JSON),
-                queuedResponse(201, """{"opId":"$TEST_OPERATION_ID","psbt":"$TEST_PSBT_BASE64",
-                    "intent":$intent,"expiresAt":2000123}"""),
-            )
-            val backend = testBackend(transport, rgbInvoiceDecoder = { recipient })
-            val context = initializedContext(backend)
-            val request = OnchainSendRequest(
-                invoice = RgbInvoice.of("rgb:~/~/~/sb:utxob:recipient-1"),
-                amount = AssetAmount.of(40),
-                feeRate = FeeRate.satPerVbyte("2"),
-                idempotencyKey = TEST_IDEMPOTENCY_KEY,
-            )
-            assertFailsWith<SdkException.BackendProtocolMismatch>(asset) {
-                backend.prepareOnchainSend(
-                    PrepareOnchainSendRequest(
-                        OperationRequestContext(
-                            context,
-                            request.idempotencyKey,
-                            RequestHasher.onchainSend(Network.SIGNET, request),
-                        ),
-                        request,
-                    ),
-                )
-            }
-        }
-    }
-
-    @Test
-    fun `onchainSend refuses witness data that contradicts the invoice`(): Unit = runBlocking {
-        // rgb-lib rejects a witness beneficiary without sats and a blind one with
-        // them; the mismatch is caught locally rather than at the gateway.
-        for (witnessInvoice in listOf(true, false)) {
-            val recipient = GatewayRgbRecipient(
-                recipientId = if (witnessInvoice) "wvout:recipient" else "utxob:recipient",
-                assetId = AssetId.of("rgb:asset-1"),
-                transportEndpoints = emptyList(),
-                witness = witnessInvoice,
-                network = Network.SIGNET,
-            )
-            val backend = testBackend(
-                QueueInterceptor(queuedResponse(200, TEST_ME_JSON)),
-                rgbInvoiceDecoder = { recipient },
-            )
-            val context = initializedContext(backend)
-            // Deliberately the WRONG pairing for this invoice kind.
-            val request = OnchainSendRequest(
-                invoice = RgbInvoice.of("rgb:~/~/~/sb:recipient"),
-                amount = AssetAmount.of(1),
-                witnessData = if (witnessInvoice) null else WitnessData(Satoshis.of(1_000)),
-                feeRate = FeeRate.satPerVbyte("2"),
-                idempotencyKey = TEST_IDEMPOTENCY_KEY,
-            )
-            assertFailsWith<SdkException.InvalidArgument> {
-                backend.prepareOnchainSend(
-                    PrepareOnchainSendRequest(
-                        OperationRequestContext(
-                            context,
-                            request.idempotencyKey,
-                            RequestHasher.onchainSend(Network.SIGNET, request),
-                        ),
-                        request,
-                    ),
-                )
-            }
-        }
-    }
-
-    @Test
-    fun `all seventeen unsupported business methods and ordinary send gate refuse without business HTTP`(): Unit = runBlocking {
+    fun `remaining unsupported business methods and ordinary send gate refuse without business HTTP`(): Unit = runBlocking {
         val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
             queuedResponse(201, "{\"fingerprint\":\"deadbeef\",\"address\":\"fixture-address\"}"))
         val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
@@ -517,26 +736,17 @@ internal class RgbLightningNodeGatewayBackendTest {
         fun method(name: String, action: suspend () -> Unit) = name to action
         val asset = AssetId.of("fixture-asset")
         val unavailable = listOf(
-            method("getAddress") { wallet.getAddress() },
-            method("rotateVanillaAddress") { wallet.rotateVanillaAddress() },
-            method("estimateFeeRate") { wallet.estimateFeeRate(BlockCount.of(6)) },
             method("createUtxos") { wallet.createUtxos() },
-            method("listAssets") { wallet.listAssets() },
             method("issueAssetNia") { wallet.issueAssetNia(IssueAssetNiaRequest("T", "Fixture", listOf(AssetAmount.of(1)), 0)) },
             method("issueAssetIfa") { wallet.issueAssetIfa(IssueAssetIfaRequest("T", "Fixture", 0, listOf(AssetAmount.of(1)), listOf(AssetAmount.of(1)))) },
-            method("blindReceive") { wallet.blindReceive(InvoiceRequest()) },
-            method("witnessReceive") { wallet.witnessReceive(InvoiceRequest()) },
             method("onchainSend") { wallet.onchainSend(OnchainSendRequest(RgbInvoice.of("rgb:fixture"), AssetAmount.of(1))) },
             method("inflate") { wallet.inflate(InflateRequest(asset, listOf(AssetAmount.of(1)))) },
             method("listTransactions") { wallet.listTransactions() },
             method("listTransactionsByTxid") { wallet.listTransactionsByTxid(TEST_TXID) },
-            method("listTransfers") { wallet.listTransfers() },
-            method("listTransfersByTxid") { wallet.listTransfersByTxid(TEST_TXID) },
-            method("listOnchainTransfers") { wallet.listOnchainTransfers() },
             method("failTransfers") { wallet.failTransfers(FailTransfersRequest()) },
         )
         try {
-            assertEquals(17, unavailable.size)
+            assertEquals(8, unavailable.size)
             for ((name, call) in unavailable) {
                 assertFailsWith<SdkException.Unsupported>(name) { call() }
                 assertEquals(2, transport.requests.size, "$name must not issue business HTTP")
@@ -1518,12 +1728,8 @@ internal class RgbLightningNodeGatewayBackendTest {
                     OperationId.of("123e4567-e89b-42d3-a456-426614174000"),
                 )
             }
-            assertFailsWith<SdkException.Unsupported> { backend.reserveAddress(
-                ReserveAddressRequest(context, rotate = false),
-            ) }
-            assertFailsWith<SdkException.Unsupported> {
-                backend.blindReceive(context, InvoiceRequest())
-            }
+            assertFailsWith<SdkException.Unsupported> { backend.listTransactions(context) }
+            assertFailsWith<SdkException.Unsupported> { backend.failTransfers(context, FailTransfersRequest()) }
             assertEquals(1, transport.requests.size)
         }
 
@@ -2109,8 +2315,8 @@ internal class RgbLightningNodeGatewayBackendTest {
         createPlanExtractor: suspend (String, Network) -> CreateUtxosOutputPlan = { _, _ ->
             throw AssertionError("unexpected native create-plan extraction in JVM transport test")
         },
-        rgbInvoiceDecoder: suspend (RgbInvoice) -> GatewayRgbRecipient = {
-            throw AssertionError("unexpected native RGB invoice decoding in JVM transport test")
+        invoiceDecoder: suspend (RgbInvoice) -> GatewayRgbInvoice = {
+            throw AssertionError("unexpected native invoice decoding in JVM transport test")
         },
     ): RgbLightningNodeGatewayBackend {
         val configuration = gatewayConfiguration(
@@ -2130,7 +2336,7 @@ internal class RgbLightningNodeGatewayBackendTest {
             Function2::class.java,
         )
         constructor.isAccessible = true
-        return constructor.newInstance(configuration, client, clock, createPlanExtractor, rgbInvoiceDecoder)
+        return constructor.newInstance(configuration, client, clock, createPlanExtractor, invoiceDecoder)
             as RgbLightningNodeGatewayBackend
     }
 

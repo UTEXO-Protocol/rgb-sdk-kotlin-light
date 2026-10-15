@@ -13,8 +13,25 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 internal class OperationCoordinatorTest {
+    @Test
+    fun `changed authorization context before first dispatch preserves signature without submission`(): Unit = runBlocking {
+        val journal = InMemoryOperationJournal()
+        val backend = FakeBackend()
+        val signer = FakeSigningEngine().apply {
+            retainedValidationFailure = SdkException.PolicyRejected("fresh chain bound excludes transaction locktime")
+        }
+        val wallet = testWallet(backend, signer, journal)
+        wallet.initialize(); wallet.unlock()
+        val request = testSendRequest()
+        assertFailsWith<SdkException.PolicyRejected> { wallet.sendBtc(request) }
+        assertEquals(1, signer.signCalls)
+        assertEquals(1, signer.retainedValidationCalls)
+        assertEquals(OperationPhase.SIGNED, journal.load(testConfiguration().walletId, request.idempotencyKey)?.phase)
+        assertTrue(backend.submissions.isEmpty())
+    }
     @Test
     fun `ambiguous error for another operation does not trigger reconciliation or replace identity`(): Unit = runBlocking {
         val backend = FakeBackend().apply {
@@ -402,7 +419,7 @@ internal class OperationCoordinatorTest {
             assertEquals(TEST_TXID, resumedWallet.sendBtc(request))
             assertEquals(1, backend.prepareSendCalls)
             assertEquals(0, resumedSigner.signCalls)
-            assertEquals(1, resumedSigner.retainedValidationCalls)
+            assertEquals(2, resumedSigner.retainedValidationCalls)
             assertEquals("signed-psbt", backend.submissions.single().signedPsbtBase64)
         }
 

@@ -4,14 +4,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal class WalletServiceConfigurationTest {
     private val provider = WalletAPIKeyProvider { WalletAPIKey.fromCharacters("token".toCharArray()) }
 
     @Test
-    fun `ordinary configuration validates transport without loading credentials and keeps profile disabled`(): Unit {
+    fun `ordinary configuration enables gateway transport but leaves trusted chain source explicit`(): Unit {
         val config = WalletServiceConfiguration("https://gateway.example", provider)
-        assertFalse(config.gatewayConfiguration(Network.SIGNET).allowUnverifiedPsbtProfile)
+        assertTrue(config.gatewayConfiguration(Network.SIGNET).allowUnverifiedPsbtProfile)
+        assertEquals(null, config.chainContextProvider)
         assertFailsWith<SdkException.InvalidArgument> { WalletServiceConfiguration("http://gateway.example", provider) }
         assertFailsWith<SdkException.InvalidArgument> {
             WalletServiceConfiguration("https://gateway.example", provider, callTimeoutMillis = 0)

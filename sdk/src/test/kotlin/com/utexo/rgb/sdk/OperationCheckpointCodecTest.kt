@@ -9,6 +9,31 @@ import kotlin.test.assertIs
 
 internal class OperationCheckpointCodecTest {
     @Test
+    fun `RGB receipts preserve old numeric batch encoding and additive missing batch encoding`(): Unit {
+        for (batch in listOf<Long?>(42L, null)) {
+            val base = signedCheckpoint(OperationTerminalOutcome.Succeeded(BackendOperationResult.SendBtc(TEST_OPERATION_ID, TEST_TXID)))
+            val prepared = base.preparedTransaction!!
+            val checkpoint = base.copy(operationKind = OperationKind.ONCHAIN_SEND,
+                preparedTransaction = PreparedTransaction(prepared.operationId, prepared.idempotencyKey,
+                    prepared.requestHash, prepared.network, OperationKind.ONCHAIN_SEND, prepared.psbtBase64, prepared.expiresAt),
+                terminalOutcome = OperationTerminalOutcome.Succeeded(
+                    BackendOperationResult.OnchainSend(TEST_OPERATION_ID, OnchainSendResponse(TEST_TXID, batch))))
+            val encoded = OperationCheckpointCodec.encode(checkpoint)
+            val decoded = OperationCheckpointCodec.decode(encoded)
+            assertEquals(batch, (decoded.terminalResult as BackendOperationResult.OnchainSend).result.batchTransferIdx)
+            assertContentEquals(encoded, OperationCheckpointCodec.encode(decoded))
+            val compact = checkpoint.compactTerminal()
+            val golden = if (batch == null)
+                "VVRYT1BDSEsAAAACAAAACHdhbGxldC0xAAAADWlkZW1wb3RlbmN5LTEAAABAZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZAAAAAtvbmNoYWluU2VuZAAAAAh0ZXJtaW5hbAAAAAtvcGVyYXRpb24tMQEAAABAYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYgAAAEBjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjAAAAQGFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEAAAAAAABOIAAAAAAAAEo4AAAAAAAAA+gAAAAAAAAAyAAAAAAAABOIAAAAAAAAJxAAAAAAAAAjKAAAAAEAAAACAAAAAAEEAAAAC29wZXJhdGlvbi0xAAAAQGFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWGagJla0qZuVqvoR6VpKk/CXm9p5ymGGEOCuHkhlnPn2A=="
+            else
+                "VVRYT1BDSEsAAAACAAAACHdhbGxldC0xAAAADWlkZW1wb3RlbmN5LTEAAABAZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZAAAAAtvbmNoYWluU2VuZAAAAAh0ZXJtaW5hbAAAAAtvcGVyYXRpb24tMQEAAABAYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYmJiYgAAAEBjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjAAAAQGFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEAAAAAAABOIAAAAAAAAEo4AAAAAAAAA+gAAAAAAAAAyAAAAAAAABOIAAAAAAAAJxAAAAAAAAAjKAAAAAEAAAACAAAAAAEDAAAAC29wZXJhdGlvbi0xAAAAQGFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWEAAAAAAAAAKjT+IIi8IAUBHN/sRLUZvDApVJe4Ke8hsmz0wturCGHl"
+            assertEquals(golden, Base64.getEncoder().encodeToString(OperationCheckpointCodec.encode(compact)))
+            assertContentEquals(Base64.getDecoder().decode(golden), OperationCheckpointCodec.encode(OperationCheckpointCodec.decode(Base64.getDecoder().decode(golden))))
+            assertEquals(batch, (OperationCheckpointCodec.decode(OperationCheckpointCodec.encode(compact))
+                .terminalResult as BackendOperationResult.OnchainSend).result.batchTransferIdx)
+        }
+    }
+    @Test
     fun `compact terminal receipt matches cross-platform v2 golden and cannot revive`(): Unit {
         val expected = Base64.getDecoder().decode(
             "VVRYT1BDSEsAAAACAAAACHdhbGxldC0xAAAADWlkZW1wb3RlbmN5LTEAAABAZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZAAAAAdzZW5kQnRjAAAACHRlcm1pbmFsAAAAC29wZXJhdGlvbi0xAAMAAAALb3BlcmF0aW9uLTFSUNDMLn6hpZ09w6zr8hXk1Do4zIX1dfSNTTTvNeq6jQ==",

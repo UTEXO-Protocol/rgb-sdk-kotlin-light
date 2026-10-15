@@ -92,17 +92,17 @@ deployed gateway package and regression coverage still need qualification.
 This does not call for an invented cryptographic proof of missing allocations,
 and local account/transaction authorization remains mandatory.
 
-The PR #174 prepare/complete mapping is disabled by default. Its explicit
-`allowUnverifiedPsbtProfile` opt-in is for development interoperability only
-until canonical backend fixtures, the exact PSBT profile, and idempotency
-durability are settled. The gate runs before new or nonterminal journal
-advancement and is rechecked immediately before both gateway write requests.
-An already-expired prepared/signed checkpoint may be truthfully terminalized
-before that gate. Terminal replay and status-only SUBMITTING recovery remain
-available with the gate off; neither path prepares or submits another
-transaction.
+The ordinary factory enables the PR #174 BTC/create/RGB prepare/complete
+mapping. New spending requires an app-owned `WalletChainContextProvider` with
+an independently obtained tip for the selected network. Its observation may be
+at most 300 seconds old or 30 seconds in the future; `observedAt` is observation
+time, not the block timestamp. Missing or invalid context cannot authorize
+signing/submission. Terminal replay and status-only SUBMITTING recovery remain
+available without the provider; neither path prepares or submits another
+transaction. The infrastructure-only adapter can still explicitly disable new
+spending without preventing those recovery paths.
 
-The separately selected internal `utexo.psbt.rgb-lib.v1` path keeps its own
+The ordinary gateway factory's `utexo.psbt.rgb-lib.v1` path keeps its own
 profile domain and requires an independently trusted maximum block height;
 the candidate PSBT is never allowed to choose that bound. It authorizes the
 specific Bitcoin effects of BTC send, create-UTXOs, and RGB send, with a fee
@@ -123,7 +123,7 @@ Apps own their session/background/device-lock policy and must await shutdown
 when authenticated access ends. A changed creation-time seed-store policy is
 not an implicit custody upgrade or authorization to delete old material.
 
-The gateway operation-status adapter accepts completed BTC success only when
+The gateway operation-status adapter accepts completed BTC/create/RGB success only when
 the returned operation/intent/expiry and transaction ID match retained local
 journal evidence and the original caller request. Pending/expired states are
 not proof of no broadcast, even when `txid` is null: the read bypasses the
@@ -137,7 +137,11 @@ the submitting checkpoint until a verified final outcome exists.
 Ambiguous gateway completion receives one read-only reconciliation; it never
 causes automatic prepare/sign/submit. Malformed, missing, contradictory,
 unavailable, or canceled recovery cannot release or replace the checkpoint.
-The endpoint does not yet carry complete create-UTXO or RGB public results.
+For create-UTXOs, the exact retained locally validated plan supplies the count
+after a matching completed txid is established. An omitted RGB batch identity
+remains nullable. Backend crash/TTL recovery and reservation guarantees remain
+known risks, not SDK activation gates. A broadcast without a recorded outcome
+can remain unresolved; enabling spending does not fix that backend gap.
 
 Backend preparation is never authorization. Echoed server intent is compared
 to a canonical hash produced from the original Kotlin request.

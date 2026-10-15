@@ -43,8 +43,8 @@ public data class Utxo(
     public val outpoint: Outpoint,
     public val btcAmount: Satoshis,
     public val colorable: Boolean,
-    /** Unlike the RN mapper, this must be authoritative backend state. */
-    public val exists: Boolean,
+    /** Null means the backend does not expose authoritative existence state. */
+    public val exists: Boolean? = null,
 )
 
 public class AssignmentType private constructor(public val wireValue: String) {
@@ -180,7 +180,7 @@ public data class TransferTransportEndpoint(
 
 public data class Transfer(
     public val idx: Long,
-    public val batchTransferIdx: Long,
+    public val batchTransferIdx: Long? = null,
     public val createdAt: UnixSeconds,
     public val updatedAt: UnixSeconds,
     public val status: TransferStatus,
@@ -192,13 +192,15 @@ public data class Transfer(
     public val receiveUtxo: Outpoint? = null,
     public val changeUtxo: Outpoint? = null,
     public val expiration: UnixSeconds? = null,
-    public val transportEndpoints: List<TransferTransportEndpoint> = emptyList(),
+    /** Null means unavailable, not an empty list of configured transports. */
+    public val transportEndpoints: List<TransferTransportEndpoint>? = null,
     /** Intentionally not exposed: the backend must not leak a server filesystem path. */
     public val invoice: RgbInvoice? = null,
+    public val assetId: AssetId? = null,
 ) {
     init {
         if (idx < 0L) throw SdkException.InvalidArgument("idx", "must not be negative")
-        if (batchTransferIdx < 0L) {
+        if (batchTransferIdx != null && batchTransferIdx < 0L) {
             throw SdkException.InvalidArgument("batchTransferIdx", "must not be negative")
         }
         recipientId?.let { requireCanonicalText("recipientId", it, 1_024) }
@@ -235,9 +237,10 @@ public data class AssetIfa(
     public val ticker: String,
     public val name: String,
     public val precision: Int,
-    public val initialSupply: AssetAmount,
-    public val maxSupply: AssetAmount,
-    public val knownCirculatingSupply: AssetAmount,
+    /** Null means this supply was not provided; never inferred from the balance. */
+    public val initialSupply: AssetAmount?,
+    public val maxSupply: AssetAmount?,
+    public val knownCirculatingSupply: AssetAmount?,
     public val timestamp: UnixSeconds,
     public val addedAt: UnixSeconds,
     public val balance: AssetBalance,
@@ -247,7 +250,8 @@ public data class AssetIfa(
 ) {
     init {
         validateAssetMetadata(ticker, name, precision, details)
-        if (initialSupply > maxSupply || knownCirculatingSupply > maxSupply) {
+        if (maxSupply != null && ((initialSupply != null && initialSupply > maxSupply) ||
+                (knownCirculatingSupply != null && knownCirculatingSupply > maxSupply))) {
             throw SdkException.InvalidArgument("supply", "must not exceed maximum supply")
         }
         rejectListUrl?.let { requireCanonicalText("rejectListUrl", it, 2_048) }
@@ -323,9 +327,11 @@ public data class InvoiceData(
 
 private fun validateAssetMetadata(ticker: String?, name: String, precision: Int, details: String?): Unit {
     ticker?.let { requireCanonicalText("ticker", it, 16) }
-    requireCanonicalText("name", name, 256)
+    if (name.isEmpty() || name.toByteArray(Charsets.UTF_8).size > 256) {
+        throw SdkException.InvalidArgument("name", "must contain between 1 and 256 UTF-8 bytes")
+    }
     if (precision !in 0..18) throw SdkException.InvalidArgument("precision", "must be between 0 and 18")
-    if (details != null && details.toByteArray(Charsets.UTF_8).size > 4_096) {
-        throw SdkException.InvalidArgument("details", "must be at most 4096 UTF-8 bytes")
+    if (details != null && (details.isEmpty() || details.toByteArray(Charsets.UTF_8).size > 65_535)) {
+        throw SdkException.InvalidArgument("details", "must contain between 1 and 65535 UTF-8 bytes")
     }
 }

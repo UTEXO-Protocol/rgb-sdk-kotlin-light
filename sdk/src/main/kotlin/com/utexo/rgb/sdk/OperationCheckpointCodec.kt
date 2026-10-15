@@ -210,10 +210,11 @@ private class CheckpointWriter(private val output: DataOutputStream) {
             output.writeInt(value.result.createdUtxoCount)
         }
         is BackendOperationResult.OnchainSend -> {
-            output.writeByte(3)
+            output.writeByte(if (value.result.batchTransferIdx == null) 4 else 3)
             string(value.operationId.value, 128)
             string(value.result.txid.hex, 64)
-            output.writeLong(value.result.batchTransferIdx)
+            value.result.batchTransferIdx?.let(output::writeLong)
+            Unit
         }
     }
 }
@@ -332,6 +333,9 @@ private class CheckpointReader(private val input: DataInputStream) {
                 txid = TransactionId.of(string(64)),
                 batchTransferIdx = input.readLong(),
             ),
+        )
+        4 -> BackendOperationResult.OnchainSend(
+            OperationId.of(string(128)), OnchainSendResponse(TransactionId.of(string(64))),
         )
         else -> throw IOException("unknown operation result")
     }
