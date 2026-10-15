@@ -120,6 +120,24 @@ internal class RgbLightningNodeGatewayBackendTest {
         }
     }
 
+    @Test
+    fun `RGB prepare refuses witness data that contradicts the invoice recipient mode`(): Unit = runBlocking {
+        // rgb-lib rejects a witness beneficiary without sats and a blind one with
+        // them; the mismatch is caught locally rather than at the gateway.
+        for (witnessInvoice in listOf(true, false)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON))
+            val backend = testBackend(transport, invoiceDecoder = { rgbDecodedInvoice().copy(witness = witnessInvoice) })
+            val context = initializedContext(backend)
+            // Deliberately the WRONG pairing for this invoice kind.
+            val request = rgbSendRequest().copy(witnessData = if (witnessInvoice) null else WitnessData(Satoshis.of(1_000)))
+            assertFailsWith<SdkException.InvalidArgument> {
+                backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(context,
+                    request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+            }
+            assertEquals(1, transport.requests.size)
+        }
+    }
+
     private fun rgbSendRequest(): OnchainSendRequest = OnchainSendRequest(RgbInvoice.of("rgb:fixture"),
         AssetAmount.of(40), AssetId.of("fixture-asset"), idempotencyKey = TEST_IDEMPOTENCY_KEY)
 
@@ -240,6 +258,28 @@ internal class RgbLightningNodeGatewayBackendTest {
             val context = initializedContext(backend)
             assertFailsWith<SdkException.BackendProtocolMismatch>(body) { backend.listUnspents(context) }
         }
+    }
+
+    @Test
+    fun `unspents map every wire field including reported existence and unit assignments`(): Unit = runBlocking {
+        val body = """{"unspents":[{"txid":"${"ab".repeat(32)}","vout":2,"amountSat":9999,
+            "colorable":true,"exists":true,"pendingBlinded":3,
+            "allocations":[{"assetId":"rgb:a1","amount":42,
+              "assignment":{"kind":"Fungible","amount":42},"settled":true},
+             {"assetId":null,"amount":null,
+              "assignment":{"kind":"Any","amount":null},"settled":false}]}]}"""
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body))
+        val backend = testBackend(transport)
+        val only = backend.listUnspents(initializedContext(backend)).single()
+        assertEquals(Outpoint(TransactionId.of("ab".repeat(32)), 2), only.utxo.outpoint)
+        assertEquals(9999L, only.utxo.btcAmount.value)
+        assertTrue(only.utxo.colorable)
+        assertEquals(true, only.utxo.exists)
+        assertEquals(3, only.pendingBlinded)
+        assertEquals(RgbAllocation(AssetId.of("rgb:a1"), Assignment(AssignmentType.FUNGIBLE, AssetAmount.of(42)), true),
+            only.rgbAllocations[0])
+        // A unit variant keeps its name and carries no amount.
+        assertEquals(RgbAllocation(null, Assignment(AssignmentType.ANY), false), only.rgbAllocations[1])
     }
 
     @Test
