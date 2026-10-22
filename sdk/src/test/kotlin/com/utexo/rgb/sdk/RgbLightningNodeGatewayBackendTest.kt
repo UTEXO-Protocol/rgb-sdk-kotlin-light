@@ -808,7 +808,8 @@ internal class RgbLightningNodeGatewayBackendTest {
     fun `receive rejects mode expiry numeric and missing-field inconsistencies without retrying`(): Unit = runBlocking {
         val valid = "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":87900}"
         val invalid = listOf(
-            valid.replace("witness", "blind"), valid.replace("87900", "87901"), valid.replace("87900", "87899"),
+            // Expected expiry is 87900; the clock-skew allowance is 300 seconds either way.
+            valid.replace("witness", "blind"), valid.replace("87900", "88201"), valid.replace("87900", "87599"),
             valid.replace("87900", "87900.0"), valid.replace("87900", "\"87900\""),
             valid.replace(",\"expirationTimestamp\":87900", ""),
             valid.replace("\"recipientId\":\"recipient-fixture\",", ""),
@@ -826,6 +827,18 @@ internal class RgbLightningNodeGatewayBackendTest {
         val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, valid.replace("87900", "null")))
         val backend = testBackend(transport)
         assertEquals(null, backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest()).expirationTimestamp)
+    }
+
+    @Test
+    fun `receive tolerates bounded gateway clock skew in either direction`(): Unit = runBlocking {
+        // A gateway clock 2s ahead (as observed on an emulator) and the edges of the allowance.
+        for (expiry in listOf(87_902L, 87_600L, 88_200L)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
+                "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":$expiry}"))
+            val backend = testBackend(transport)
+            assertEquals(UnixSeconds.of(expiry),
+                backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest()).expirationTimestamp)
+        }
     }
 
     @Test

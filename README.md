@@ -209,6 +209,11 @@ WalletChainContext(
 The observation must match the requested network, be at most 300 seconds old,
 and be no more than 30 seconds in the future. Fetch from your trusted node/indexer;
 do not copy a height from a PSBT or assign a new timestamp to an old observation.
+The tip must come from the chain your gateway actually runs on. UTEXO's signet
+environment is UTEXO's own signet, not Bitcoin's public signet, even though its
+invoices use the `sb` signet tag; read its tip from that environment's indexer
+(`https://esplora-api.utexo.com/blocks/tip/height`). A public-signet tip is far
+behind that chain, and the signer then rejects every new spend.
 The SDK refreshes this context before sensitive signing/submission transitions.
 The gateway's `syncWallet()` result does not supply a trusted tip for this purpose.
 
@@ -358,7 +363,9 @@ transfer so the asset becomes available for named-asset invoices and balances.
 
 Set `witness = false` for a blind invoice backed by an existing suitable UTXO.
 The facade verifies the invoice's network, requested asset/amount, mode,
-recipient, and expiry. Decoding checks syntax and intent; it does not validate an
+recipient, and expiry. The gateway sets the expiry from its own clock, so it must
+match the requested duration within 300 seconds of device/gateway clock
+difference. Decoding checks syntax and intent; it does not validate an
 RGB contract/consignment or prove gateway beneficiary ownership. Inspecting an
 expired invoice is possible; a new send rejects it.
 

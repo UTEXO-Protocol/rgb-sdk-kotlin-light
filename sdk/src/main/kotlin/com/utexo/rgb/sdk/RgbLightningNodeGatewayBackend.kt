@@ -595,7 +595,9 @@ public class RgbLightningNodeGatewayBackend private constructor(
         // timestamp: the facade always requires and validates the invoice's expiry.
         val expiration = if (body["expirationTimestamp"] == JsonNull) null
             else body.requiredLong("expirationTimestamp", 0, MAX_SAFE_JSON_INTEGER_VALUE)
-        if (expiration != null && (expiration !in (started + duration)..(finished + duration) || expiration <= finished)) {
+        val earliest = started + duration - MAX_INVOICE_CLOCK_SKEW_SECONDS
+        val latest = finished + duration + MAX_INVOICE_CLOCK_SKEW_SECONDS
+        if (expiration != null && (expiration !in earliest..latest || expiration <= finished)) {
             throw SdkException.BackendProtocolMismatch("gateway receive expiration does not match requested duration and local clock")
         }
         return OnchainReceiveResponse(

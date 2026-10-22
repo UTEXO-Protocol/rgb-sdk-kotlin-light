@@ -11,10 +11,10 @@ import org.junit.runner.RunWith
 /**
  * `listUnspents` against a live gateway.
  *
- * Every field of the SDK's `Unspent` model is authoritative backend state, so
- * this asserts the shape is fully populated rather than defaulted — `exists` in
- * particular, which says whether the creating transaction was broadcast and
- * cannot be inferred from the other fields.
+ * Every field of the SDK's `Unspent` model is backend state, so this asserts
+ * the shape is populated rather than defaulted. `exists`, which says whether
+ * the creating transaction was broadcast, is reported by the gateway or null —
+ * never inferred from the other fields.
  *
  * Opt-in only: no-ops unless `gatewayBaseUrl` is supplied.
  */
@@ -50,8 +50,8 @@ public class ListUnspentsE2eTest {
 
         var totalSat = 0L
         for (u in unspents) {
-            // Nothing here may be a default: a 64-hex txid, a real amount, and
-            // an `exists` flag that came from the wallet.
+            // Nothing here may be a default: a 64-hex txid and a real amount;
+            // `exists` is whatever the wallet reported, possibly null.
             assertEquals(64, u.utxo.outpoint.txid.hex.length)
             assertTrue(u.utxo.outpoint.vout >= 0)
             assertTrue("amount must be positive", u.utxo.btcAmount.value > 0)

@@ -96,6 +96,14 @@ public data class OnchainReceiveRequest(
     )
 }
 
+/**
+ * The gateway stamps a receive invoice's expiry from its own clock, so the
+ * expiry is checked against the requested duration with this much disagreement
+ * allowed between the device and gateway clocks. An invoice already expired by
+ * the device clock is still rejected.
+ */
+internal const val MAX_INVOICE_CLOCK_SKEW_SECONDS: Long = 300L
+
 public data class OnchainReceiveResponse(
     public val invoice: RgbInvoice,
     public val recipientId: String? = null,

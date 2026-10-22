@@ -45,8 +45,9 @@ internal class InvoiceIntentTest {
             decoded().copy(assignment = Assignment(AssignmentType.NON_FUNGIBLE)),
             decoded().copy(expirationTimestamp = null),
             decoded().copy(expirationTimestamp = UnixSeconds.of(TEST_NOW)),
-            decoded().copy(expirationTimestamp = UnixSeconds.of(TEST_NOW + 599)),
-            decoded().copy(expirationTimestamp = UnixSeconds.of(TEST_NOW + 601)),
+            // Outside the 300-second clock-skew allowance around TEST_NOW + 600.
+            decoded().copy(expirationTimestamp = UnixSeconds.of(TEST_NOW + 299)),
+            decoded().copy(expirationTimestamp = UnixSeconds.of(TEST_NOW + 901)),
         )
         for (changed in changes) {
             val backend = FakeBackend().apply { onchainReceiveResponse = response() }
@@ -60,6 +61,19 @@ internal class InvoiceIntentTest {
         wallet.init(); wallet.unlock()
         try { assertFailsWith<SdkException.BackendProtocolMismatch> { wallet.onchainReceive(request) } }
         finally { wallet.destroy() }
+    }
+
+    @Test
+    fun `received expiry tolerates bounded device and gateway clock skew`(): Unit = runBlocking {
+        for (offset in listOf(2L, -2L, 300L, -300L)) {
+            val expiration = UnixSeconds.of(TEST_NOW + 600 + offset)
+            val returned = response().copy(expirationTimestamp = expiration)
+            val wallet = testWallet(FakeBackend().apply { onchainReceiveResponse = returned },
+                FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), decoded().copy(expirationTimestamp = expiration)))
+            wallet.init(); wallet.unlock()
+            try { assertEquals(returned, wallet.onchainReceive(request)) }
+            finally { wallet.destroy() }
+        }
     }
 
     @Test
@@ -129,7 +143,7 @@ internal class InvoiceIntentTest {
                 else assertFailsWith<SdkException.BackendProtocolMismatch> { wallet.onchainReceive(request.copy(duration = null)) }
             } finally { wallet.destroy() }
         }
-        for (expiration in listOf(null, UnixSeconds.of(TEST_NOW + 86_399), UnixSeconds.of(TEST_NOW + 86_401))) {
+        for (expiration in listOf(null, UnixSeconds.of(TEST_NOW + 86_099), UnixSeconds.of(TEST_NOW + 86_701))) {
             val wallet = testWallet(FakeBackend().apply { onchainReceiveResponse = response().copy(expirationTimestamp = expiration) },
                 FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), decoded().copy(expirationTimestamp = expiration)))
             wallet.init(); wallet.unlock()

@@ -634,8 +634,9 @@ public class UTEXOWallet internal constructor(
             throw SdkException.BackendProtocolMismatch("received invoice is expired or local clock changed")
         }
         val duration = request.duration?.value ?: 86_400L
-        if (duration > Long.MAX_VALUE - finished || expiration == null ||
-            expiration !in (started + duration)..(finished + duration)) {
+        if (duration > Long.MAX_VALUE - MAX_INVOICE_CLOCK_SKEW_SECONDS - finished || expiration == null ||
+            expiration !in (started + duration - MAX_INVOICE_CLOCK_SKEW_SECONDS)..
+            (finished + duration + MAX_INVOICE_CLOCK_SKEW_SECONDS)) {
             throw SdkException.BackendProtocolMismatch("invoice expiration does not match the receive request")
         }
     }
