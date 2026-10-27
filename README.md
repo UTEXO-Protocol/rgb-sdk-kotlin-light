@@ -406,7 +406,9 @@ val related = wallet.listTransfersByTxid(sent.txid)
 
 Asset balance fields are nullable; null means unavailable, not zero. Transfer
 states include waiting for the counterparty, confirmations, settlement, and
-failure. Preserve unknown future status strings.
+failure. Preserve unknown future status strings. `listTransfersByTxid` and
+`listTransfers()` without an asset ID search every asset, which costs one
+gateway request per asset.
 
 ## Units and current gateway limits
 
@@ -451,13 +453,13 @@ Handle `SdkException` using `code`, `retryable`, `operationId`, and
 | `OPERATION_AMBIGUOUS` | Keep pending; reconcile the original request/key with backoff. |
 | `OPERATION_CONFLICT` | The key was used for different intent; load the original record and investigate. |
 | `BACKEND_UNAVAILABLE` | Retry reads with backoff; retain a payment's exact request/key. |
-| `OPERATION_JOURNAL_UNAVAILABLE` | Stop dispatching and investigate storage recovery; do not delete history to retry. |
+| `OPERATION_JOURNAL_UNAVAILABLE` | Stop dispatching and investigate storage recovery; do not delete history to retry. If `details["reason"]` is `reopen_required` (not retryable), `destroy()` this instance, create a new wallet, then retry the same key. |
 
 A `retryable` flag is not permission to create a second payment. Propagate Kotlin
 `CancellationException`; cancellation does not reverse broadcast. Gateway
 crash/expiry recovery and RGB-input reservation limitations can leave an outcome
-pending and require support. See the [durable consumer recovery contract](docs/DURABLE_CONSUMER_RECOVERY.md)
-for exact record fields and restart behavior.
+pending and require support. See [Retry safely after a crash or timeout](docs/GETTING_STARTED.md#retry-safely-after-a-crash-or-timeout)
+for the record fields and restart behavior.
 
 ## Backup and trust boundaries
 

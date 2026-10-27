@@ -141,9 +141,21 @@ public sealed class SdkException(
         operationId = operationId,
     )
 
-    public class OperationJournalUnavailable : SdkException(
+    /**
+     * When [details] has `reason` = `reopen_required`, this instance cannot use its journal again
+     * and [retryable] is false: destroy the wallet, create a new one, then retry the same key.
+     */
+    public class OperationJournalUnavailable(
+        reopenRequired: Boolean = false,
+    ) : SdkException(
         code = SdkErrorCode.OPERATION_JOURNAL_UNAVAILABLE,
-        message = "Durable operation state could not be accessed",
+        retryable = !reopenRequired,
+        message = if (reopenRequired) {
+            "Durable operation state is unusable on this wallet instance; destroy it and create a new one"
+        } else {
+            "Durable operation state could not be accessed"
+        },
+        details = if (reopenRequired) mapOf("reason" to "reopen_required") else emptyMap(),
     )
 
     public class BackendUnavailable(

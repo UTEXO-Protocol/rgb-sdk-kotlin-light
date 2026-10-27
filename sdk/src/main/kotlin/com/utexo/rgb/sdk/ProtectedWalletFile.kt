@@ -17,7 +17,9 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.RandomAccessFile
 import java.nio.channels.FileLock
+import java.nio.channels.OverlappingFileLockException
 import java.security.KeyStore
+import java.util.concurrent.ConcurrentHashMap
 import java.security.MessageDigest
 import javax.crypto.KeyGenerator
 import kotlinx.coroutines.CancellationException
@@ -93,26 +95,43 @@ internal class ProtectedWalletFile(
                     if (!directory.isDirectory) throw IOException()
                     secureDirectory(directory)
                     val lockFile = File(directory, "session.lock")
-                    validateFile(lockFile)
-                    val handle = RandomAccessFile(lockFile, "rw")
+                    // Check in-process owners before opening a descriptor: closing any descriptor
+                    // for this file drops the process's POSIX lock, even one a live session holds.
+                    val owner = lockFile.canonicalPath
+                    if (!OWNED_LOCKS.add(owner)) {
+                        throw SdkException.InvalidState("open wallet storage", "already owned by another session")
+                    }
+                    var transferred = false
                     try {
                         validateFile(lockFile)
-                        secureFile(lockFile)
-                        val lock = handle.channel.tryLock() ?: throw SdkException.InvalidState(
-                            "open wallet storage", "already owned by another session",
-                        )
-                        Session(handle, lock).also { session ->
-                            acquired = session
-                            try {
-                                session.validateState()
-                            } catch (failure: Exception) {
-                                session.close()
-                                throw failure
+                        val handle = RandomAccessFile(lockFile, "rw")
+                        try {
+                            validateFile(lockFile)
+                            secureFile(lockFile)
+                            // A same-JVM overlap throws instead of returning null; both mean another owner.
+                            val lock = try {
+                                handle.channel.tryLock()
+                            } catch (_: OverlappingFileLockException) {
+                                null
+                            } ?: throw SdkException.InvalidState(
+                                "open wallet storage", "already owned by another session",
+                            )
+                            Session(handle, lock, owner).also { session ->
+                                transferred = true
+                                acquired = session
+                                try {
+                                    session.validateState()
+                                } catch (failure: Exception) {
+                                    session.close()
+                                    throw failure
+                                }
                             }
+                        } catch (failure: Exception) {
+                            handle.close()
+                            throw failure
                         }
-                    } catch (failure: Exception) {
-                        handle.close()
-                        throw failure
+                    } finally {
+                        if (!transferred) OWNED_LOCKS.remove(owner)
                     }
                 }
             }
@@ -131,6 +150,7 @@ internal class ProtectedWalletFile(
     internal inner class Session(
         private val handle: RandomAccessFile,
         private val lock: FileLock,
+        private val owner: String,
     ) : AutoCloseable {
         private var closed = false
         private var poisoned = false
@@ -244,10 +264,11 @@ internal class ProtectedWalletFile(
                 syncDirectory(directory)
                 cipher.markCommittedState()
                 if (protectRollback) cipher.anchors().filter { it != hash }.forEach(cipher::removeAnchor)
-            } catch (failure: Exception) {
+            } catch (_: Exception) {
                 // The write outcome may be uncertain; no more payments can use this instance.
+                // Only a reopen re-validates anchors and the directory, so a same-instance retry never helps.
                 poisoned = true
-                throw failure
+                throw SdkException.OperationJournalUnavailable(reopenRequired = true)
             } finally {
                 encoded.fill(0)
             }
@@ -278,7 +299,8 @@ internal class ProtectedWalletFile(
         }
 
         private fun checkOpen(): Unit {
-            if (closed || poisoned || !lock.isValid) throw IOException()
+            if (closed || !lock.isValid) throw IOException()
+            if (poisoned) throw SdkException.OperationJournalUnavailable(reopenRequired = true)
         }
 
         override fun close(): Unit {
@@ -287,7 +309,12 @@ internal class ProtectedWalletFile(
             try {
                 lock.release()
             } finally {
-                handle.close()
+                try {
+                    handle.close()
+                } finally {
+                    // Only after the descriptor is closed may a successor open its own.
+                    OWNED_LOCKS.remove(owner)
+                }
             }
         }
     }
@@ -295,6 +322,8 @@ internal class ProtectedWalletFile(
     internal companion object {
         const val MAX_BYTES = 64 * 1_024 * 1_024
         private const val MAGIC = 0x55545845
+        /** Canonical lock paths owned by live sessions in this process. */
+        private val OWNED_LOCKS: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
         fun forAndroid(
             context: Context,

@@ -62,7 +62,7 @@ spaces through reliably. Quote an RGB invoice passed as `recipient`: it contains
 | `utxos`          | `createUtxos()` — colored UTXOs to hold RGB allocations                       |
 | `sendbtc`        | `sendBtc()` to *recipient* for *amount* sats, signed on the device            |
 | `assets`         | `listAssets()` with settled / spendable / future balances                     |
-| `transfers`      | `listTransfers()`, optionally for *asset ID*                                  |
+| `transfers`      | `listTransfers()` for every asset, or only for *asset ID*                     |
 | `witnessinvoice` | `witnessReceive()` — the sender creates the receiving output                  |
 | `blindinvoice`   | `blindReceive()` — receives onto one of this wallet's colored UTXOs           |
 | `rgbsend`        | `onchainSend()` of *amount* to the RGB invoice in *recipient*                 |

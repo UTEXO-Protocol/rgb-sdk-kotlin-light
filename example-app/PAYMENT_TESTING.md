@@ -147,7 +147,8 @@ drive b witnessinvoice             # invoice: rgb:~/~/~/bcrt:wvout:…   <- B_IN
 drive a rgbsend recipient='<B_INVOICE>' amount=100 assetId="$ASSET"
                                    # sent: txid … batchTransferIdx=…
 drive b sync,transfers             # ReceiveWitness WaitingConfirmations, amounts=100
-drive a sync,transfers             # Send WaitingConfirmations, amounts=400 (A's change)
+drive a sync,transfers             # Send WaitingConfirmations, amounts=400 (A's change),
+                                   # listed after step 5's settled receive
 example-app/scripts/rln.py mine 1
 drive b sync,assets                # settled=100
 drive a sync,assets                # settled=400

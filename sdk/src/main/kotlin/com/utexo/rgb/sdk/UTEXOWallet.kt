@@ -547,7 +547,11 @@ public class UTEXOWallet internal constructor(
         if (decoded.recipientId != response.recipientId) {
             throw SdkException.BackendProtocolMismatch("received invoice recipient ID does not match")
         }
-        if (decoded.expirationTimestamp != response.expirationTimestamp) {
+        // The gateway schema permits a null envelope expiry; verifyInvoiceIntent still
+        // requires and bounds the invoice's own expiry.
+        if (response.expirationTimestamp != null &&
+            decoded.expirationTimestamp != response.expirationTimestamp
+        ) {
             throw SdkException.BackendProtocolMismatch("received invoice expiration does not match")
         }
     }
@@ -616,6 +620,12 @@ public class UTEXOWallet internal constructor(
         }
         if (decoded.assignmentName != null && decoded.assignmentName != "assetOwner") {
             throw SdkException.BackendProtocolMismatch("invoice assignment does not match the receive request")
+        }
+        // A payer needs at least one RGB transport to deliver consignments to this invoice.
+        if (decoded.transportEndpoints.isEmpty() ||
+            decoded.transportEndpoints.distinct().size != decoded.transportEndpoints.size
+        ) {
+            throw SdkException.BackendProtocolMismatch("received invoice transport endpoints are missing or duplicated")
         }
         // RGB-lib's public projection can show Any/null for an explicitly encoded
         // amount, or Fungible(0) for an omitted amount under an NIA schema. Bind

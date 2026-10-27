@@ -144,8 +144,12 @@ internal class EncryptedOperationJournalTest {
         ).open()
         val failure = assertFailsWith<SdkException.OperationJournalUnavailable> { failing.write("next-phase".toByteArray()) }
         assertNull(failure.cause)
-        assertFailsWith<SdkException.OperationJournalUnavailable> { failing.read() }
-        assertFailsWith<SdkException.OperationJournalUnavailable> { failing.write("replacement".toByteArray()) }
+        val read = assertFailsWith<SdkException.OperationJournalUnavailable> { failing.read() }
+        val rewrite = assertFailsWith<SdkException.OperationJournalUnavailable> { failing.write("replacement".toByteArray()) }
+        for (error in listOf(failure, read, rewrite)) {
+            assertFalse(error.retryable)
+            assertEquals("reopen_required", error.details["reason"])
+        }
         failing.close()
         file().open().use {
             assertContentEquals(original, it.read())
@@ -366,9 +370,85 @@ internal class EncryptedOperationJournalTest {
     @Test
     fun `concurrent instance fails while ownership survives until close`(): Unit = runBlocking {
         val first = file().open()
-        assertFailsWith<SdkException.OperationJournalUnavailable> { file().open() }
+        val error = assertFailsWith<SdkException.InvalidState> { file().open() }
+        assertEquals(SdkErrorCode.INVALID_STATE, error.code)
+        assertFalse(error.retryable)
         first.close()
         file().open().close()
+    }
+
+    @Test
+    fun `rejected same-process instance never drops the live cross-process lock`(): Unit = runBlocking {
+        val lockFile = directory.resolve("session.lock").toFile()
+        val first = file().open()
+        try {
+            assertFailsWith<SdkException.InvalidState> { file().open() }
+            // Closing any second descriptor would release this process's POSIX lock.
+            assertFalse(otherProcessCanLock(lockFile))
+            descriptorsFor(lockFile)?.let { assertEquals(1, it) }
+        } finally { first.close() }
+        assertTrue(otherProcessCanLock(lockFile))
+    }
+
+    @Test
+    fun `same-process lock overlap is invalid state and closes its probe handle`(): Unit = runBlocking {
+        val lockFile = directory.resolve("session.lock").toFile()
+        java.io.RandomAccessFile(lockFile, "rw").use { foreign ->
+            foreign.channel.lock().use {
+                val error = assertFailsWith<SdkException.InvalidState> { file().open() }
+                assertFalse(error.retryable)
+                descriptorsFor(lockFile)?.let { assertEquals(1, it) }
+            }
+        }
+        file().open().close() // The failed attempt did not leave a stale in-process owner.
+    }
+
+    @Test
+    fun `failed terminal write requires reopen and destroy plus create recovers the same key`(): Unit = runBlocking {
+        val backend = FakeBackend().apply {
+            status = BackendOperationStatus.Succeeded(TEST_OPERATION_ID, BackendOperationResult.SendBtc(TEST_OPERATION_ID, TEST_TXID))
+        }
+        val failing = ProtectedWalletFile(
+            directory.toFile(), "package\u0000wallet-1\u0000signet".toByteArray(), cipher, protectRollback = true,
+            writeAndSync = { candidate, encoded ->
+                if (backend.submitCalls > 0) throw IOException("EIO fixture") // the post-broadcast TERMINAL write
+                candidate.writeBytes(encoded)
+            },
+        )
+        val request = SendBtcRequest(TEST_ADDRESS, Satoshis.of(10_000), FeeRate.satPerVbyte(5.0), idempotencyKey = TEST_IDEMPOTENCY_KEY)
+        val first = testWallet(backend, FakeSigningEngine(), EncryptedOperationJournal.open(testConfiguration(), failing))
+        first.init(); first.unlock()
+        repeat(2) { // The failing write itself and every later same-instance retry say the same thing.
+            val error = assertFailsWith<SdkException.OperationJournalUnavailable> { first.sendBtc(request) }
+            assertEquals(SdkErrorCode.OPERATION_JOURNAL_UNAVAILABLE, error.code)
+            assertFalse(error.retryable)
+            assertEquals(mapOf("reason" to "reopen_required"), error.details)
+            assertNull(error.cause)
+        }
+        assertEquals(1, backend.submitCalls)
+        assertEquals(0, backend.statusCalls)
+        first.destroy()
+
+        val reopened = testWallet(backend, FakeSigningEngine(), EncryptedOperationJournal.open(testConfiguration(), file()))
+        reopened.init(); reopened.unlock()
+        assertEquals(TEST_TXID, reopened.sendBtc(request))
+        assertEquals(1, backend.submitCalls)
+        assertEquals(1, backend.statusCalls)
+        reopened.destroy()
+    }
+
+    @Test
+    fun `failure before any file change stays retryable on the same session`(): Unit = runBlocking {
+        file().open().use { session ->
+            session.write("old".toByteArray())
+            cipher.failAfterEncryption = true
+            val transient = assertFailsWith<SdkException.OperationJournalUnavailable> { session.write("new".toByteArray()) }
+            assertTrue(transient.retryable)
+            assertTrue(transient.details.isEmpty())
+            cipher.failAfterEncryption = false
+            session.write("new".toByteArray())
+            assertContentEquals("new".toByteArray(), session.read())
+        }
     }
 
     @Test
@@ -575,6 +655,31 @@ internal class EncryptedOperationJournalTest {
         )
     }
 }
+
+/** POSIX record locks are per process, so only a child process can observe whether one is held. */
+internal object CrossProcessLockProbe {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        val acquired = java.io.RandomAccessFile(args[0], "rw").use { it.channel.tryLock() != null }
+        System.exit(if (acquired) 0 else 3)
+    }
+}
+
+private fun otherProcessCanLock(file: File): Boolean {
+    val java = File(System.getProperty("java.home"), "bin/java").path
+    val process = ProcessBuilder(java, "-cp", System.getProperty("java.class.path"),
+        CrossProcessLockProbe::class.java.name, file.absolutePath).redirectErrorStream(true).start()
+    val output = process.inputStream.bufferedReader().readText()
+    return when (val exit = process.waitFor()) {
+        0 -> true
+        3 -> false
+        else -> error("cross-process lock probe failed ($exit): $output")
+    }
+}
+
+/** Open descriptors for [file] in this process, or null where /proc is unavailable. */
+private fun descriptorsFor(file: File): Int? = File("/proc/self/fd").takeIf { it.isDirectory }?.listFiles()
+    ?.count { runCatching { it.canonicalPath }.getOrNull() == file.canonicalPath }
 
 private class JournalTestCipher : ProtectedStorageCipher {
     var key: SecretKey? = null

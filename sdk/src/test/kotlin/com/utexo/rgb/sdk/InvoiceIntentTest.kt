@@ -14,10 +14,64 @@ internal class InvoiceIntentTest {
         invoice, "recipient-fixture", assetId = asset, network = Network.SIGNET,
         assignment = Assignment(AssignmentType.FUNGIBLE, AssetAmount.of(10)),
         expirationTimestamp = UnixSeconds.of(TEST_NOW + 600),
+        transportEndpoints = listOf("rpc://proxy.example/json-rpc"),
     )
     private fun response(): OnchainReceiveResponse = OnchainReceiveResponse(
         invoice, "recipient-fixture", UnixSeconds.of(TEST_NOW + 600),
     )
+    private val invoiceRequest = InvoiceRequest(AssetAmount.of(10), asset, duration = DurationSeconds.of(600))
+    private fun received(expiration: UnixSeconds?): InvoiceReceiveData =
+        InvoiceReceiveData(invoice, "recipient-fixture", expiration, 7)
+
+    @Test
+    fun `blind and witness receive accept a null gateway expiry but reject a different one`(): Unit = runBlocking {
+        for (witness in listOf(false, true)) {
+            for (expiration in listOf(null, UnixSeconds.of(TEST_NOW + 600), UnixSeconds.of(TEST_NOW + 601))) {
+                val backend = FakeBackend().apply { receiveResponse = received(expiration) }
+                val signer = FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), decoded()).apply { decodedWitness = witness }
+                val wallet = testWallet(backend, signer)
+                wallet.init(); wallet.unlock()
+                try {
+                    val receive: suspend () -> InvoiceReceiveData =
+                        { if (witness) wallet.witnessReceive(invoiceRequest) else wallet.blindReceive(invoiceRequest) }
+                    if (expiration?.value == TEST_NOW + 601) assertFailsWith<SdkException.BackendProtocolMismatch> { receive() }
+                    else assertEquals(received(expiration), receive())
+                } finally { wallet.destroy() }
+            }
+        }
+    }
+
+    @Test
+    fun `received invoice without unique transport endpoints is rejected on every receive path`(): Unit = runBlocking {
+        val endpoint = "rpc://proxy.example/json-rpc"
+        for (endpoints in listOf(emptyList(), listOf(endpoint, endpoint))) {
+            val changed = decoded().copy(transportEndpoints = endpoints)
+            for (path in 0..2) {
+                val backend = FakeBackend().apply {
+                    onchainReceiveResponse = response(); receiveResponse = received(changed.expirationTimestamp)
+                }
+                val signer = FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), changed).apply { decodedWitness = path != 1 }
+                val wallet = testWallet(backend, signer)
+                wallet.init(); wallet.unlock()
+                try {
+                    val error = assertFailsWith<SdkException.BackendProtocolMismatch> {
+                        when (path) {
+                            0 -> wallet.onchainReceive(request)
+                            1 -> wallet.blindReceive(invoiceRequest)
+                            else -> wallet.witnessReceive(invoiceRequest)
+                        }
+                    }
+                    assertEquals(SdkErrorCode.BACKEND_PROTOCOL_MISMATCH, error.code)
+                } finally { wallet.destroy() }
+            }
+        }
+        val distinct = decoded().copy(transportEndpoints = listOf(endpoint, "rpc://other.example/json-rpc"))
+        val wallet = testWallet(FakeBackend().apply { onchainReceiveResponse = response() },
+            FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), distinct))
+        wallet.init(); wallet.unlock()
+        try { assertEquals(response(), wallet.onchainReceive(request)) }
+        finally { wallet.destroy() }
+    }
 
     @Test
     fun `valid receive returns unchanged result and decoder alias preserves original invoice`(): Unit = runBlocking {
