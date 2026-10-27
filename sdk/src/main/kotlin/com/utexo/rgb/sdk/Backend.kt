@@ -106,15 +106,22 @@ public interface WalletBackend {
         return listTransactions(context).filter { it.txid == txid }
     }
 
+    /**
+     * Complete transfer list for [assetId], or for the whole wallet when it is
+     * null: every asset's transfers plus asset-less receives. A backend whose
+     * native null filter means "asset-less only" (as the gateway's does) must
+     * merge per-asset results; see [RgbLightningNodeGatewayBackend].
+     */
     public suspend fun listTransfers(
         context: BackendContext,
         assetId: AssetId? = null,
     ): List<Transfer> = unsupportedBackendMethod("listTransfers")
 
     /**
-     * Filters the complete all-assets transfer snapshot. Backends with a
-     * selective endpoint may override this. [listTransfers] must not expose an
-     * unmarked partial page as a complete list.
+     * Filters the whole-wallet list from [listTransfers] with a null asset, so
+     * it costs as much as that call. Backends with a selective endpoint may
+     * override this. [listTransfers] must not expose an unmarked partial page
+     * as a complete list.
      */
     public suspend fun listTransfersByTxid(
         context: BackendContext,

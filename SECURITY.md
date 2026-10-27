@@ -162,7 +162,10 @@ not validate a contract history or prove seed ownership of the beneficiary.
 `onchainReceive` relies on gateway-held receive state: witness derivation evidence
 and blind secret recovery are not supplied by the current DTO. An explicit null
 response expiry is preserved only when the invoice itself has a valid expiry
-matching the requested/default duration. No endpoint is contacted by parsing.
+matching the requested/default duration. Expiry matching allows 300 seconds of
+device/gateway clock difference, because the gateway stamps the expiry from its
+own clock; an invoice already expired by the device clock is still rejected.
+No endpoint is contacted by parsing.
 No UI or product text should describe its RGB result as trustless. A malicious
 backend can potentially redirect allocations from selected colored inputs,
 including RGB change, even when the Bitcoin transaction satisfies local policy.

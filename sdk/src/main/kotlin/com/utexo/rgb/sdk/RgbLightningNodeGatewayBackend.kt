@@ -479,7 +479,47 @@ public class RgbLightningNodeGatewayBackend private constructor(
         }
     }
 
+    /**
+     * A null [assetId] returns every wallet transfer, ordered by `idx`. The gateway
+     * (rgb-lib) treats a null asset as "asset-less transfers only", so the full list
+     * is rebuilt here: the asset-less transfers, then the asset list, then one
+     * transfers request per asset. That costs N + 2 requests for N assets. Reading
+     * the asset-less page before the asset list means a transfer that gains its
+     * asset meanwhile is still seen. A non-null [assetId] is a single request.
+     */
     override suspend fun listTransfers(context: BackendContext, assetId: AssetId?): List<Transfer> {
+        if (assetId != null) return listTransferPage(context, assetId)
+        val pages = mutableListOf(listTransferPage(context, null))
+        val assets = listAssets(context)
+        val assetIds = assets.nia.map { it.assetId } + assets.cfa.map { it.assetId } +
+            assets.ifa.map { it.assetId } + assets.uda.map { it.assetId }
+        for (id in assetIds) pages += listTransferPage(context, id)
+        return mergeTransferPages(pages)
+    }
+
+    /**
+     * Merges pages by `idx`, which rgb-lib keeps unique per wallet, in fetch order.
+     * A later row that carries an asset replaces an earlier row with the same idx
+     * (the transfer gained its asset between requests); a later asset-less row never
+     * replaces one. The same idx under two different assets is contradictory: no
+     * row can be trusted, so it is a protocol mismatch rather than a silent pick.
+     */
+    private fun mergeTransferPages(pages: List<List<Transfer>>): List<Transfer> {
+        val merged = HashMap<Long, Transfer>()
+        for (transfer in pages.flatten()) {
+            val existing = merged[transfer.idx]
+            if (existing != null) {
+                if (existing.assetId != null && transfer.assetId != null && existing.assetId != transfer.assetId) {
+                    throw SdkException.BackendProtocolMismatch("gateway returned one transfer index for two assets")
+                }
+                if (transfer.assetId == null) continue
+            }
+            merged[transfer.idx] = transfer
+        }
+        return merged.values.sortedBy { it.idx }
+    }
+
+    private suspend fun listTransferPage(context: BackendContext, assetId: AssetId?): List<Transfer> {
         requireContext(context)
         val response = requestJson("GET", "/v1/wallet/transfers", 200,
             query = assetId?.let { mapOf("assetId" to it.value) } ?: emptyMap())
@@ -595,7 +635,9 @@ public class RgbLightningNodeGatewayBackend private constructor(
         // timestamp: the facade always requires and validates the invoice's expiry.
         val expiration = if (body["expirationTimestamp"] == JsonNull) null
             else body.requiredLong("expirationTimestamp", 0, MAX_SAFE_JSON_INTEGER_VALUE)
-        if (expiration != null && (expiration !in (started + duration)..(finished + duration) || expiration <= finished)) {
+        val earliest = started + duration - MAX_INVOICE_CLOCK_SKEW_SECONDS
+        val latest = finished + duration + MAX_INVOICE_CLOCK_SKEW_SECONDS
+        if (expiration != null && (expiration !in earliest..latest || expiration <= finished)) {
             throw SdkException.BackendProtocolMismatch("gateway receive expiration does not match requested duration and local clock")
         }
         return OnchainReceiveResponse(

@@ -155,16 +155,20 @@ internal class RgbLightningNodeGatewayBackendTest {
         val address = """{"address":"${TEST_GATEWAY_ADDRESS.value}","derivation":{"account":"vanilla","keychain":0,"index":7,"derivationPath":"m/86'/1'/0'/0/7","scriptHex":"5120${"a".repeat(64)}"}}"""
         val unspents = unspentsJson()
         val transfers = transfersJson()
+        // A whole-wallet listing is asset-less transfers, the asset list, then one call per asset.
+        val wholeWallet = listOf(queuedResponse(200, transfersOf()), queuedResponse(200, assetsJson()),
+            queuedResponse(200, transfersOf(transferRow(1, "nia-asset"))), queuedResponse(200, transfersOf()))
         val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
             queuedResponse(201, "{\"fingerprint\":\"deadbeef\",\"address\":\"fixture-address\"}"),
             queuedResponse(200, address), queuedResponse(200, address), queuedResponse(200, unspents),
             queuedResponse(200, "{\"blocks\":6,\"sourceBlocks\":3,\"feeRateSatPerVb\":2}"),
-            queuedResponse(200, assetsJson()), queuedResponse(200, transfers), queuedResponse(200, transfers),
-            queuedResponse(200, transfers), queuedResponse(201, receiveJson("blind")), queuedResponse(201, receiveJson("witness")))
+            queuedResponse(200, assetsJson()), queuedResponse(200, transfers), *wholeWallet.toTypedArray(),
+            *wholeWallet.toTypedArray(), queuedResponse(201, receiveJson("blind")), queuedResponse(201, receiveJson("witness")))
         val backend = testBackend(transport, allowUnverifiedPsbtProfile = false)
         val signer = FakeSigningEngine(testCapabilities(rgbInvoiceParsing = true), InvoiceData(
             RgbInvoice.of("rgb:fixture"), "recipient-fixture", network = Network.SIGNET,
-            assignment = Assignment(AssignmentType.ANY), expirationTimestamp = UnixSeconds.of(87_900)))
+            assignment = Assignment(AssignmentType.ANY), expirationTimestamp = UnixSeconds.of(87_900),
+            transportEndpoints = listOf("rpc://proxy.example/json-rpc")))
         val engine = object : LocalSigningEngine by signer {
             override suspend fun identity(): WalletIdentity = gatewayIdentity()
             override suspend fun verifyReservedAddress(reservation: ReservedAddress) {
@@ -197,16 +201,22 @@ internal class RgbLightningNodeGatewayBackendTest {
             assertEquals(null, listed.transportEndpoints)
             assertEquals(null, listed.expiration)
             assertEquals(AssetAmount.of(7), listed.assignments.single().amount)
-            assertEquals(listOf(listed), wallet.listTransfersByTxid(TEST_TXID))
-            assertEquals(listOf(listed), wallet.listOnchainTransfers())
+            val inNia = listOf(listed.copy(assetId = AssetId.of("nia-asset")))
+            assertEquals(inNia, wallet.listTransfersByTxid(TEST_TXID))
+            assertEquals(inNia, wallet.listOnchainTransfers())
             signer.decodedWitness = false
             assertEquals(42L, wallet.blindReceive(InvoiceRequest()).batchTransferIdx)
             signer.decodedWitness = true
             assertEquals(42L, wallet.witnessReceive(InvoiceRequest()).batchTransferIdx)
-            assertEquals(12, transport.requests.size)
+            assertEquals(18, transport.requests.size)
             assertFalse(transport.requests.any { it.url.encodedPath.endsWith("/sync") })
             assertEquals("fixture-asset", transport.requests[7].url.queryParameter("assetId"))
-            assertEquals(null, transport.requests[8].url.queryParameter("assetId"))
+            for (start in listOf(8, 12)) {
+                assertEquals(listOf("/v1/wallet/transfers", "/v1/wallet/balances", "/v1/wallet/transfers", "/v1/wallet/transfers"),
+                    transport.requests.subList(start, start + 4).map { it.url.encodedPath })
+                assertEquals(listOf(null, null, "nia-asset", "ifa-asset"),
+                    transport.requests.subList(start, start + 4).map { it.url.queryParameter("assetId") })
+            }
             assertEquals(0, signer.signCalls)
         } finally { wallet.destroy() }
     }
@@ -364,6 +374,78 @@ internal class RgbLightningNodeGatewayBackendTest {
     }
 
     @Test
+    fun `whole wallet transfers merge asset-less and per-asset pages across every schema ordered by idx`(): Unit = runBlocking {
+        val other = TransactionId.of("b".repeat(64))
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(200, transfersOf(transferRow(5, null, txid = null, status = "WaitingCounterparty"))),
+            queuedResponse(200, allSchemaAssetsJson()),
+            queuedResponse(200, transfersOf(transferRow(3, "nia-asset"))), queuedResponse(200, transfersOf()),
+            queuedResponse(200, transfersOf(transferRow(1, "ifa-asset", other))),
+            queuedResponse(200, transfersOf(transferRow(2, "uda-asset", other))))
+        val backend = testBackend(transport)
+        val result = backend.listTransfers(initializedContext(backend))
+        assertEquals(listOf(1L, 2L, 3L, 5L), result.map { it.idx })
+        assertEquals(listOf("ifa-asset", "uda-asset", "nia-asset", null), result.map { it.assetId?.value })
+        assertEquals(TransferStatus.WAITING_COUNTERPARTY, result.last().status)
+        assertEquals(listOf("/v1/me", "/v1/wallet/transfers", "/v1/wallet/balances", "/v1/wallet/transfers",
+            "/v1/wallet/transfers", "/v1/wallet/transfers", "/v1/wallet/transfers"), transport.requests.map { it.url.encodedPath })
+        assertEquals(listOf(null, null, null, "nia-asset", "cfa-asset", "ifa-asset", "uda-asset"),
+            transport.requests.map { it.url.queryParameter("assetId") })
+    }
+
+    @Test
+    fun `transfers by txid find an asset send that the asset-less page omits`(): Unit = runBlocking {
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, transfersOf()),
+            queuedResponse(200, assetsJson()),
+            queuedResponse(200, transfersOf(transferRow(4, "nia-asset", status = "WaitingConfirmations"))),
+            queuedResponse(200, transfersOf(transferRow(6, "ifa-asset", TransactionId.of("b".repeat(64))))))
+        val backend = testBackend(transport)
+        val sent = backend.listTransfersByTxid(initializedContext(backend), TEST_TXID).single()
+        assertEquals(4L, sent.idx)
+        assertEquals(AssetId.of("nia-asset"), sent.assetId)
+        assertEquals(TransferKind.SEND, sent.kind)
+        assertEquals(5, transport.requests.size)
+    }
+
+    @Test
+    fun `whole wallet transfers dedupe an idx seen twice and reject one idx under two assets`(): Unit = runBlocking {
+        // idx 7 was asset-less on the first page and gained its asset before the per-asset page.
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(200, transfersOf(transferRow(8, null, txid = null), transferRow(7, null, txid = null))),
+            queuedResponse(200, assetsJson()), queuedResponse(200, transfersOf(transferRow(7, "nia-asset"))),
+            queuedResponse(200, transfersOf()))
+        val backend = testBackend(transport)
+        val result = backend.listTransfers(initializedContext(backend))
+        assertEquals(listOf(7L, 8L), result.map { it.idx })
+        assertEquals(AssetId.of("nia-asset"), result[0].assetId)
+        assertEquals(TEST_TXID, result[0].txid)
+        assertEquals(null, result[1].assetId)
+
+        val conflicting = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, transfersOf()),
+            queuedResponse(200, assetsJson()), queuedResponse(200, transfersOf(transferRow(7, "nia-asset"))),
+            queuedResponse(200, transfersOf(transferRow(7, "ifa-asset")))))
+        val conflictingContext = initializedContext(conflicting)
+        assertFailsWith<SdkException.BackendProtocolMismatch> { conflicting.listTransfers(conflictingContext) }
+
+        // A failed per-asset page fails the whole listing instead of returning a partial list.
+        val failing = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, transfersOf()),
+            queuedResponse(200, assetsJson()), queuedResponse(503, "{\"error\":{\"code\":\"UNAVAILABLE\"}}")))
+        val failingContext = initializedContext(failing)
+        assertFailsWith<SdkException.BackendUnavailable> { failing.listTransfersByTxid(failingContext, TEST_TXID) }
+    }
+
+    @Test
+    fun `transfers for one asset remain a single request`(): Unit = runBlocking {
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON),
+            queuedResponse(200, transfersOf(transferRow(1, "nia-asset"))))
+        val backend = testBackend(transport)
+        val result = backend.listTransfers(initializedContext(backend), AssetId.of("nia-asset")).single()
+        assertEquals(AssetId.of("nia-asset"), result.assetId)
+        assertEquals(listOf("/v1/me", "/v1/wallet/transfers"), transport.requests.map { it.url.encodedPath })
+        assertEquals("nia-asset", transport.requests.last().url.queryParameter("assetId"))
+    }
+
+    @Test
     fun `strict receives require actual batch identity but unified receive remains compatible`(): Unit = runBlocking {
         for (mode in listOf("blind", "witness")) for (batch in listOf("null", "-1", "9007199254740992", "\"42\"")) {
             val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
@@ -384,7 +466,22 @@ internal class RgbLightningNodeGatewayBackendTest {
         return """{"btc":{"vanilla":{"settled":0,"future":0,"spendable":0},"colored":{"settled":0,"future":0,"spendable":0}},"assets":[${asset("nia")},${asset("ifa")}]}"""
     }
 
+    /** Gateway order nia, ifa, cfa, uda; the client requests per-asset transfers as nia, cfa, ifa, uda. */
+    private fun allSchemaAssetsJson(): String {
+        fun asset(schema: String, ticker: String, supply: String): String = """{"assetId":"$schema-asset","schema":"$schema","ticker":$ticker,"name":"Fixture","details":null,"precision":0,"issuedSupply":$supply,"timestamp":1,"addedAt":2,"balance":{"settled":0,"future":7,"spendable":0}}"""
+        return assetsJson().removeSuffix("]}") + ",${asset("cfa", "null", "100")},${asset("uda", "\"TEST\"", "null")}]}"
+    }
+
     private fun transfersJson(): String = """{"transfers":[{"idx":1,"batchTransferIdx":null,"assetId":"fixture-asset","amount":99,"assignments":[{"kind":"Fungible","amount":7}],"kind":"Send","status":"Settled","txid":"${TEST_TXID.hex}","recipientId":null,"expiration":null,"createdAt":1,"updatedAt":2}]}"""
+
+    private fun transferRow(idx: Long, assetId: String?, txid: TransactionId? = TEST_TXID, status: String = "Settled"): String =
+        transfersJson().removePrefix("{\"transfers\":[").removeSuffix("]}")
+            .replace("\"idx\":1,", "\"idx\":$idx,")
+            .replace("\"fixture-asset\"", assetId?.let { "\"$it\"" } ?: "null")
+            .replace("\"${TEST_TXID.hex}\"", txid?.let { "\"${it.hex}\"" } ?: "null")
+            .replace("\"Settled\"", "\"$status\"")
+
+    private fun transfersOf(vararg rows: String): String = "{\"transfers\":[${rows.joinToString(",")}]}"
 
     private fun receiveJson(mode: String): String = """{"invoice":"rgb:fixture","recipientId":"recipient-fixture","mode":"$mode","expirationTimestamp":87900,"batchTransferIdx":42}"""
 
@@ -396,11 +493,12 @@ internal class RgbLightningNodeGatewayBackendTest {
             queuedResponse(200, transfersJson().replace("\"expiration\":null", "\"expiration\":null,\"transportEndpoints\":[]")))
         val backend = testBackend(transport)
         val context = initializedContext(backend)
-        val result = backend.listTransfers(context).single()
+        val asset = AssetId.of("fixture-asset")
+        val result = backend.listTransfers(context, asset).single()
         assertEquals(UnixSeconds.of(50), result.expiration)
         assertEquals(Outpoint(TEST_TXID, 2), result.receiveUtxo)
         assertEquals(listOf(TransferTransportEndpoint("https://proxy.example", "JsonRpc", true)), result.transportEndpoints)
-        assertEquals(emptyList(), backend.listTransfers(context).single().transportEndpoints)
+        assertEquals(emptyList(), backend.listTransfers(context, asset).single().transportEndpoints)
         for (bad in listOf(body.replace("\"expiration\":null", "\"expiration\":51"),
             body.replace("\"vout\":2", "\"vout\":-1"), body.replace("\"used\":true", "\"used\":1"))) {
             val badBackend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, bad)))
@@ -808,7 +906,8 @@ internal class RgbLightningNodeGatewayBackendTest {
     fun `receive rejects mode expiry numeric and missing-field inconsistencies without retrying`(): Unit = runBlocking {
         val valid = "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":87900}"
         val invalid = listOf(
-            valid.replace("witness", "blind"), valid.replace("87900", "87901"), valid.replace("87900", "87899"),
+            // Expected expiry is 87900; the clock-skew allowance is 300 seconds either way.
+            valid.replace("witness", "blind"), valid.replace("87900", "88201"), valid.replace("87900", "87599"),
             valid.replace("87900", "87900.0"), valid.replace("87900", "\"87900\""),
             valid.replace(",\"expirationTimestamp\":87900", ""),
             valid.replace("\"recipientId\":\"recipient-fixture\",", ""),
@@ -826,6 +925,18 @@ internal class RgbLightningNodeGatewayBackendTest {
         val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, valid.replace("87900", "null")))
         val backend = testBackend(transport)
         assertEquals(null, backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest()).expirationTimestamp)
+    }
+
+    @Test
+    fun `receive tolerates bounded gateway clock skew in either direction`(): Unit = runBlocking {
+        // A gateway clock 2s ahead (as observed on an emulator) and the edges of the allowance.
+        for (expiry in listOf(87_902L, 87_600L, 88_200L)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201,
+                "{\"invoice\":\"rgb:fixture\",\"recipientId\":\"recipient-fixture\",\"mode\":\"witness\",\"expirationTimestamp\":$expiry}"))
+            val backend = testBackend(transport)
+            assertEquals(UnixSeconds.of(expiry),
+                backend.onchainReceive(initializedContext(backend), OnchainReceiveRequest()).expirationTimestamp)
+        }
     }
 
     @Test

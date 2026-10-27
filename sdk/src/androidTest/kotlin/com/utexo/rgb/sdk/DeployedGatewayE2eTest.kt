@@ -28,10 +28,10 @@ import org.junit.runner.RunWith
  *   (fund that address out of band, wait for a confirmation)
  *   step2_prepareSignAndSend        -> signs locally and completes the send
  *
- * This deliberately drives `RgbLightningNodeGatewayBackend` directly rather
- * than `UTEXOWallet`: the app-facing factory hardcodes
- * `allowUnverifiedPsbtProfile = false` (WalletServiceConfiguration), so a BTC
- * send cannot be reached through it by design.
+ * This deliberately drives `RgbLightningNodeGatewayBackend` and the signer
+ * directly rather than `UTEXOWallet`, so each step of prepare, local signing
+ * and completion is observable. `UTEXOWallet` reaches the same path when its
+ * `WalletServiceConfiguration` has a `chainContextProvider`.
  */
 @RunWith(AndroidJUnit4::class)
 public class DeployedGatewayE2eTest {

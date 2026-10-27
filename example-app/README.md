@@ -16,6 +16,8 @@ production.
 ```
 
 Then launch it, paste a gateway URL and a bearer token, and press **Connect**.
+The defaults target UTEXO's signet environment: `Network.SIGNET`, with the
+trusted chain tip read from `https://esplora-api.utexo.com/blocks/tip/height`.
 
 A token is minted once per user by the operator:
 
@@ -25,31 +27,45 @@ curl -X POST https://your-gateway.example/v1/users \
 # 201 {"userId":"u_…","token":"utxg_…","createdAt":…}
 ```
 
-For a gateway on your own machine use `http://10.0.2.2:<port>`.
+For a gateway on your own machine use `http://10.0.2.2:<port>`. Against
+`rgb-lightning-node`'s regtest stack, also pass `-e network regtest` and
+`-e tipUrl http://10.0.2.2:3002/blocks/tip/height`.
 
-For scripted runs, every field is also an intent extra:
+For scripted runs, every field is also an intent extra, and `run` connects and
+then runs the named actions in order, logging each result line to logcat under
+the `UtexoExample` tag:
 
 ```sh
-adb shell am start -n com.utexo.rgb.sdk.example/.MainActivity \
+adb shell am start -S -n com.utexo.rgb.sdk.example/.MainActivity \
   -e gatewayUrl https://your-gateway.example \
   -e bearerToken utxg_… \
+  -e walletId example                       `# one Keystore seed per wallet ID` \
   -e provisionedMnemonic word_word_word_…   `# optional: restore instead of generate` \
-  -e autoConnect true
+  -e recipient tb1p…  -e amount 50000 \
+  -e run sync,balance,sendbtc
+adb logcat -s UtexoExample:I
 ```
 
 `provisionedMnemonic` is underscore-separated because `am start -e` does not carry
-spaces through reliably.
+spaces through reliably. Quote an RGB invoice passed as `recipient`: it contains
+`?` and `&`.
 
-## What the buttons show
+## What the actions show
 
-| Button       | What it demonstrates                                                       |
-| ------------ | -------------------------------------------------------------------------- |
-| **Connect**  | first-run seed generation (or restore) → `create` → `init` → `unlock`      |
-| **Address**  | the `reserveAddress` gap, and the workaround — see below                    |
-| **Balance**  | `getBtcBalance()`, split vanilla / colored, settled / spendable            |
-| **Sync**     | `syncWallet()` — one call covering Bitcoin sync plus RGB refresh            |
-| **Unspents** | `listUnspents()`, including the authoritative `exists` flag                 |
-| **Send**     | why `sendBtc` is gated off in the application API                           |
+| Action           | What it demonstrates                                                         |
+| ---------------- | ---------------------------------------------------------------------------- |
+| **Connect**      | first-run seed generation (or restore) → `create` → `init` → `unlock`        |
+| `address`        | `getAddress()` — a fresh vanilla address, re-derived locally before use       |
+| `balance`        | `getBtcBalance()`, split vanilla / colored, settled / spendable              |
+| `sync`           | `syncWallet()` — Bitcoin sync plus RGB refresh; settles incoming RGB          |
+| `unspents`       | `listUnspents()`, with `exists` reported by the gateway or null               |
+| `utxos`          | `createUtxos()` — colored UTXOs to hold RGB allocations                       |
+| `sendbtc`        | `sendBtc()` to *recipient* for *amount* sats, signed on the device            |
+| `assets`         | `listAssets()` with settled / spendable / future balances                     |
+| `transfers`      | `listTransfers()` for every asset, or only for *asset ID*                     |
+| `witnessinvoice` | `witnessReceive()` — the sender creates the receiving output                  |
+| `blindinvoice`   | `blindReceive()` — receives onto one of this wallet's colored UTXOs           |
+| `rgbsend`        | `onchainSend()` of *amount* to the RGB invoice in *recipient*                 |
 
 ## Three things the example is really here to teach
 
@@ -75,19 +91,20 @@ Messages, codes and `details` are all documented as redacted and safe to log, so
 the example logs the code, the `correlationId` an operator can grep for, and
 `details` — and nothing else.
 
-## Two capabilities that are deliberately not wired up
+## Before testing a payment
 
-**`getAddress()` throws `configuration.unsupported`.** The gateway backend does not
-implement `reserveAddress` yet. Until it does, get a deposit address from
-`GET /v1/wallet/address` and re-derive it from the `derivation` object that
-response carries before showing it to a user. A `null` derivation means the
-gateway could not attribute the address — that is unproven, not safe.
+**Spending needs a trusted chain tip.** `chainContextProvider` must read the tip
+height from an indexer for the chain the gateway runs on, never from the gateway.
+UTEXO's signet is not Bitcoin's public signet even though its invoices say `sb`;
+a public-signet tip is far behind it, and the signer rejects every spend.
 
-**`sendBtc()` throws `configuration.unsupported`.** `WalletServiceConfiguration`
-pins `allowUnverifiedPsbtProfile = false`. Sending works, and has been run end to
-end against a live gateway; what is gated is the entry point. To send, construct
-`RgbLightningNodeGatewayBackend` yourself with the flag on — and qualify your
-deployment's PSBT profile before you do.
+**RGB payments take three turns.** The receiver syncs to fetch, validate and
+ACK the consignment. The sender then syncs to see the ACK and broadcast. After a
+confirmation, the receiver's next sync settles the transfer.
 
-Both gaps are reachable from the buttons on purpose, so they are discovered here
-rather than in production.
+**RGB needs colored UTXOs.** A sender funds the fee and any witness output from
+colored UTXOs, not its vanilla balance (`rgbsend` adds 1,000 sats for a `wvout:`
+recipient). A blind invoice receives onto a free colored UTXO. Run `utxos` first.
+
+[PAYMENT_TESTING.md](PAYMENT_TESTING.md) walks through complete BTC and RGB
+payment runs, locally on regtest and against a deployed gateway.
