@@ -15,10 +15,11 @@ below. Keep it in protected storage and supply the key itself, without a
 
 [UTEXO](https://docs.utexo.com/overview) provides infrastructure for RGB assets and
 Bitcoin payments. [RGB](https://docs.utexo.com/getting-started/rgb-concepts) tracks asset ownership against Bitcoin UTXOs and exchanges
-asset state between participants. [RGB Lightning Node (RLN)](https://github.com/UTEXO-Protocol/rgb-lightning-node) supplies Bitcoin/RGB
-wallet and Lightning infrastructure; this SDK connects through a wallet gateway
-rather than exposing the full RLN API. **This build has no public Lightning
-payment, BOLT11 invoice, or channel-management API.**
+asset state between participants. This SDK connects to a wallet gateway, which
+keeps one watch-only wallet per user on [rgb-node-api](https://github.com/UTEXO-Protocol/rgb-node-api);
+the keys stay on the device and sign there. The gateway handles on-chain Bitcoin
+and RGB only. **This build has no Lightning payment, BOLT11 invoice, or
+channel-management API.**
 
 ## Before you integrate
 
@@ -28,7 +29,7 @@ You need:
 - The SDK source or an artifact supplied by UTEXO. The build includes native
   signing libraries for `arm64-v8a`, `armeabi-v7a`, and `x86_64`.
 - Your UTEXO API key, compatible gateway URL, supported network, and RGB asset
-  contract ID/schema. A plain RLN endpoint, Cloud API, or Swap API URL is not a
+  contract ID/schema. An rgb-node-api endpoint, Cloud API, or Swap API URL is not a
   substitute for this gateway.
 - A stable, app-persisted `WalletId`, a recovery-phrase backup flow, and durable
   storage for pending payment requests.
