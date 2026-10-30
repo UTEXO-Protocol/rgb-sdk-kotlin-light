@@ -27,9 +27,10 @@ curl -X POST https://your-gateway.example/v1/users \
 # 201 {"userId":"u_…","token":"utxg_…","createdAt":…}
 ```
 
-For a gateway on your own machine use `http://10.0.2.2:<port>`. Against
-`rgb-lightning-node`'s regtest stack, also pass `-e network regtest` and
-`-e tipUrl http://10.0.2.2:3002/blocks/tip/height`.
+For a gateway on your own machine use `http://10.0.2.2:<port>`. Against the
+lightsdk-gateway regtest stack (`regtest/` in the gateway repository), also pass
+`-e network regtest` and `-e tipUrl http://10.0.2.2:3002/blocks/tip/height`.
+[PAYMENT_TESTING.md](PAYMENT_TESTING.md) walks through a full local run.
 
 For scripted runs, every field is also an intent extra, and `run` connects and
 then runs the named actions in order, logging each result line to logcat under

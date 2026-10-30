@@ -159,7 +159,7 @@ public class RgbLightningNodeGatewayConfiguration(
 }
 
 /**
- * HTTP adapter for the watch-only gateway introduced by rgb-lightning-node PR #174.
+ * HTTP adapter for lightsdk-gateway, the watch-only wallet gateway in front of rgb-node-api.
  *
  * This is deliberately an infrastructure implementation. [UTEXOWallet]
  * remains the application-facing API and continues to validate and sign a
