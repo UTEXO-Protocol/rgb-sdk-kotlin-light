@@ -22,6 +22,8 @@ public object OperationCheckpointCodec {
     public const val SCHEMA_VERSION: Int = 1
     public const val MAX_ENCODED_BYTES: Int = 16_000_000
     private const val COMPACT_TERMINAL_SCHEMA_VERSION: Int = 2
+    /** Schema v1 plus RGB send evidence; used only when a preparation carries it. */
+    private const val RGB_EVIDENCE_SCHEMA_VERSION: Int = 3
 
     private const val CHECKSUM_BYTES: Int = 32
     private val magic: ByteArray = "UTXOPCHK".toByteArray(StandardCharsets.US_ASCII)
@@ -32,7 +34,12 @@ public object OperationCheckpointCodec {
             val writer = CheckpointWriter(output)
             output.write(magic)
             val compactTerminal = checkpoint.phase == OperationPhase.TERMINAL && checkpoint.preparedTransaction == null
-            output.writeInt(if (compactTerminal) COMPACT_TERMINAL_SCHEMA_VERSION else SCHEMA_VERSION)
+            val rgbEvidence = checkpoint.preparedTransaction?.rgbSendEvidence != null
+            output.writeInt(when {
+                compactTerminal -> COMPACT_TERMINAL_SCHEMA_VERSION
+                rgbEvidence -> RGB_EVIDENCE_SCHEMA_VERSION
+                else -> SCHEMA_VERSION
+            })
             writer.string(checkpoint.walletId.value, 128)
             writer.string(checkpoint.idempotencyKey.value, 128)
             writer.string(checkpoint.requestHash.hex, 64)
@@ -44,7 +51,7 @@ public object OperationCheckpointCodec {
                 writer.outcome(requireNotNull(checkpoint.terminalOutcome))
             } else {
                 writer.optional(checkpoint.operationId) { writer.string(it.value, 128) }
-                writer.optional(checkpoint.preparedTransaction, writer::prepared)
+                writer.optional(checkpoint.preparedTransaction) { writer.prepared(it, rgbEvidence) }
                 writer.optional(checkpoint.signedPayload, writer::signed)
                 writer.optional(checkpoint.terminalOutcome, writer::outcome)
             }
@@ -75,7 +82,9 @@ public object OperationCheckpointCodec {
                 throw IOException("invalid operation checkpoint magic")
             }
             val schema = input.readInt()
-            if (schema != SCHEMA_VERSION && schema != COMPACT_TERMINAL_SCHEMA_VERSION) {
+            if (schema != SCHEMA_VERSION && schema != COMPACT_TERMINAL_SCHEMA_VERSION &&
+                schema != RGB_EVIDENCE_SCHEMA_VERSION
+            ) {
                 throw IOException("unsupported operation checkpoint schema")
             }
             val reader = CheckpointReader(input)
@@ -98,12 +107,15 @@ public object OperationCheckpointCodec {
                 OperationCheckpoint(
                     walletId, key, hash, kind, phase,
                     operationId = reader.optional { OperationId.of(reader.string(128)) },
-                    preparedTransaction = reader.optional(reader::prepared),
+                    preparedTransaction = reader.optional { reader.prepared(schema == RGB_EVIDENCE_SCHEMA_VERSION) },
                     signedPayload = reader.optional(reader::signed),
                     terminalOutcome = reader.optional(reader::outcome),
                 ).also {
                     if (phase != OperationPhase.CREATED && it.preparedTransaction == null) {
                         throw IOException("schema v1 requires full preparation")
+                    }
+                    if ((schema == RGB_EVIDENCE_SCHEMA_VERSION) != (it.preparedTransaction?.rgbSendEvidence != null)) {
+                        throw IOException("schema v3 is used exactly for RGB send evidence")
                     }
                 }
             }
@@ -134,7 +146,7 @@ private class CheckpointWriter(private val output: DataOutputStream) {
         if (value != null) write(value)
     }
 
-    fun prepared(value: PreparedTransaction): Unit {
+    fun prepared(value: PreparedTransaction, withRgbEvidence: Boolean): Unit {
         string(value.operationId.value, 128)
         string(value.idempotencyKey.value, 128)
         string(value.requestHash.hex, 64)
@@ -144,6 +156,18 @@ private class CheckpointWriter(private val output: DataOutputStream) {
         output.writeLong(value.expiresAt.value)
         optional(value.createUtxosOutputPlan, ::outputPlan)
         optional(value.correlationId) { string(it, 128) }
+        if (withRgbEvidence) optional(value.rgbSendEvidence, ::rgbSendEvidence)
+    }
+
+    fun rgbSendEvidence(value: RgbSendEvidence): Unit {
+        string(value.fasciaBase64, RgbSendEvidence.MAX_FASCIA_BASE64_CHARACTERS)
+        output.writeLong(value.mpcEntropy.toLong())
+        output.writeInt(value.existingOutputProofs.size)
+        value.existingOutputProofs.forEach { proof ->
+            string(proof.transactionHex, RgbExistingOutputProof.MAX_TRANSACTION_HEX_CHARACTERS)
+            output.writeInt(proof.vout)
+            output.writeInt(proof.derivationIndex)
+        }
     }
 
     fun outputPlan(value: CreateUtxosOutputPlan): Unit {
@@ -254,7 +278,7 @@ private class CheckpointReader(private val input: DataInputStream) {
             ?: throw IOException("unknown operation phase")
     }
 
-    fun prepared(): PreparedTransaction = PreparedTransaction(
+    fun prepared(withRgbEvidence: Boolean): PreparedTransaction = PreparedTransaction(
         operationId = OperationId.of(string(128)),
         idempotencyKey = IdempotencyKey.of(string(128)),
         requestHash = RequestHash.ofLowercaseHex(string(64)),
@@ -264,6 +288,24 @@ private class CheckpointReader(private val input: DataInputStream) {
         expiresAt = UnixSeconds.of(input.readLong()),
         createUtxosOutputPlan = optional(::outputPlan),
         correlationId = optional { string(128) },
+        rgbSendEvidence = if (withRgbEvidence) optional(::rgbSendEvidence) else null,
+    )
+
+    fun rgbSendEvidence(): RgbSendEvidence = RgbSendEvidence(
+        fasciaBase64 = string(RgbSendEvidence.MAX_FASCIA_BASE64_CHARACTERS),
+        mpcEntropy = input.readLong().toULong(),
+        existingOutputProofs = input.readInt().let { size ->
+            if (size !in 0..RgbSendEvidence.MAX_EXISTING_OUTPUT_PROOFS) {
+                throw IOException("invalid checkpoint existing-output proof count")
+            }
+            List(size) {
+                RgbExistingOutputProof(
+                    transactionHex = string(RgbExistingOutputProof.MAX_TRANSACTION_HEX_CHARACTERS),
+                    vout = input.readInt(),
+                    derivationIndex = input.readInt(),
+                )
+            }
+        },
     )
 
     fun outputPlan(): CreateUtxosOutputPlan {

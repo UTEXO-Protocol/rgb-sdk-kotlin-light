@@ -120,6 +120,8 @@ public class GatewayNativeProfileTest {
                     assertEquals(validation, signed.validation)
                     assertNotEquals(prepared.psbtBase64, signed.signedPsbtBase64)
                     check(!signer.capabilities.localRgbValidation)
+                    // Without the explicit opt-in, a send with no RGB evidence is never signed.
+                    expectRejected(signer, prepared, withPolicy(intent, intent.policy.copy(allowUnverifiedRgbSends = false)))
                     expectRejected(signer, rebound(prepared, key = IdempotencyKey.of("other-request")), intent)
                     expectRejected(signer, rebound(prepared, hash = RequestHash("0".repeat(64))), intent)
                     expectRejected(signer, prepared, withPolicy(intent,
@@ -207,7 +209,8 @@ public class GatewayNativeProfileTest {
                 val send = OnchainSendRequest(invoice, AssetAmount.of(request.getLong("amount")),
                     assetId = AssetId.of(request.getString("assetId")),
                     feeRate = FeeRate.satPerVbyte("2"), idempotencyKey = key)
-                intent = LocalOperationIntent.OnchainSend(Network.REGTEST, policy, send)
+                // The PR #174 capture predates RGB send evidence, so it is signed blind.
+                intent = LocalOperationIntent.OnchainSend(Network.REGTEST, policy.copy(allowUnverifiedRgbSends = true), send)
                 hash = RequestHasher.onchainSend(Network.REGTEST, send)
                 kind = OperationKind.ONCHAIN_SEND
             }

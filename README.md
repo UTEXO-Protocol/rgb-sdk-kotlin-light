@@ -394,6 +394,27 @@ by the gateway; invoices using out-of-band consignment exchange without endpoint
 are unsupported. `batchTransferIdx` may be null after sending: the current
 completion route supplies the txid without a batch index.
 
+Before signing an RGB send, the SDK verifies its RGB part locally with the
+bundled `utexo-rgb-verifier` library. The check fails unless every allocation the
+signature moves goes to the invoice's beneficiary, in the approved asset and
+amount, or back to this wallet. This needs evidence that the gateway returns with
+the preparation (`rgbEvidence`), and the current gateway does not return it yet.
+Until it does, `onchainSend` fails with `policy.rejected` after the gateway has
+prepared the send, and that preparation is left to expire. To keep sending
+meanwhile, opt in to signing RGB sends unverified:
+
+```kotlin
+val configuration = WalletConfiguration(
+    walletId = walletId,
+    network = Network.REGTEST,
+    signingPolicy = LocalSigningPolicy(allowUnverifiedRgbSends = true),
+)
+```
+
+Evidence that arrives is always verified, whatever the flag says. Remove the
+opt-in once your gateway returns the evidence. `SECURITY.md` describes what the
+verifier proves and what it does not.
+
 Refresh and inspect transfer state before presenting settlement:
 
 ```kotlin

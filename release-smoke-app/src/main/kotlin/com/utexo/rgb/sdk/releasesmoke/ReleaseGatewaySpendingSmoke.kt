@@ -115,7 +115,8 @@ public object ReleaseGatewaySpendingSmoke {
                 } catch (failure: Throwable) { finished.completeExceptionally(failure) }
             }.apply { isDaemon = true; start() }
             val configuration = WalletConfiguration(WalletId.of("spend-probe-${UUID.randomUUID()}"), Network.REGTEST,
-                LocalSigningPolicy(maximumFeeRate = FeeRate.satPerVbyte("3")))
+                // The PR #174 fixture predates RGB send evidence.
+                LocalSigningPolicy(maximumFeeRate = FeeRate.satPerVbyte("3"), allowUnverifiedRgbSends = true))
             val seedStore = AndroidKeystoreSeedStore(context, configuration.walletId, configuration.network)
             SecretMnemonic.fromWords(fixture.getString("mnemonic").toCharArray()).use { mnemonic ->
                 deriveSeedFromMnemonic(mnemonic).use { seedStore.provision(it) }
