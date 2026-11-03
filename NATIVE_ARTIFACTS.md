@@ -52,6 +52,23 @@ normal Android asset packaging. Run the local-only consumer validation with:
 ANDROID_HOME=/path/to/android-sdk bash scripts/verify-maven-consumer.sh
 ```
 
+## RGB send verifier
+
+`libutexo_rgb_verifier.so` for the same three ABIs, and its generated binding
+`sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/verifier/utexo_rgb_verifier.kt`,
+are built from `utexo-rgb-verifier`. Its source is bundled as
+[NativeSource/utexo-rgb-verifier-source.tar.gz](NativeSource/utexo-rgb-verifier-source.tar.gz).
+`SHA256SUMS` lists all five files, and the build's input check requires them.
+
+The verifier has less evidence than the signer. `artifact-manifest.json`,
+`native-build.json`, the SBOM, the notices and the license review describe the
+signer only. None of them covers the verifier's RGB dependencies (`rgb-consensus`,
+`rgb-ops` and `rgb-invoicing` 0.11.2-rc.1, `rgb-strict-encoding`, `amplify`).
+The publication has no source classifier for the verifier. The checked-in
+libraries were built locally on 2026-10-29 with the crate's
+`scripts/build-android.sh`: rustc 1.98.0, cargo-ndk 4.1.2, NDK 29.0.14206865,
+API 24, release profile, `--locked`. The signer used rustc 1.88.0 and NDK 28.2.
+
 These artifacts preserve the currently collected evidence; they do not close the
 missing upstream notice or select a distribution license. No local receipt,
 checksum, SNAPSHOT publication or emulator result is a signed release attestation.

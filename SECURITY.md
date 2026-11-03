@@ -166,9 +166,25 @@ matching the requested/default duration. Expiry matching allows 300 seconds of
 device/gateway clock difference, because the gateway stamps the expiry from its
 own clock; an invoice already expired by the device clock is still rejected.
 No endpoint is contacted by parsing.
-No UI or product text should describe its RGB result as trustless. A malicious
-backend can potentially redirect allocations from selected colored inputs,
+No UI or product text should describe its RGB result as trustless.
+
+Before signing or revalidating an RGB send, the gateway signer runs
+`utexo-rgb-verifier` on the evidence the backend returns with the preparation:
+rgb-lib's fascia, the MPC entropy of its commitment, and ownership proofs for
+existing UTXOs used as seals. The verifier proves that the transaction's single
+`OP_RETURN` commits to exactly the disclosed transitions, and that every
+allocation they move goes to the invoice's beneficiary, in the approved asset
+and amount, or back to a seal derived from this wallet's colored account. A
+backend therefore cannot redirect allocations, including RGB change, to itself.
+It can still destroy them. The verifier does not validate RGB history, cannot
+see allocations left out of the fascia, and does not check that an
+existing-UTXO seal is still unspent.
+
+A preparation without evidence is refused unless
+`LocalSigningPolicy.allowUnverifiedRgbSends` is set. With that opt-in a
+malicious backend can redirect allocations from selected colored inputs,
 including RGB change, even when the Bitcoin transaction satisfies local policy.
+The current gateway does not return the evidence yet, so the example app opts in.
 
 Lightning is outside the current implementation. If later hosted by a shared
 backend node, its balances are custodial/server-authorized until an explicitly

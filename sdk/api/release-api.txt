@@ -3354,47 +3354,51 @@
   com/utexo/rgb/sdk/ListAssets.toString()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d1[]
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ADQKAhgCCgIQAAoACgIYAgoACgIYAgoACgIQCAoCCAQKAhgCCgIIGgoCEAsKAggDCgIQDgoACMKGCBgAMgIwAUJNEggIAhACGgIwAxIICAIQBBoCMAUSCAgCEAYaAjAHEggIAhAIGgIwBxIICAIQCRoCMAcSCAgCEAoaAjAHEggIAhALGgIwDMKiBgQIDRAOShAQGhoCMANIw4YDwqIGBAgbEBBKEBAcGgIwBUjDhgPCogYECB0QEEoJEB4aAjAHSMOGA0oJEB8aAjAHSMOGA0oJECAaAjAHSMOGA0oJECEaAjAHSMOGA0oJECIaAjAMSMOGA0pWECMaAjAAMggIAhACGgIwAzIICAIQBBoCMAUyCAgCEAYaAjAHMggIAhAIGgIwBzIICAIQCRoCMAcyCAgCEAoaAjAHMggIAhALGgIwDEjDhgHCogYECCQQJUoTECYaAjAnMggQKBoEGAEwAUjDlgNKCRApGgIwB0jDlgFKCRAqGgIwK0jDlgFSExACGgIwA8KiBgoKAhARGgQIDxAQUhMQBBoCMAXCogYKCgIQERoECBIQEFIREAYaAjAHwqIGCAoAGgQIExAUUhEQCBoCMAfCogYICgAaBAgVEBRSERAJGgIwB8KiBggKABoECBYQFFIREAoaAjAHwqIGCAoAGgQIFxAUUhEQCxoCMAzCogYICgAaBAgYEBnCqAYs
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ADIKAhgCCgIQAAoACgIYAgoACgIYAgoACgIQCAoCCAQKAhgCCgAKAhALCgIIIAoCEA4KAAjChggYADICMAFCVxIICAIQAhoCMAMSCAgCEAQaAjAFEggIAhAGGgIwBxIICAIQCBoCMAcSCAgCEAkaAjAHEggIAhAKGgIwBxIICAIQCxoCMAwSCAgCEA0aAjAOwqIGBAgPEBBKEBAeGgIwA0jDhgPCogYECB8QEkoQECAaAjAFSMOGA8KiBgQIIRASSgkQIhoCMAdIw4YDSgkQIxoCMAdIw4YDSgkQJBoCMAdIw4YDSgkQJRoCMAdIw4YDSgkQJhoCMAxIw4YDSgkQJxoCMA5Iw4YDSmAQKBoCMAAyCAgCEAIaAjADMggIAhAEGgIwBTIICAIQBhoCMAcyCAgCEAgaAjAHMggIAhAJGgIwBzIICAIQChoCMAcyCAgCEAsaAjAMMggIAhANGgIwDkjDhgHCogYECCkQKkoTECsaAjAOMggQLBoEGAEwAUjDlgNKCRAtGgIwB0jDlgFKCRAuGgIwL0jDlgFSExACGgIwA8KiBgoKAhATGgQIERASUhMQBBoCMAXCogYKCgIQExoECBQQElIREAYaAjAHwqIGCAoAGgQIFRAWUhEQCBoCMAfCogYICgAaBAgXEBZSERAJGgIwB8KiBggKABoECBgQFlIREAoaAjAHwqIGCAoAGgQIGRAWUhEQCxoCMAzCogYICgAaBAgaEBtSERANGgIwDsKiBggKABoECBwQHcKoBjA=
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0xvY2FsU2lnbmluZ1BvbGljeTs=
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[10]=utf8-base64:bWF4aW11bUNoaWxkSW5kZXg=
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[11]=utf8-base64:cmJm
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[12]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JiZlBvbGljeTs=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:PGluaXQ+
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:KEpKSUlJSUxjb20vdXRleG8vcmdiL3Nkay9SYmZQb2xpY3k7TGtvdGxpbi9qdm0vaW50ZXJuYWwvRGVmYXVsdENvbnN0cnVjdG9yTWFya2VyOylW
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:Z2V0TWF4aW11bUFic29sdXRlRmVlLWl6THIydTg=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:KClK
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:Sg==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:Z2V0TWF4aW11bUZlZVJhdGUtUDNDdktrTQ==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:Z2V0TWF4aW11bVBzYnRCeXRlcw==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:YWxsb3dVbnZlcmlmaWVkUmdiU2VuZHM=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:KEpKSUlJSUxjb20vdXRleG8vcmdiL3Nkay9SYmZQb2xpY3k7Wkxrb3RsaW4vanZtL2ludGVybmFsL0RlZmF1bHRDb25zdHJ1Y3Rvck1hcmtlcjspVg==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:Z2V0TWF4aW11bUFic29sdXRlRmVlLWl6THIydTg=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:KClK
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:Sg==
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:KClJ
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:Z2V0TWF4aW11bUlucHV0cw==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:Z2V0TWF4aW11bU91dHB1dHM=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:Z2V0TWF4aW11bUNoaWxkSW5kZXg=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:Z2V0UmJm
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[25]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvUmJmUG9saWN5Ow==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[26]=utf8-base64:Y29tcG9uZW50MQ==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[27]=utf8-base64:Y29tcG9uZW50MS1pekxyMnU4
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[28]=utf8-base64:Y29tcG9uZW50Mg==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[29]=utf8-base64:Y29tcG9uZW50Mi1QM0N2S2tN
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:Z2V0TWF4aW11bUZlZVJhdGUtUDNDdktrTQ==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:Z2V0TWF4aW11bVBzYnRCeXRlcw==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:KClJ
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:Z2V0TWF4aW11bUlucHV0cw==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:Z2V0TWF4aW11bU91dHB1dHM=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[25]=utf8-base64:Z2V0TWF4aW11bUNoaWxkSW5kZXg=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[26]=utf8-base64:Z2V0UmJm
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[27]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvUmJmUG9saWN5Ow==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[28]=utf8-base64:Z2V0QWxsb3dVbnZlcmlmaWVkUmdiU2VuZHM=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[29]=utf8-base64:KCla
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:bWF4aW11bUFic29sdXRlRmVl
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[30]=utf8-base64:Y29tcG9uZW50Mw==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[31]=utf8-base64:Y29tcG9uZW50NA==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[32]=utf8-base64:Y29tcG9uZW50NQ==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[33]=utf8-base64:Y29tcG9uZW50Ng==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[34]=utf8-base64:Y29tcG9uZW50Nw==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[35]=utf8-base64:Y29weQ==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[36]=utf8-base64:Y29weS0tb0w0YThn
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[37]=utf8-base64:KEpKSUlJSUxjb20vdXRleG8vcmdiL3Nkay9SYmZQb2xpY3k7KUxjb20vdXRleG8vcmdiL3Nkay9Mb2NhbFNpZ25pbmdQb2xpY3k7
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[38]=utf8-base64:ZXF1YWxz
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[39]=utf8-base64:
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[30]=utf8-base64:Y29tcG9uZW50MQ==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[31]=utf8-base64:Y29tcG9uZW50MS1pekxyMnU4
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[32]=utf8-base64:Y29tcG9uZW50Mg==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[33]=utf8-base64:Y29tcG9uZW50Mi1QM0N2S2tN
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[34]=utf8-base64:Y29tcG9uZW50Mw==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[35]=utf8-base64:Y29tcG9uZW50NA==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[36]=utf8-base64:Y29tcG9uZW50NQ==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[37]=utf8-base64:Y29tcG9uZW50Ng==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[38]=utf8-base64:Y29tcG9uZW50Nw==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[39]=utf8-base64:Y29tcG9uZW50OA==
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1NhdG9zaGlzOw==
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[40]=utf8-base64:b3RoZXI=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[41]=utf8-base64:aGFzaENvZGU=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[42]=utf8-base64:dG9TdHJpbmc=
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[43]=utf8-base64:
-  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[44]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[40]=utf8-base64:Y29weQ==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[41]=utf8-base64:Y29weS15ZDlUbzhj
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[42]=utf8-base64:KEpKSUlJSUxjb20vdXRleG8vcmdiL3Nkay9SYmZQb2xpY3k7WilMY29tL3V0ZXhvL3JnYi9zZGsvTG9jYWxTaWduaW5nUG9saWN5Ow==
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[43]=utf8-base64:ZXF1YWxz
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[44]=utf8-base64:b3RoZXI=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[45]=utf8-base64:aGFzaENvZGU=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[46]=utf8-base64:dG9TdHJpbmc=
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[47]=utf8-base64:
+  com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[48]=utf8-base64:c2Rr
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:bWF4aW11bUZlZVJhdGU=
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0ZlZVJhdGU7
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:bWF4aW11bVBzYnRCeXRlcw==
@@ -3404,8 +3408,8 @@
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
   com/utexo/rgb/sdk/LocalSigningPolicy annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
-  com/utexo/rgb/sdk/LocalSigningPolicy.<init>(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;ILkotlin/jvm/internal/DefaultConstructorMarker;)V 1
-  com/utexo/rgb/sdk/LocalSigningPolicy.<init>(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;Lkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/LocalSigningPolicy.<init>(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/LocalSigningPolicy.<init>(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;ZLkotlin/jvm/internal/DefaultConstructorMarker;)V 1
   com/utexo/rgb/sdk/LocalSigningPolicy.component1-izLr2u8()J 11
   com/utexo/rgb/sdk/LocalSigningPolicy.component2-P3CvKkM()J 11
   com/utexo/rgb/sdk/LocalSigningPolicy.component3()I 11
@@ -3414,12 +3418,14 @@
   com/utexo/rgb/sdk/LocalSigningPolicy.component6()I 11
   com/utexo/rgb/sdk/LocalSigningPolicy.component7()Lcom/utexo/rgb/sdk/RbfPolicy; 11
   com/utexo/rgb/sdk/LocalSigningPolicy.component7()Lcom/utexo/rgb/sdk/RbfPolicy; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
-  com/utexo/rgb/sdk/LocalSigningPolicy.copy--oL4a8g$default(Lcom/utexo/rgb/sdk/LocalSigningPolicy;JJIIIILcom/utexo/rgb/sdk/RbfPolicy;ILjava/lang/Object;)Lcom/utexo/rgb/sdk/LocalSigningPolicy; 9
-  com/utexo/rgb/sdk/LocalSigningPolicy.copy--oL4a8g(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;)Lcom/utexo/rgb/sdk/LocalSigningPolicy; 11
-  com/utexo/rgb/sdk/LocalSigningPolicy.copy--oL4a8g(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;)Lcom/utexo/rgb/sdk/LocalSigningPolicy; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
-  com/utexo/rgb/sdk/LocalSigningPolicy.copy--oL4a8g(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;)Lcom/utexo/rgb/sdk/LocalSigningPolicy; parameter=6 annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/LocalSigningPolicy.component8()Z 11
+  com/utexo/rgb/sdk/LocalSigningPolicy.copy-yd9To8c$default(Lcom/utexo/rgb/sdk/LocalSigningPolicy;JJIIIILcom/utexo/rgb/sdk/RbfPolicy;ZILjava/lang/Object;)Lcom/utexo/rgb/sdk/LocalSigningPolicy; 9
+  com/utexo/rgb/sdk/LocalSigningPolicy.copy-yd9To8c(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;Z)Lcom/utexo/rgb/sdk/LocalSigningPolicy; 11
+  com/utexo/rgb/sdk/LocalSigningPolicy.copy-yd9To8c(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;Z)Lcom/utexo/rgb/sdk/LocalSigningPolicy; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/LocalSigningPolicy.copy-yd9To8c(JJIIIILcom/utexo/rgb/sdk/RbfPolicy;Z)Lcom/utexo/rgb/sdk/LocalSigningPolicy; parameter=6 annotation Lorg/jetbrains/annotations/NotNull; runtime=false
   com/utexo/rgb/sdk/LocalSigningPolicy.equals(Ljava/lang/Object;)Z 1
   com/utexo/rgb/sdk/LocalSigningPolicy.equals(Ljava/lang/Object;)Z parameter=0 annotation Lorg/jetbrains/annotations/Nullable; runtime=false
+  com/utexo/rgb/sdk/LocalSigningPolicy.getAllowUnverifiedRgbSends()Z 11
   com/utexo/rgb/sdk/LocalSigningPolicy.getMaximumAbsoluteFee-izLr2u8()J 11
   com/utexo/rgb/sdk/LocalSigningPolicy.getMaximumChildIndex()I 11
   com/utexo/rgb/sdk/LocalSigningPolicy.getMaximumFeeRate-P3CvKkM()J 11
@@ -4100,30 +4106,31 @@
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lcom/utexo/rgb/sdk/WalletInfrastructureApi; runtime=false
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d1[]
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ACwKAhgCCgIQAAoCCAMKAhAICgIIBAoCEBIKAggCCgIYAgoCCAUKAhgCCgIIAgjDhwIYADICMAFCCQgCwqIGBAgCEANKDhALGgIwCjIGEAwaAjANSg4QDhoCMA0yBhAPGgIwCkoiEBAaAkgRIgQIABARMgwQEhoIEgQSAkgRMBNIwoIIwqIGAhAUUg4QBBoCMAVYwoZUwqIGAgoAUg4QBhoCMAVYwoZUwqIGAgoAUg4QBxoCMAVYwoJUwqIGAgoAUg4QCBoCMAVYwoJUwqIGAgoAUg4QCRoCMApYwoIEwqIGAgoAwqgGFQ==
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ACwKAhgCCgIQAAoCCAMKAhAICgIIBQoCEBIKAggCCgIYAgoCCAUKAhgCCgIIAgjDhwIYADICMAFCCQgCwqIGBAgCEANKDhAMGgIwCzIGEA0aAjAOSg4QDxoCMA4yBhAQGgIwC0oiEBEaAkgSIgQIABASMgwQExoIEgQSAkgSMBRIwoIIwqIGAhAVUg4QBBoCMAVYwoZUwqIGAgoAUg4QBhoCMAVYwoZUwqIGAgoAUg4QBxoCMAVYwoJUwqIGAgoAUg4QCBoCMAVYwoJUwqIGAgoAUg4QCRoCMAVYwoJUwqIGAgoAUg4QChoCMAtYwoIEwqIGAgoAwqgGFg==
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbkNoZWNrcG9pbnRDb2RlYzs=
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[10]=utf8-base64:
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[11]=utf8-base64:ZW5jb2Rl
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[12]=utf8-base64:Y2hlY2twb2ludA==
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbkNoZWNrcG9pbnQ7
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:ZGVjb2Rl
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:ZW5jb2RlZA==
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:Y29kZWNCb3VuZGFyeQ==
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:VA==
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:YmxvY2s=
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:TGtvdGxpbi9GdW5jdGlvbjA7
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[10]=utf8-base64:bWFnaWM=
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[11]=utf8-base64:
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[12]=utf8-base64:ZW5jb2Rl
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:Y2hlY2twb2ludA==
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbkNoZWNrcG9pbnQ7
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:ZGVjb2Rl
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:ZW5jb2RlZA==
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:Y29kZWNCb3VuZGFyeQ==
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:VA==
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:YmxvY2s=
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:KExrb3RsaW4vanZtL2Z1bmN0aW9ucy9GdW5jdGlvbjA7KUxqYXZhL2xhbmcvT2JqZWN0Ow==
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:TGtvdGxpbi9GdW5jdGlvbjA7
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:KExrb3RsaW4vanZtL2Z1bmN0aW9ucy9GdW5jdGlvbjA7KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:c2Rr
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:PGluaXQ+
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:KClW
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:U0NIRU1BX1ZFUlNJT04=
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:TUFYX0VOQ09ERURfQllURVM=
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[7]=utf8-base64:Q09NUEFDVF9URVJNSU5BTF9TQ0hFTUFfVkVSU0lPTg==
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[8]=utf8-base64:Q0hFQ0tTVU1fQllURVM=
-  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[9]=utf8-base64:bWFnaWM=
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[8]=utf8-base64:UkdCX0VWSURFTkNFX1NDSEVNQV9WRVJTSU9O
+  com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/d2[]/[9]=utf8-base64:Q0hFQ0tTVU1fQllURVM=
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
   com/utexo/rgb/sdk/OperationCheckpointCodec annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
@@ -4760,7 +4767,7 @@
   com/utexo/rgb/sdk/PreparedTransaction annotation Lcom/utexo/rgb/sdk/WalletInfrastructureApi; runtime=false
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d1[]
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ADwKAhgCCgIQAAoACgIYAgoACgIYAgoACgIYAgoACgIYAgoACgIYAgoACgIQDgoACgIYAgoACgIYAgoCCBUIBxgAMgIwAUJXEgYQAhoCMAMSBhAEGgIwBRIGEAYaAjAHEgYQCBoCMAkSBhAKGgIwCxIGEAwaAjANEgYQDhoCMA8SCggCEBAaBBgBMBESCggCEBIaBBgBMA3CogYECBMQFEoIECUaAjANSBZSExACGgIwA8KiBgoKAhAXGgQIFRAWUhMQBBoCMAXCogYKCgIQFxoECBgQFlITEAYaAjAHwqIGCgoCEBcaBAgZEBZSERAIGgIwCcKiBggKABoECBoQG1IREAoaAjALwqIGCAoAGgQIHBAdUhEQDBoCMA3CogYICgAaBAgeEBZSExAOGgIwD8KiBgoKAhAhGgQIHxAgUhMQEhoEGAEwDcKiBggKABoECCIQFlITEBAaBBgBMBHCogYICgAaBAgjECTCqAYm
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:AEQKAhgCCgIQAAoACgIYAgoACgIYAgoACgIYAgoACgIYAgoACgIYAgoACgIQDgoACgIYAgoACgIYAgoCCAIKAhgCCgIIFggHGAAyAjABQmMSBhACGgIwAxIGEAQaAjAFEgYQBhoCMAcSBhAIGgIwCRIGEAoaAjALEgYQDBoCMA0SBhAOGgIwDxIKCAIQEBoEGAEwERIKCAIQEhoEGAEwDRIKCAIQExoEGAEwFMKiBgQIFRAWSggQKRoCMA1IFlITEAIaAjADwqIGCgoCEBkaBAgXEBhSExAEGgIwBcKiBgoKAhAZGgQIGhAYUhMQBhoCMAfCogYKCgIQGRoECBsQGFIREAgaAjAJwqIGCAoAGgQIHBAdUhEQChoCMAvCogYICgAaBAgeEB9SERAMGgIwDcKiBggKABoECCAQGFITEA4aAjAPwqIGCgoCECMaBAghECJSExASGgQYATANwqIGCAoAGgQIJBAYUhMQExoEGAEwFMKiBggKABoECCUQJlITEBAaBBgBMBHCogYICgAaBAgnECjCqAYq
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1ByZXBhcmVkVHJhbnNhY3Rpb247
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[10]=utf8-base64:b3BlcmF0aW9u
@@ -4772,29 +4779,33 @@
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:Y3JlYXRlVXR4b3NPdXRwdXRQbGFu
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0NyZWF0ZVV0eG9zT3V0cHV0UGxhbjs=
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:Y29ycmVsYXRpb25JZA==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:cmdiU2VuZEV2aWRlbmNl
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xjb20vdXRleG8vcmdiL3Nkay9OZXR3b3JrO0xjb20vdXRleG8vcmdiL3Nkay9PcGVyYXRpb25LaW5kO0xqYXZhL2xhbmcvU3RyaW5nO0pMY29tL3V0ZXhvL3JnYi9zZGsvQ3JlYXRlVXR4b3NPdXRwdXRQbGFuO0xqYXZhL2xhbmcvU3RyaW5nO0xrb3RsaW4vanZtL2ludGVybmFsL0RlZmF1bHRDb25zdHJ1Y3Rvck1hcmtlcjspVg==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:Z2V0T3BlcmF0aW9uSWQtSXJjODNTVQ==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:KClMamF2YS9sYW5nL1N0cmluZzs=
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:TGphdmEvbGFuZy9TdHJpbmc7
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:Z2V0SWRlbXBvdGVuY3lLZXktQ1JMWFpaOA==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[25]=utf8-base64:Z2V0UmVxdWVzdEhhc2gtQmRIaTBUOA==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[26]=utf8-base64:Z2V0TmV0d29yaw==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[27]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvTmV0d29yazs=
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[28]=utf8-base64:Z2V0T3BlcmF0aW9u
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[29]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uS2luZDs=
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYlNlbmRFdmlkZW5jZTs=
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xjb20vdXRleG8vcmdiL3Nkay9OZXR3b3JrO0xjb20vdXRleG8vcmdiL3Nkay9PcGVyYXRpb25LaW5kO0xqYXZhL2xhbmcvU3RyaW5nO0pMY29tL3V0ZXhvL3JnYi9zZGsvQ3JlYXRlVXR4b3NPdXRwdXRQbGFuO0xqYXZhL2xhbmcvU3RyaW5nO0xjb20vdXRleG8vcmdiL3Nkay9SZ2JTZW5kRXZpZGVuY2U7TGtvdGxpbi9qdm0vaW50ZXJuYWwvRGVmYXVsdENvbnN0cnVjdG9yTWFya2VyOylW
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:Z2V0T3BlcmF0aW9uSWQtSXJjODNTVQ==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:KClMamF2YS9sYW5nL1N0cmluZzs=
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[25]=utf8-base64:TGphdmEvbGFuZy9TdHJpbmc7
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[26]=utf8-base64:Z2V0SWRlbXBvdGVuY3lLZXktQ1JMWFpaOA==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[27]=utf8-base64:Z2V0UmVxdWVzdEhhc2gtQmRIaTBUOA==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[28]=utf8-base64:Z2V0TmV0d29yaw==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[29]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvTmV0d29yazs=
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:b3BlcmF0aW9uSWQ=
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[30]=utf8-base64:Z2V0UHNidEJhc2U2NA==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[31]=utf8-base64:Z2V0RXhwaXJlc0F0LUYxc1dCYWc=
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[32]=utf8-base64:KClK
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[33]=utf8-base64:Sg==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[34]=utf8-base64:Z2V0Q29ycmVsYXRpb25JZA==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[35]=utf8-base64:Z2V0Q3JlYXRlVXR4b3NPdXRwdXRQbGFu
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[36]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvQ3JlYXRlVXR4b3NPdXRwdXRQbGFuOw==
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[37]=utf8-base64:dG9TdHJpbmc=
-  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[38]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[30]=utf8-base64:Z2V0T3BlcmF0aW9u
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[31]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uS2luZDs=
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[32]=utf8-base64:Z2V0UHNidEJhc2U2NA==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[33]=utf8-base64:Z2V0RXhwaXJlc0F0LUYxc1dCYWc=
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[34]=utf8-base64:KClK
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[35]=utf8-base64:Sg==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[36]=utf8-base64:Z2V0Q29ycmVsYXRpb25JZA==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[37]=utf8-base64:Z2V0UmdiU2VuZEV2aWRlbmNl
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[38]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvUmdiU2VuZEV2aWRlbmNlOw==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[39]=utf8-base64:Z2V0Q3JlYXRlVXR4b3NPdXRwdXRQbGFu
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbklkOw==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[40]=utf8-base64:KClMY29tL3V0ZXhvL3JnYi9zZGsvQ3JlYXRlVXR4b3NPdXRwdXRQbGFuOw==
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[41]=utf8-base64:dG9TdHJpbmc=
+  com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[42]=utf8-base64:c2Rr
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:aWRlbXBvdGVuY3lLZXk=
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0lkZW1wb3RlbmN5S2V5Ow==
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:cmVxdWVzdEhhc2g=
@@ -4804,8 +4815,8 @@
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
   com/utexo/rgb/sdk/PreparedTransaction annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
-  com/utexo/rgb/sdk/PreparedTransaction.<init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/utexo/rgb/sdk/Network;Lcom/utexo/rgb/sdk/OperationKind;Ljava/lang/String;JLcom/utexo/rgb/sdk/CreateUtxosOutputPlan;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V 1
-  com/utexo/rgb/sdk/PreparedTransaction.<init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/utexo/rgb/sdk/Network;Lcom/utexo/rgb/sdk/OperationKind;Ljava/lang/String;JLcom/utexo/rgb/sdk/CreateUtxosOutputPlan;Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/PreparedTransaction.<init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/utexo/rgb/sdk/Network;Lcom/utexo/rgb/sdk/OperationKind;Ljava/lang/String;JLcom/utexo/rgb/sdk/CreateUtxosOutputPlan;Ljava/lang/String;Lcom/utexo/rgb/sdk/RgbSendEvidence;ILkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/PreparedTransaction.<init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/utexo/rgb/sdk/Network;Lcom/utexo/rgb/sdk/OperationKind;Ljava/lang/String;JLcom/utexo/rgb/sdk/CreateUtxosOutputPlan;Ljava/lang/String;Lcom/utexo/rgb/sdk/RgbSendEvidence;Lkotlin/jvm/internal/DefaultConstructorMarker;)V 1
   com/utexo/rgb/sdk/PreparedTransaction.getCorrelationId()Ljava/lang/String; 11
   com/utexo/rgb/sdk/PreparedTransaction.getCorrelationId()Ljava/lang/String; annotation Lorg/jetbrains/annotations/Nullable; runtime=false
   com/utexo/rgb/sdk/PreparedTransaction.getCreateUtxosOutputPlan()Lcom/utexo/rgb/sdk/CreateUtxosOutputPlan; 11
@@ -4823,6 +4834,8 @@
   com/utexo/rgb/sdk/PreparedTransaction.getPsbtBase64()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
   com/utexo/rgb/sdk/PreparedTransaction.getRequestHash-BdHi0T8()Ljava/lang/String; 11
   com/utexo/rgb/sdk/PreparedTransaction.getRequestHash-BdHi0T8()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/PreparedTransaction.getRgbSendEvidence()Lcom/utexo/rgb/sdk/RgbSendEvidence; 11
+  com/utexo/rgb/sdk/PreparedTransaction.getRgbSendEvidence()Lcom/utexo/rgb/sdk/RgbSendEvidence; annotation Lorg/jetbrains/annotations/Nullable; runtime=false
   com/utexo/rgb/sdk/PreparedTransaction.toString()Ljava/lang/String; 1
   com/utexo/rgb/sdk/PreparedTransaction.toString()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
   com/utexo/rgb/sdk/RGBSDK annotation Lkotlin/Metadata; runtime=true
@@ -5304,6 +5317,76 @@
   com/utexo/rgb/sdk/RgbAllocation.hashCode()I 1
   com/utexo/rgb/sdk/RgbAllocation.toString()Ljava/lang/String; 1
   com/utexo/rgb/sdk/RgbAllocation.toString()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lcom/utexo/rgb/sdk/WalletInfrastructureApi; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d1[]
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ACAKAhgCCgIQAAoACgIQDgoACgIQCAoCCA4KAhALCgIIBAjChwgYACAXMgIwAToBF0IfEgYQAhoCMAMSBhAEGgIwBRIGEAYaAjAFwqIGBAgHEAhKCBAOGgIwA0gWSgkQDxoCMANIw4YDSgkQEBoCMAVIw4YDSgkQERoCMAVIw4YDSicQEhoCMAAyCAgCEAIaAjADMggIAhAEGgIwBTIICAIQBhoCMAVIw4YBShMQExoCMBQyCBAVGgQYATABSMOWA0oJEBYaAjAFSMOWAVIREAIaAjADwqIGCAoAGgQICRAKUhEQBBoCMAXCogYICgAaBAgLEAxSERAGGgIwBcKiBggKABoECA0QDMKoBhg=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkV4aXN0aW5nT3V0cHV0UHJvb2Y7
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[10]=utf8-base64:KClMamF2YS9sYW5nL1N0cmluZzs=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[11]=utf8-base64:Z2V0Vm91dA==
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[12]=utf8-base64:KClJ
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:Z2V0RGVyaXZhdGlvbkluZGV4
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:dG9TdHJpbmc=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:Y29tcG9uZW50MQ==
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:Y29tcG9uZW50Mg==
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:Y29tcG9uZW50Mw==
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:Y29weQ==
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:ZXF1YWxz
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:b3RoZXI=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:aGFzaENvZGU=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:Q29tcGFuaW9u
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:dHJhbnNhY3Rpb25IZXg=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:dm91dA==
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:ZGVyaXZhdGlvbkluZGV4
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[7]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[8]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0lJKVY=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/d2[]/[9]=utf8-base64:Z2V0VHJhbnNhY3Rpb25IZXg=
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
+  com/utexo/rgb/sdk/RgbExistingOutputProof annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d1[]
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ABIKAhgCCgIQAAoCCAMKAhAICgAIwoYDGAAyAjABQgkIAsKiBgQIAhADUg4QBBoCMAVYwoZUwqIGAgoAwqgGBg==
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkV4aXN0aW5nT3V0cHV0UHJvb2YkQ29tcGFuaW9uOw==
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:KClW
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:TUFYX1RSQU5TQUNUSU9OX0hFWF9DSEFSQUNURVJT
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
+  com/utexo/rgb/sdk/RgbExistingOutputProof$Companion.<init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/RgbExistingOutputProof.<init>(Ljava/lang/String;II)V 1
+  com/utexo/rgb/sdk/RgbExistingOutputProof.<init>(Ljava/lang/String;II)V parameter=0 annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.Companion Lcom/utexo/rgb/sdk/RgbExistingOutputProof$Companion; 19
+  com/utexo/rgb/sdk/RgbExistingOutputProof.Companion Lcom/utexo/rgb/sdk/RgbExistingOutputProof$Companion; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.MAX_TRANSACTION_HEX_CHARACTERS I 19 = 400000
+  com/utexo/rgb/sdk/RgbExistingOutputProof.component1()Ljava/lang/String; 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.component1()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.component2()I 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.component3()I 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.copy$default(Lcom/utexo/rgb/sdk/RgbExistingOutputProof;Ljava/lang/String;IIILjava/lang/Object;)Lcom/utexo/rgb/sdk/RgbExistingOutputProof; 9
+  com/utexo/rgb/sdk/RgbExistingOutputProof.copy(Ljava/lang/String;II)Lcom/utexo/rgb/sdk/RgbExistingOutputProof; 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.copy(Ljava/lang/String;II)Lcom/utexo/rgb/sdk/RgbExistingOutputProof; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.copy(Ljava/lang/String;II)Lcom/utexo/rgb/sdk/RgbExistingOutputProof; parameter=0 annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.equals(Ljava/lang/Object;)Z 1
+  com/utexo/rgb/sdk/RgbExistingOutputProof.equals(Ljava/lang/Object;)Z parameter=0 annotation Lorg/jetbrains/annotations/Nullable; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.getDerivationIndex()I 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.getTransactionHex()Ljava/lang/String; 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.getTransactionHex()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbExistingOutputProof.getVout()I 11
+  com/utexo/rgb/sdk/RgbExistingOutputProof.hashCode()I 1
+  com/utexo/rgb/sdk/RgbExistingOutputProof.toString()Ljava/lang/String; 1
+  com/utexo/rgb/sdk/RgbExistingOutputProof.toString()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
   com/utexo/rgb/sdk/RgbInvoice annotation Lkotlin/Metadata; runtime=true
   com/utexo/rgb/sdk/RgbInvoice annotation Lkotlin/Metadata; runtime=true/d1[]
   com/utexo/rgb/sdk/RgbInvoice annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ACIKAhgCCgIQAAoACgIQDgoCCAcKAhALCgIIBAoCEAgKAggECMKHQBgAIBMyAjABOgETQhEIAhIGEAIaAjADwqIGBAgEEAVKDxAIGgIwA0gWwqIGBAgJEAVKGhAKGgIwCzIIEAwaBBgBMAFIw5YDwqIGBAgNEA5KEBAPGgIwEEjDlgHCogYECBEQElIREAIaAjADwqIGCAoAGgQIBhAHwogBAsKoBhQ=
@@ -5373,7 +5456,7 @@
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lcom/utexo/rgb/sdk/WalletInfrastructureApi; runtime=false
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d1[]
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:AMK4AwoCGAIKAhgCCgAKAhgCCgAKAhgCCgAKAhgCCgIQCQoACgIYAgoCEA4KAhgCCgIYAgoCGAIKAhAACgAKAhgCCgIYAgoCGAIKAggGCgIYAgoACgIQAgoACgIYAgoCCAMKAhgCCgIIAwoCGAIKAggFCgIYAgoCCAIKAhgCCgAKAhgCCgIIAgoCGAIKAggFCgIYAgoACgIYAgoCCAIKAhgCCgIYAgoCCAIKAhgCCgAKAhgCCgIIAwoCECAKAhgCCgAKAhgCCgAKAhgCCgAKAhgCCgIIBwoCGAIKAhgCCgIIBAoCEAsKAggCCgIYAgoCCAIKAhgCCgIYAgoCCAMKAhgCCgIIAgoCGAIKAhgCCgIIAgoCGAIKAAoCGAIKAhgCCgAKAhgCCgIIAgoCGAIKAggDCgIYAgoCCAMKAhgCCgIIBQoCGAIKAhgCCgIICAoCGAIKAAoCGAIKAggICgIYAgoACgIYAgoACgIYAgoACgIYAgoCGAIKAggICgIYAgoCCAQKAhAICgAKAhgCCgIIBAoCECQKAggHCgIYAgoCCAQKAhgCCgIYAgoCCAMKAhgCCgIIEAoCGAIKAggNCAcYACDDpgEyAjABOgjDowHDpAHDpQHDpgFCdQgCEgYQAhoCMAMSBhAEGgIwBRIMEAYaCBIEEgIwCDAHEigQCRokCAESBBICMAsSBBICMAwSChIIEgQSAjAOMA0SBhIEGAEwDzAKEiIQEBoeCAESBBICMBISChIIEgQSAjATMA0SBhIEGAEwDzARwqIGBAgUEBVCEQgWEgYQAhoCMAPCogYECBQQFkpFECcaAjAcMgYQGRoCMBoyLAgCEBsaJggBEgQSAjALEgQSAjALEgoSCBIEEgIwHDANEgYSBBgBMA8YATAKSADCogYECCgQKUoWECoaAjAcMgYQKxoCMCxIwpZAwqIGAhAtShYQLhoCMC8yBhAwGgIwMUjClkDCogYCEDJKFhAzGgIwHDIGEDAaAjA0SMKWQMKiBgIQNUoWEDYaAjAcMgYQNxoCMC9IwpZAwqIGAhA4ShYQORoCMDoyBhA7GgIwPEjClkDCogYCED1KFhA+GgIwPzIGEDAaAjBASMKWQMKiBgIQQUogEEIaAjBDMgYQOxoCMDwyBhBEGgIwRUjClkDCogYECEYQR0ocEEgaCBIEEgIwSjBJMgYQOxoCMDxIwpZA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EMOWARoCMAtIAsKiBgYIw5cBEMOYAUocEMOZARoCMAgyCBDCqAEaAzDDmgFIAsKiBgYIw5sBEMOcAUobEMOdARoCMBwyBxDDngEaAjALMgcQw58BGgIwC0gCSj0Qw6ABGgIwHDIHEMOfARoCMAsyBxDDngEaAjALMgoQwrQBGgUYATDCoQEyCwgCEMOAARoEGAEwC0gCwqIGBgjDoQEQw6IBUg4QAhoCMANYwoIEwqIGAgoAUg4QBBoCMAVYwoIEwqIGAgoAUhQQBhoIEgQSAjAIMAdYwoIEwqIGAgoAUjIQCRokCAESBBICMAsSBBICMAwSChIIEgQSAjAOMA0SBhIEGAEwDzAKWMKCBMKiBgQKAhAXUiwQEBoeCAESBBICMBISChIIEgQSAjATMA0SBhIEGAEwDzARWMKCBMKiBgQKAhAYUhAQGRoEGAEwGljCgg7CogYCCgBSNBAbGiYIARIEEgIwCxIEEgIwCxIKEggSBBICMBwwDRIGEgQYATAPGAEwCljCgg7CogYECgIQF1IOEB0aAjAeWMKCBMKiBgIKAFIOEB8aAjAeWMKCBMKiBgIKAFIQECAaBBgBMAtYwoIOwqIGAgoAUhIQIRoEGAEwIljCgg7CogYECgIQI1IQECQaBBgBMAtYwoIOwqIGAgoAUhAQJRoEGAEwJljCgg7CogYCCgDCqAbDpwE=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:AMOCAwoCGAIKAhgCCgAKAhgCCgAKAhgCCgAKAhgCCgIQCQoACgIYAgoCEA4KAhgCCgIYAgoCGAIKAhAACgAKAhgCCgIYAgoCGAIKAggGCgIYAgoACgIQAgoACgIYAgoCCAMKAhgCCgIIAwoCGAIKAggFCgIYAgoCCAIKAhgCCgAKAhgCCgIIAgoCGAIKAggFCgIYAgoACgIYAgoCCAIKAhgCCgIYAgoCCAIKAhgCCgAKAhgCCgIIAwoCECAKAhgCCgAKAhgCCgAKAhgCCgAKAhgCCgIIBwoCGAIKAhgCCgIIBAoCEAsKAggCCgIYAgoCCAIKAhgCCgIYAgoCCAMKAhgCCgIIAgoCGAIKAhgCCgIIAgoCGAIKAAoCGAIKAhgCCgAKAhgCCgIIAgoCGAIKAggCCgIYAgoACgIYAgoACgIYAgoCCAUKAhgCCgIIAwoCGAIKAggFCgIYAgoCGAIKAggICgIYAgoACgIYAgoCCAgKAhgCCgAKAhgCCgAKAhgCCgAKAhgCCgIICAoCGAIKAggECgIQCAoCCAMKAhAkCgIIBwoCGAIKAggDCgIYAgoCGAIKAggDCgIYAgoCCBAKAhgCCgIIDQgHGAAgw6oBMgIwAToIw6cBw6gBw6kBw6oBQnUIAhIGEAIaAjADEgYQBBoCMAUSDBAGGggSBBICMAgwBxIoEAkaJAgBEgQSAjALEgQSAjAMEgoSCBIEEgIwDjANEgYSBBgBMA8wChIiEBAaHggBEgQSAjASEgoSCBIEEgIwEzANEgYSBBgBMA8wEcKiBgQIFBAVQhEIFhIGEAIaAjADwqIGBAgUEBZKRRAnGgIwHDIGEBkaAjAaMiwIAhAbGiYIARIEEgIwCxIEEgIwCxIKEggSBBICMBwwDRIGEgQYATAPGAEwCkgAwqIGBAgoEClKFhAqGgIwHDIGECsaAjAsSMKWQMKiBgIQLUoWEC4aAjAvMgYQMBoCMDFIwpZAwqIGAhAyShYQMxoCMBwyBhAwGgIwNEjClkDCogYCEDVKFhA2GgIwHDIGEDcaAjAvSMKWQMKiBgIQOEoWEDkaAjA6MgYQOxoCMDxIwpZAwqIGAhA9ShYQPhoCMD8yBhAwGgIwQEjClkDCogYCEEFKIBBCGgIwQzIGEDsaAjA8MgYQRBoCMEVIwpZAwqIGBAhGEEdKHBBIGggSBBICMEowSTIG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ShQQw5UBGgIwCzIJEMOWARoEGAEwC0gCSgkQw5cBGgIwHEgCSiUQw5gBGgIwCzIIEMOZARoDMMKkATIHEMOaARoCMAtIAsKiBgYIw5sBEMOcAUocEMOdARoCMAgyCBDCsAEaAzDDngFIAsKiBgYIw58BEMOgAUobEMOhARoCMBwyBxDDogEaAjALMgcQw6MBGgIwC0gCSjsQw6QBGgIwHDIHEMOjARoCMAsyBxDDogEaAjALMggQfhoEGAEwfzILCAIQwoABGgQYATALSALCogYGCMOlARDDpgFSDhACGgIwA1jCggTCogYCCgBSDhAEGgIwBVjCggTCogYCCgBSFBAGGggSBBICMAgwB1jCggTCogYCCgBSMhAJGiQIARIEEgIwCxIEEgIwDBIKEggSBBICMA4wDRIGEgQYATAPMApYwoIEwqIGBAoCEBdSLBAQGh4IARIEEgIwEhIKEggSBBICMBMwDRIGEgQYATAPMBFYwoIEwqIGBAoCEBhSEBAZGgQYATAaWMKCDsKiBgIKAFI0EBsaJggBEgQSAjALEgQSAjALEgoSCBIEEgIwHDANEgYSBBgBMA8YATAKWMKCDsKiBgQKAhAXUg4QHRoCMB5YwoIEwqIGAgoAUg4QHxoCMB5YwoIEwqIGAgoAUhAQIBoEGAEwC1jCgg7CogYCCgBSEhAhGgQYATAiWMKCDsKiBgQKAhAjUhAQJBoEGAEwC1jCgg7CogYCCgBSEBAlGgQYATAmWMKCDsKiBgIKAMKoBsOrAQ==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkxpZ2h0bmluZ05vZGVHYXRld2F5QmFja2VuZDs=
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[100]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09uY2hhaW5SZWNlaXZlUmVzcG9uc2U7
@@ -5400,128 +5483,132 @@
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[11]=utf8-base64:
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[120]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1ByZXBhcmVPbmNoYWluU2VuZFJlcXVlc3Q7
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[121]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9QcmVwYXJlT25jaGFpblNlbmRSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[122]=utf8-base64:dmFsaWRhdGVSZ2JJbnRlbnQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[123]=utf8-base64:cmVzcG9uc2U=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[124]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkxpZ2h0bmluZ05vZGVHYXRld2F5QmFja2VuZCRHYXRld2F5SnNvblJlc3BvbnNlOw==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[125]=utf8-base64:aW52b2ljZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[126]=utf8-base64:cHJlcGFyYXRpb25DbG9jaw==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[127]=utf8-base64:cHJlcGFyZUNyZWF0ZVV0eG9z
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[128]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1ByZXBhcmVDcmVhdGVVdHhvc1JlcXVlc3Q7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[129]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9QcmVwYXJlQ3JlYXRlVXR4b3NSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[122]=utf8-base64:cmdiU2VuZEV2aWRlbmNl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[123]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYlNlbmRFdmlkZW5jZTs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[124]=utf8-base64:Ym9keQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[125]=utf8-base64:TGtvdGxpbngvc2VyaWFsaXphdGlvbi9qc29uL0pzb25PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[126]=utf8-base64:b3BlcmF0aW9uSWQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[127]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbklkOw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[128]=utf8-base64:Y29ycmVsYXRpb25JZA==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[129]=utf8-base64:cmdiU2VuZEV2aWRlbmNlLUxpTUhpd1E=
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[12]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL05ldHdvcms7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[130]=utf8-base64:dmFsaWRhdGVDcmVhdGVVdHhvc0ludGVudA==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[131]=utf8-base64:dmFsaWRhdGVDcmVhdGVVdHhvc1BsYW4=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[132]=utf8-base64:cGxhbg==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[133]=utf8-base64:c3VibWl0U2lnbmVkVHJhbnNhY3Rpb24=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[134]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0JhY2tlbmRPcGVyYXRpb25SZXN1bHQ7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[135]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1NpZ25lZFRyYW5zYWN0aW9uU3VibWlzc2lvbjs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[136]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9TaWduZWRUcmFuc2FjdGlvblN1Ym1pc3Npb247TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[137]=utf8-base64:cHJlcGFyZWQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[138]=utf8-base64:c3VibWl0U2lnbmVkVHJhbnNhY3Rpb24kc2Rr
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[139]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9TaWduZWRUcmFuc2FjdGlvblN1Ym1pc3Npb247TGNvbS91dGV4by9yZ2Ivc2RrL1ByZXBhcmVkVHJhbnNhY3Rpb247TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[130]=utf8-base64:KExrb3RsaW54L3NlcmlhbGl6YXRpb24vanNvbi9Kc29uT2JqZWN0O0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylMY29tL3V0ZXhvL3JnYi9zZGsvUmdiU2VuZEV2aWRlbmNlOw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[131]=utf8-base64:dmFsaWRhdGVSZ2JJbnRlbnQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[132]=utf8-base64:cmVzcG9uc2U=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[133]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkxpZ2h0bmluZ05vZGVHYXRld2F5QmFja2VuZCRHYXRld2F5SnNvblJlc3BvbnNlOw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[134]=utf8-base64:aW52b2ljZQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[135]=utf8-base64:cHJlcGFyYXRpb25DbG9jaw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[136]=utf8-base64:cHJlcGFyZUNyZWF0ZVV0eG9z
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[137]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1ByZXBhcmVDcmVhdGVVdHhvc1JlcXVlc3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[138]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9QcmVwYXJlQ3JlYXRlVXR4b3NSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[139]=utf8-base64:dmFsaWRhdGVDcmVhdGVVdHhvc0ludGVudA==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[140]=utf8-base64:c3VibWl0U2lnbmVkVHJhbnNhY3Rpb25JbXBs
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[141]=utf8-base64:Y3JlYXRlUGxhbg==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[142]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9TaWduZWRUcmFuc2FjdGlvblN1Ym1pc3Npb247TGNvbS91dGV4by9yZ2Ivc2RrL0NyZWF0ZVV0eG9zT3V0cHV0UGxhbjtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uS2luZDtMa290bGluL2Nvcm91dGluZXMvQ29udGludWF0aW9uOylMamF2YS9sYW5nL09iamVjdDs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[143]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3Zlcnk=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[144]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0JhY2tlbmRPcGVyYXRpb25TdGF0dXM7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[145]=utf8-base64:Y2hlY2twb2ludA==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[146]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbkNoZWNrcG9pbnQ7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[147]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3Zlcnkkc2Rr
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[148]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvU2VuZEJ0Y1JlcXVlc3Q7TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[149]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvT25jaGFpblNlbmRSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[140]=utf8-base64:dmFsaWRhdGVDcmVhdGVVdHhvc1BsYW4=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[141]=utf8-base64:cGxhbg==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[142]=utf8-base64:c3VibWl0U2lnbmVkVHJhbnNhY3Rpb24=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[143]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0JhY2tlbmRPcGVyYXRpb25SZXN1bHQ7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[144]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1NpZ25lZFRyYW5zYWN0aW9uU3VibWlzc2lvbjs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[145]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9TaWduZWRUcmFuc2FjdGlvblN1Ym1pc3Npb247TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[146]=utf8-base64:cHJlcGFyZWQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[147]=utf8-base64:c3VibWl0U2lnbmVkVHJhbnNhY3Rpb24kc2Rr
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[148]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9TaWduZWRUcmFuc2FjdGlvblN1Ym1pc3Npb247TGNvbS91dGV4by9yZ2Ivc2RrL1ByZXBhcmVkVHJhbnNhY3Rpb247TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[149]=utf8-base64:c3VibWl0U2lnbmVkVHJhbnNhY3Rpb25JbXBs
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0NyZWF0ZVV0eG9zT3V0cHV0UGxhbjs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[150]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvQ3JlYXRlVXR4b3NSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[151]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3ZlcnlJbXBs
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[152]=utf8-base64:a2luZA==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[153]=utf8-base64:d2lyZUtpbmQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[154]=utf8-base64:aWRlbXBvdGVuY3lLZXk=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[155]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0lkZW1wb3RlbmN5S2V5Ow==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[156]=utf8-base64:cmVxdWVzdEhhc2g=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[157]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JlcXVlc3RIYXNoOw==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[158]=utf8-base64:dmFsaWRhdGVJbnRlbnQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[159]=utf8-base64:TGtvdGxpbi9GdW5jdGlvbjE7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[150]=utf8-base64:Y3JlYXRlUGxhbg==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[151]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9TaWduZWRUcmFuc2FjdGlvblN1Ym1pc3Npb247TGNvbS91dGV4by9yZ2Ivc2RrL0NyZWF0ZVV0eG9zT3V0cHV0UGxhbjtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uS2luZDtMa290bGluL2Nvcm91dGluZXMvQ29udGludWF0aW9uOylMamF2YS9sYW5nL09iamVjdDs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[152]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3Zlcnk=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[153]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0JhY2tlbmRPcGVyYXRpb25TdGF0dXM7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[154]=utf8-base64:Y2hlY2twb2ludA==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[155]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbkNoZWNrcG9pbnQ7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[156]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3Zlcnkkc2Rr
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[157]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvU2VuZEJ0Y1JlcXVlc3Q7TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[158]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvT25jaGFpblNlbmRSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[159]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvQ3JlYXRlVXR4b3NSZXF1ZXN0O0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[160]=utf8-base64:cmVzdWx0
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[161]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvbklkOw==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[162]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1RyYW5zYWN0aW9uSWQ7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[163]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3ZlcnlJbXBsLVZTZWIzU1U=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[164]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uS2luZDtMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMa290bGluL2p2bS9mdW5jdGlvbnMvRnVuY3Rpb24xO0xrb3RsaW4vanZtL2Z1bmN0aW9ucy9GdW5jdGlvbjI7TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[165]=utf8-base64:d2FsbGV0QmFsYW5jZXM=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[166]=utf8-base64:KExrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[167]=utf8-base64:dmFsaWRhdGVTZW5kQnRjSW50ZW50
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[168]=utf8-base64:ZmVlUmF0ZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[169]=utf8-base64:cmVxdWlyZUNvbnRleHQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[160]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3ZlcnlJbXBs
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[161]=utf8-base64:a2luZA==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[162]=utf8-base64:d2lyZUtpbmQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[163]=utf8-base64:aWRlbXBvdGVuY3lLZXk=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[164]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0lkZW1wb3RlbmN5S2V5Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[165]=utf8-base64:cmVxdWVzdEhhc2g=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[166]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JlcXVlc3RIYXNoOw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[167]=utf8-base64:dmFsaWRhdGVJbnRlbnQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[168]=utf8-base64:TGtvdGxpbi9GdW5jdGlvbjE7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[169]=utf8-base64:cmVzdWx0
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:aW52b2ljZURlY29kZXI=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[170]=utf8-base64:cmVxdWlyZU9wZXJhdGlvbkNvbnRleHQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[171]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvblJlcXVlc3RDb250ZXh0Ow==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[172]=utf8-base64:cmVxdWVzdEpzb24=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[173]=utf8-base64:bWV0aG9k
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[174]=utf8-base64:cGF0aA==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[175]=utf8-base64:ZXhwZWN0ZWRTdGF0dXNDb2Rl
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[176]=utf8-base64:
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[177]=utf8-base64:Ym9keQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[178]=utf8-base64:TGtvdGxpbngvc2VyaWFsaXphdGlvbi9qc29uL0pzb25PYmplY3Q7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[179]=utf8-base64:bG9naWNhbElkZW1wb3RlbmN5S2V5
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[170]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1RyYW5zYWN0aW9uSWQ7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[171]=utf8-base64:Z2V0T3BlcmF0aW9uRm9yUmVjb3ZlcnlJbXBsLVZTZWIzU1U=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[172]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9CYWNrZW5kQ29udGV4dDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uQ2hlY2twb2ludDtMY29tL3V0ZXhvL3JnYi9zZGsvT3BlcmF0aW9uS2luZDtMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMa290bGluL2p2bS9mdW5jdGlvbnMvRnVuY3Rpb24xO0xrb3RsaW4vanZtL2Z1bmN0aW9ucy9GdW5jdGlvbjI7TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[173]=utf8-base64:d2FsbGV0QmFsYW5jZXM=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[174]=utf8-base64:KExrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[175]=utf8-base64:dmFsaWRhdGVTZW5kQnRjSW50ZW50
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[176]=utf8-base64:ZmVlUmF0ZQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[177]=utf8-base64:cmVxdWlyZUNvbnRleHQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[178]=utf8-base64:cmVxdWlyZU9wZXJhdGlvbkNvbnRleHQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[179]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL09wZXJhdGlvblJlcXVlc3RDb250ZXh0Ow==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:TGtvdGxpbi9GdW5jdGlvbjI7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[180]=utf8-base64:b3BlcmF0aW9uSWQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[181]=utf8-base64:YXV0aG9yaXphdGlvbk92ZXJyaWRl
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[182]=utf8-base64:cXVlcnk=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[183]=utf8-base64:
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[184]=utf8-base64:cmVxdWVzdEpzb24tZlJSWjU0Yw==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[185]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0lMa290bGlueC9zZXJpYWxpemF0aW9uL2pzb24vSnNvbk9iamVjdDtMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS91dGlsL01hcDtMa290bGluL2Nvcm91dGluZXMvQ29udGludWF0aW9uOylMamF2YS9sYW5nL09iamVjdDs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[186]=utf8-base64:YXV0aG9yaXphdGlvbkhlYWRlcg==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[187]=utf8-base64:dmVyaWZ5Q3JlZGVudGlhbEJpbmRpbmc=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[188]=utf8-base64:YXV0aG9yaXphdGlvbg==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[189]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[180]=utf8-base64:cmVxdWVzdEpzb24=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[181]=utf8-base64:bWV0aG9k
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[182]=utf8-base64:cGF0aA==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[183]=utf8-base64:ZXhwZWN0ZWRTdGF0dXNDb2Rl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[184]=utf8-base64:
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[185]=utf8-base64:bG9naWNhbElkZW1wb3RlbmN5S2V5
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[186]=utf8-base64:YXV0aG9yaXphdGlvbk92ZXJyaWRl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[187]=utf8-base64:cXVlcnk=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[188]=utf8-base64:
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[189]=utf8-base64:cmVxdWVzdEpzb24tZlJSWjU0Yw==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkludm9pY2U7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[190]=utf8-base64:c3VjY2Vzc2Z1bFJlc3BvbnNlUHJvdG9jb2xGYWlsdXJl
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[191]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1Nka0V4Y2VwdGlvbjs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[192]=utf8-base64:Y29ycmVsYXRpb25JZA==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[193]=utf8-base64:c3VjY2Vzc2Z1bFJlc3BvbnNlUHJvdG9jb2xGYWlsdXJlLTZ1ckx0TTQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[194]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylMY29tL3V0ZXhvL3JnYi9zZGsvU2RrRXhjZXB0aW9uOw==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[195]=utf8-base64:ZXhlY3V0ZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[196]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkxpZ2h0bmluZ05vZGVHYXRld2F5QmFja2VuZCRHYXRld2F5UmF3UmVzcG9uc2U7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[197]=utf8-base64:TG9raHR0cDMvUmVxdWVzdDs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[198]=utf8-base64:ZXhlY3V0ZS01WHpEbEhV
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[199]=utf8-base64:KExva2h0dHAzL1JlcXVlc3Q7TGphdmEvbGFuZy9TdHJpbmc7TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[190]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0lMa290bGlueC9zZXJpYWxpemF0aW9uL2pzb24vSnNvbk9iamVjdDtMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS91dGlsL01hcDtMa290bGluL2Nvcm91dGluZXMvQ29udGludWF0aW9uOylMamF2YS9sYW5nL09iamVjdDs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[191]=utf8-base64:YXV0aG9yaXphdGlvbkhlYWRlcg==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[192]=utf8-base64:dmVyaWZ5Q3JlZGVudGlhbEJpbmRpbmc=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[193]=utf8-base64:YXV0aG9yaXphdGlvbg==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[194]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xrb3RsaW4vY29yb3V0aW5lcy9Db250aW51YXRpb247KUxqYXZhL2xhbmcvT2JqZWN0Ow==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[195]=utf8-base64:c3VjY2Vzc2Z1bFJlc3BvbnNlUHJvdG9jb2xGYWlsdXJl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[196]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1Nka0V4Y2VwdGlvbjs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[197]=utf8-base64:c3VjY2Vzc2Z1bFJlc3BvbnNlUHJvdG9jb2xGYWlsdXJlLTZ1ckx0TTQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[198]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylMY29tL3V0ZXhvL3JnYi9zZGsvU2RrRXhjZXB0aW9uOw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[199]=utf8-base64:ZXhlY3V0ZQ==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL2ludGVybmFsL0dhdGV3YXlSZ2JJbnZvaWNlOw==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1dhbGxldEJhY2tlbmQ7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[200]=utf8-base64:dG9SYXdSZXNwb25zZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[201]=utf8-base64:TG9raHR0cDMvUmVzcG9uc2U7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[202]=utf8-base64:dG9SYXdSZXNwb25zZS1jNlVvMWI4
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[203]=utf8-base64:KExva2h0dHAzL1Jlc3BvbnNlO0xqYXZhL2xhbmcvU3RyaW5nOylMY29tL3V0ZXhvL3JnYi9zZGsvUmdiTGlnaHRuaW5nTm9kZUdhdGV3YXlCYWNrZW5kJEdhdGV3YXlSYXdSZXNwb25zZTs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[204]=utf8-base64:bWFwR2F0ZXdheUVycm9y
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[205]=utf8-base64:c3RhdHVzQ29kZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[206]=utf8-base64:bWFwR2F0ZXdheUVycm9yLW9aWkVkZjQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[207]=utf8-base64:KElMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZzspTGNvbS91dGV4by9yZ2Ivc2RrL1Nka0V4Y2VwdGlvbjs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[208]=utf8-base64:cGFyc2VHYXRld2F5RXJyb3JDb2Rl
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[209]=utf8-base64:Z2F0ZXdheVNhZmVNZXNzYWdl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[200]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkxpZ2h0bmluZ05vZGVHYXRld2F5QmFja2VuZCRHYXRld2F5UmF3UmVzcG9uc2U7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[201]=utf8-base64:TG9raHR0cDMvUmVxdWVzdDs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[202]=utf8-base64:ZXhlY3V0ZS01WHpEbEhV
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[203]=utf8-base64:KExva2h0dHAzL1JlcXVlc3Q7TGphdmEvbGFuZy9TdHJpbmc7TGtvdGxpbi9jb3JvdXRpbmVzL0NvbnRpbnVhdGlvbjspTGphdmEvbGFuZy9PYmplY3Q7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[204]=utf8-base64:dG9SYXdSZXNwb25zZQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[205]=utf8-base64:TG9raHR0cDMvUmVzcG9uc2U7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[206]=utf8-base64:dG9SYXdSZXNwb25zZS1jNlVvMWI4
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[207]=utf8-base64:KExva2h0dHAzL1Jlc3BvbnNlO0xqYXZhL2xhbmcvU3RyaW5nOylMY29tL3V0ZXhvL3JnYi9zZGsvUmdiTGlnaHRuaW5nTm9kZUdhdGV3YXlCYWNrZW5kJEdhdGV3YXlSYXdSZXNwb25zZTs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[208]=utf8-base64:bWFwR2F0ZXdheUVycm9y
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[209]=utf8-base64:c3RhdHVzQ29kZQ==
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:PGluaXQ+
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[210]=utf8-base64:Y29kZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[211]=utf8-base64:cmVxdWlyZVVudmVyaWZpZWRQc2J0UHJvZmlsZUVuYWJsZWQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[212]=utf8-base64:cHJvdmlzaW9uYWxTdGFnZWRJZGVtcG90ZW5jeUtleQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[213]=utf8-base64:a2V5
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[214]=utf8-base64:c3RhZ2U=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[215]=utf8-base64:cHJvdmlzaW9uYWxTdGFnZWRJZGVtcG90ZW5jeUtleS1ZbTlWdldn
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[216]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1N0cmluZzs=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[217]=utf8-base64:cmVxdWlyZVdob2xlR2F0ZXdheUZlZVJhdGU=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[218]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0ZlZVJhdGU7
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[219]=utf8-base64:cmVxdWlyZVdob2xlR2F0ZXdheUZlZVJhdGUtQU5lLTB4Zw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[210]=utf8-base64:bWFwR2F0ZXdheUVycm9yLW9aWkVkZjQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[211]=utf8-base64:KElMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZztMamF2YS9sYW5nL1N0cmluZzspTGNvbS91dGV4by9yZ2Ivc2RrL1Nka0V4Y2VwdGlvbjs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[212]=utf8-base64:cGFyc2VHYXRld2F5RXJyb3JDb2Rl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[213]=utf8-base64:Z2F0ZXdheVNhZmVNZXNzYWdl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[214]=utf8-base64:Y29kZQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[215]=utf8-base64:cmVxdWlyZVVudmVyaWZpZWRQc2J0UHJvZmlsZUVuYWJsZWQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[216]=utf8-base64:cHJvdmlzaW9uYWxTdGFnZWRJZGVtcG90ZW5jeUtleQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[217]=utf8-base64:a2V5
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[218]=utf8-base64:c3RhZ2U=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[219]=utf8-base64:cHJvdmlzaW9uYWxTdGFnZWRJZGVtcG90ZW5jeUtleS1ZbTlWdldn
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9SZ2JMaWdodG5pbmdOb2RlR2F0ZXdheUNvbmZpZ3VyYXRpb247TG9raHR0cDMvT2tIdHRwQ2xpZW50O0xrb3RsaW4vanZtL2Z1bmN0aW9ucy9GdW5jdGlvbjA7TGtvdGxpbi9qdm0vZnVuY3Rpb25zL0Z1bmN0aW9uMztMa290bGluL2p2bS9mdW5jdGlvbnMvRnVuY3Rpb24yOylW
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[220]=utf8-base64:KEopSg==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[221]=utf8-base64:cmVxdWlyZUdhdGV3YXlYcHVi
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[222]=utf8-base64:ZmllbGQ=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[223]=utf8-base64:dmFsdWU=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[224]=utf8-base64:cmVxdWlyZUNhbm9uaWNhbEJhc2U2NA==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[225]=utf8-base64:cmVxdWlyZUNhbm9uaWNhbEJhc2U2NC1sTjdaX0xz
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[226]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylW
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[227]=utf8-base64:U2Vzc2lvbkJpbmRpbmc=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[228]=utf8-base64:R2F0ZXdheUpzb25SZXNwb25zZQ==
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[229]=utf8-base64:R2F0ZXdheVJhd1Jlc3BvbnNl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[220]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1N0cmluZzs=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[221]=utf8-base64:cmVxdWlyZVdob2xlR2F0ZXdheUZlZVJhdGU=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[222]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL0ZlZVJhdGU7
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[223]=utf8-base64:cmVxdWlyZVdob2xlR2F0ZXdheUZlZVJhdGUtQU5lLTB4Zw==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[224]=utf8-base64:KEopSg==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[225]=utf8-base64:cmVxdWlyZUdhdGV3YXlYcHVi
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[226]=utf8-base64:ZmllbGQ=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[227]=utf8-base64:dmFsdWU=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[228]=utf8-base64:cmVxdWlyZUNhbm9uaWNhbEJhc2U2NA==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[229]=utf8-base64:cmVxdWlyZUNhbm9uaWNhbEJhc2U2NC1sTjdaX0xz
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:KExjb20vdXRleG8vcmdiL3Nkay9SZ2JMaWdodG5pbmdOb2RlR2F0ZXdheUNvbmZpZ3VyYXRpb247KVY=
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[230]=utf8-base64:Q29tcGFuaW9u
-  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[231]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[230]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nO0xqYXZhL2xhbmcvU3RyaW5nOylW
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[231]=utf8-base64:U2Vzc2lvbkJpbmRpbmc=
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[232]=utf8-base64:R2F0ZXdheUpzb25SZXNwb25zZQ==
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[233]=utf8-base64:R2F0ZXdheVJhd1Jlc3BvbnNl
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[234]=utf8-base64:Q29tcGFuaW9u
+  com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[235]=utf8-base64:c2Rr
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:TGtvdGxpbi9qdm0vZnVuY3Rpb25zL0Z1bmN0aW9uMzs=
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:TGtvdGxpbi9qdm0vZnVuY3Rpb25zL0Z1bmN0aW9uMjs=
   com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend annotation Lkotlin/Metadata; runtime=true/d2[]/[25]=utf8-base64:YXBpS2V5UHJvdmlkZXI=
@@ -5826,6 +5913,72 @@
   com/utexo/rgb/sdk/RgbLightningNodeGatewayConfiguration.getReadTimeoutMillis()J 11
   com/utexo/rgb/sdk/RgbLightningNodeGatewayConfiguration.toString()Ljava/lang/String; 1
   com/utexo/rgb/sdk/RgbLightningNodeGatewayConfiguration.toString()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lcom/utexo/rgb/sdk/WalletInfrastructureApi; runtime=false
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d1[]
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ADIKAhgCCgIQAAoACgIQDgoACgIYAgoACgIQIAoCGAIKAggKCgIQCwoCCAIKAhAICgIIAwgHGAAgGDICMAE6ARhCJxIGEAIaAjADEgYQBBoCMAUSDggCEAYaCBIEEgIwCDAHwqIGBAgJEApKExASGgIwEzIIEBQaBBgBMAFIwpYCSggQFRoCMBZIFkoIEBcaAjADSBZSERACGgIwA8KiBggKABoECAsQDFITEAQaAjAFwqIGCgoCEA8aBAgNEA5SFxAGGggSBBICMAgwB8KiBggKABoECBAQEcKoBhk=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYlNlbmRFdmlkZW5jZTs=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[10]=utf8-base64:KExqYXZhL2xhbmcvU3RyaW5nO0pMamF2YS91dGlsL0xpc3Q7TGtvdGxpbi9qdm0vaW50ZXJuYWwvRGVmYXVsdENvbnN0cnVjdG9yTWFya2VyOylW
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[11]=utf8-base64:Z2V0RmFzY2lhQmFzZTY0
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[12]=utf8-base64:KClMamF2YS9sYW5nL1N0cmluZzs=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[13]=utf8-base64:Z2V0TXBjRW50cm9weS1zLVZLTktV
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[14]=utf8-base64:KClK
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[15]=utf8-base64:Sg==
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[16]=utf8-base64:Z2V0RXhpc3RpbmdPdXRwdXRQcm9vZnM=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[17]=utf8-base64:KClMamF2YS91dGlsL0xpc3Q7
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[18]=utf8-base64:ZXF1YWxz
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[19]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[20]=utf8-base64:b3RoZXI=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[21]=utf8-base64:aGFzaENvZGU=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[22]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[23]=utf8-base64:dG9TdHJpbmc=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[24]=utf8-base64:Q29tcGFuaW9u
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[25]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:ZmFzY2lhQmFzZTY0
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:bXBjRW50cm9weQ==
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:TGtvdGxpbi9VTG9uZzs=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:ZXhpc3RpbmdPdXRwdXRQcm9vZnM=
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[7]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[8]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYkV4aXN0aW5nT3V0cHV0UHJvb2Y7
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/d2[]/[9]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
+  com/utexo/rgb/sdk/RgbSendEvidence annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d1[]
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:ABQKAhgCCgIQAAoCCAMKAhAICgIIAgjChgMYADICMAFCCQgCwqIGBAgCEANSDhAEGgIwBVjChlTCogYCCgBSDhAGGgIwBVjChlTCogYCCgDCqAYH
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[0]=utf8-base64:TGNvbS91dGV4by9yZ2Ivc2RrL1JnYlNlbmRFdmlkZW5jZSRDb21wYW5pb247
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[1]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[2]=utf8-base64:PGluaXQ+
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[3]=utf8-base64:KClW
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[4]=utf8-base64:TUFYX0ZBU0NJQV9CQVNFNjRfQ0hBUkFDVEVSUw==
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[5]=utf8-base64:
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[6]=utf8-base64:TUFYX0VYSVNUSU5HX09VVFBVVF9QUk9PRlM=
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/d2[]/[7]=utf8-base64:c2Rr
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/k=java.lang.Integer:1
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/mv=int[java.lang.Integer:2,java.lang.Integer:2,java.lang.Integer:0]
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion annotation Lkotlin/Metadata; runtime=true/xi=java.lang.Integer:48
+  com/utexo/rgb/sdk/RgbSendEvidence$Companion.<init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/RgbSendEvidence.<init>(Ljava/lang/String;JLjava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/RgbSendEvidence.<init>(Ljava/lang/String;JLjava/util/List;Lkotlin/jvm/internal/DefaultConstructorMarker;)V 1
+  com/utexo/rgb/sdk/RgbSendEvidence.Companion Lcom/utexo/rgb/sdk/RgbSendEvidence$Companion; 19
+  com/utexo/rgb/sdk/RgbSendEvidence.Companion Lcom/utexo/rgb/sdk/RgbSendEvidence$Companion; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbSendEvidence.MAX_EXISTING_OUTPUT_PROOFS I 19 = 8
+  com/utexo/rgb/sdk/RgbSendEvidence.MAX_FASCIA_BASE64_CHARACTERS I 19 = 4000000
+  com/utexo/rgb/sdk/RgbSendEvidence.equals(Ljava/lang/Object;)Z 1
+  com/utexo/rgb/sdk/RgbSendEvidence.equals(Ljava/lang/Object;)Z parameter=0 annotation Lorg/jetbrains/annotations/Nullable; runtime=false
+  com/utexo/rgb/sdk/RgbSendEvidence.getExistingOutputProofs()Ljava/util/List; 11 generic=()Ljava/util/List<Lcom/utexo/rgb/sdk/RgbExistingOutputProof;>;
+  com/utexo/rgb/sdk/RgbSendEvidence.getExistingOutputProofs()Ljava/util/List; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbSendEvidence.getFasciaBase64()Ljava/lang/String; 11
+  com/utexo/rgb/sdk/RgbSendEvidence.getFasciaBase64()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
+  com/utexo/rgb/sdk/RgbSendEvidence.getMpcEntropy-s-VKNKU()J 11
+  com/utexo/rgb/sdk/RgbSendEvidence.hashCode()I 1
+  com/utexo/rgb/sdk/RgbSendEvidence.toString()Ljava/lang/String; 1
+  com/utexo/rgb/sdk/RgbSendEvidence.toString()Ljava/lang/String; annotation Lorg/jetbrains/annotations/NotNull; runtime=false
   com/utexo/rgb/sdk/Satoshis annotation Lkotlin/Metadata; runtime=true
   com/utexo/rgb/sdk/Satoshis annotation Lkotlin/Metadata; runtime=true/d1[]
   com/utexo/rgb/sdk/Satoshis annotation Lkotlin/Metadata; runtime=true/d1[]/[0]=utf8-base64:AC4KAhgCCgIQDwoACgIQCQoCCAUKAhAICgIIBAoCEA4KAggDCgIQCwoCEAAKAggHCMKHQBgAIBkyCBIEEgIwADABOgEZQhEIAhIGEAIaAjADwqIGBAgEEAVKGBAIGgIwCTIGEAoaAjAASMKWAsKiBgQICxAMSg8QDRoCMA5IFsKiBgQIDxAQShoQERoCMBIyCBAKGgQYATATSMOWA8KiBgQIFBAVShAQFhoCMAlIw5YBwqIGBAgXEBhSERACGgIwA8KiBggKABoECAYQB8KIAQLCqAYa
@@ -9234,12 +9387,16 @@ class com/utexo/rgb/sdk/RequestHash$Companion 11 extends java/lang/Object implem
 class com/utexo/rgb/sdk/ReserveAddressRequest 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/ReservedAddress 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/RgbAllocation 11 extends java/lang/Object implements 
+class com/utexo/rgb/sdk/RgbExistingOutputProof 11 extends java/lang/Object implements 
+class com/utexo/rgb/sdk/RgbExistingOutputProof$Companion 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/RgbInvoice 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/RgbInvoice$Companion 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend 11 extends java/lang/Object implements com/utexo/rgb/sdk/WalletBackend
 class com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend$execute$2$2 11 extends java/lang/Object implements okhttp3/Callback
 class com/utexo/rgb/sdk/RgbLightningNodeGatewayBackend$mergeTransferPages$$inlined$sortedBy$1 11 extends java/lang/Object implements java/util/Comparator generic=<T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/Comparator;
 class com/utexo/rgb/sdk/RgbLightningNodeGatewayConfiguration 11 extends java/lang/Object implements 
+class com/utexo/rgb/sdk/RgbSendEvidence 11 extends java/lang/Object implements 
+class com/utexo/rgb/sdk/RgbSendEvidence$Companion 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/Satoshis 11 extends java/lang/Object implements java/lang/Comparable generic=Ljava/lang/Object;Ljava/lang/Comparable<Lcom/utexo/rgb/sdk/Satoshis;>;
 class com/utexo/rgb/sdk/Satoshis$Companion 11 extends java/lang/Object implements 
 class com/utexo/rgb/sdk/SdkErrorCode 4011 extends java/lang/Enum implements  generic=Ljava/lang/Enum<Lcom/utexo/rgb/sdk/SdkErrorCode;>;
