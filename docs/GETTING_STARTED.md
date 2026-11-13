@@ -34,10 +34,10 @@ still work, but every new spend fails.
 
 - **An API key.**
 - **The wallet gateway URL** for your account. It's an origin only: scheme, host
-  and optional port, with no path. An rgb-node-api, Cloud API or Swap API URL won't
-  work in its place.
+  and optional port, with no path, such as `https://your-gateway.example`. An
+  rgb-node-api, Cloud API or Swap API URL won't work in its place.
 - **The network** your gateway runs. The SDK accepts `Network.MAINNET`,
-  `TESTNET`, `SIGNET` and `REGTEST`. UTEXO's stage gateway runs on Bitcoin's
+  `TESTNET`, `SIGNET` and `REGTEST`. UTEXO's signet gateway runs on Bitcoin's
   public signet and uses `Network.SIGNET`.
 - **For RGB, an asset contract ID** your gateway supports. The send path handles
   fungible assets (NIA, CFA and IFA). It can't send UDA assets. BFA, which current
@@ -194,7 +194,7 @@ val trustedTip = WalletChainContextProvider { network ->
 The tip has to be from the chain your gateway runs on, and no more than 300
 seconds old. Stamp it with the time you actually read it.
 
-UTEXO's stage gateway runs on Bitcoin's public signet; use a public-signet
+UTEXO's signet gateway runs on Bitcoin's public signet; use a public-signet
 indexer such as `https://mempool.space/signet/api/blocks/tip/height`. A tip
 from another chain is far off the gateway's height, and the signer rejects every
 spend with `policy.rejected`.
@@ -307,8 +307,8 @@ val received = wallet.getBtcBalance().vanilla
 ```
 
 The payment shows in `received.future` once the receiver syncs, and in
-`received.settled` after it confirms. To look up a transaction on the stage
-gateway's public signet, use `https://mempool.space/signet/tx/<txid>`.
+`received.settled` after it confirms. To look up a transaction on Bitcoin's
+public signet, use `https://mempool.space/signet/tx/<txid>`.
 
 ## Send an RGB asset
 
@@ -417,9 +417,9 @@ val txid = sent.txid
 - `witnessData` is required for a witness invoice and must be left out for a
   blind one. Its `amountSat` is the BTC that goes to the receiver's new output,
   at least 294 sats.
-- The invoice must carry between one and four transport endpoints, such as
-  `rpcs://stage.rgb-proxy.utexo.com/json-rpc` on the stage gateway. Invoices
-  without endpoints aren't supported.
+- The invoice must carry between one and four transport endpoints, the RGB
+  proxies named in its `endpoints=` parameter. Invoices without endpoints aren't
+  supported.
 - A proxy protocol 1.0 invoice also carries the receiver's key as `pk=…`, and
   may carry `enc`. The SDK passes them to the gateway, which needs them to
   encrypt the transfer to the receiver.
@@ -546,7 +546,7 @@ covers the remaining codes.
 
 | Symptom | Cause and fix |
 | --- | --- |
-| Every spend fails with `policy.rejected` | The chain tip is from the wrong chain or older than 300 seconds. For the stage gateway, read it from a public-signet source such as `mempool.space/signet/api`. |
+| Every spend fails with `policy.rejected` | The chain tip is from the wrong chain or older than 300 seconds. For UTEXO's signet gateway, read it from a public-signet source such as `mempool.space/signet/api`. |
 | Creating an invoice fails with `backend.protocol_mismatch` about expiry | The device and gateway clocks differ by more than 300 seconds. Fix the device clock. |
 | The first call fails with `backend.unavailable` | The gateway is still creating a newly registered wallet. Retry the call. |
 | An RGB send, or a blind invoice, fails with `backend.rejected` (`INSUFFICIENT_FUNDS`) while the wallet has BTC | Both need colored UTXOs. Call `createUtxos`, wait for a confirmation, and retry. |

@@ -58,7 +58,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("actions", help="comma-separated actions, e.g. sync,balance")
     parser.add_argument("fields", nargs="*", help="name=value intent extras (recipient, amount, assetId)")
-    parser.add_argument("--gateway", default=os.environ.get("UTEXO_GATEWAY_URL", "https://stage.gateway.lightsdk.utexo.com"))
+    gateway = os.environ.get("UTEXO_GATEWAY_URL")
+    parser.add_argument("--gateway", default=gateway, required=gateway is None,
+                        help="gateway base URL, e.g. https://your-gateway.example (default: $UTEXO_GATEWAY_URL)")
     parser.add_argument("--token-file", help="bare token, or the JSON returned by POST /v1/users")
     parser.add_argument("--wallet", required=True, help="wallet ID; one Keystore seed per ID")
     parser.add_argument("--network", help="signet (app default), regtest, testnet, mainnet")
