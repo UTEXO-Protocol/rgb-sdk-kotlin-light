@@ -1,7 +1,7 @@
 # `example-app` — a reference integration
 
-A single-screen Android app that exercises the UTEXO SDK against a
-`minimal-gateway` deployment. It exists to be read: every SDK call lives in one
+A single-screen Android app that exercises the UTEXO SDK against a lightsdk
+gateway (`rln-gateway`) deployment. It exists to be read: every SDK call lives in one
 file, [`MainActivity.kt`](src/main/kotlin/com/utexo/rgb/sdk/example/MainActivity.kt),
 with no architecture or DI in the way.
 
@@ -16,8 +16,10 @@ production.
 ```
 
 Then launch it, paste a gateway URL and a bearer token, and press **Connect**.
-The defaults target UTEXO's signet environment: `Network.SIGNET`, with the
-trusted chain tip read from `https://esplora-api.utexo.com/blocks/tip/height`.
+The defaults target UTEXO's stage gateway,
+`https://stage.gateway.lightsdk.utexo.com`, on Bitcoin's public signet:
+`Network.SIGNET`, with the trusted chain tip read from
+`https://mempool.space/signet/api/blocks/tip/height`.
 
 A token is minted once per user by the operator:
 
@@ -28,8 +30,9 @@ curl -X POST https://your-gateway.example/v1/users \
 ```
 
 For a gateway on your own machine use `http://10.0.2.2:<port>`. Against the
-lightsdk-gateway regtest stack (`regtest/` in the gateway repository), also pass
-`-e network regtest` and `-e tipUrl http://10.0.2.2:3002/blocks/tip/height`.
+lightsdk-gateway regtest stack (`regtest/` in the gateway repository), also
+start [`scripts/tip.mjs`](scripts/tip.mjs) and pass `-e network regtest` and
+`-e tipUrl http://10.0.2.2:3003/blocks/tip/height`.
 [PAYMENT_TESTING.md](PAYMENT_TESTING.md) walks through a full local run.
 
 For scripted runs, every field is also an intent extra, and `run` connects and
@@ -96,8 +99,8 @@ the example logs the code, the `correlationId` an operator can grep for, and
 
 **Spending needs a trusted chain tip.** `chainContextProvider` must read the tip
 height from an indexer for the chain the gateway runs on, never from the gateway.
-UTEXO's signet is not Bitcoin's public signet even though its invoices say `sb`;
-a public-signet tip is far behind it, and the signer rejects every spend.
+The stage gateway runs on Bitcoin's public signet. A tip from another chain is
+far off the gateway's height, and the signer rejects every spend.
 
 **RGB payments take three turns.** The receiver syncs to fetch, validate and
 ACK the consignment. The sender then syncs to see the ACK and broadcast. After a

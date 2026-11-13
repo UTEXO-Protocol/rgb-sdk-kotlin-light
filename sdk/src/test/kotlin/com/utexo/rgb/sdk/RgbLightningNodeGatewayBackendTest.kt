@@ -37,6 +37,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 internal class RgbLightningNodeGatewayBackendTest {
@@ -169,6 +170,66 @@ internal class RgbLightningNodeGatewayBackendTest {
                     request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
             }
             assertEquals(1, transport.requests.size)
+        }
+    }
+
+    @Test
+    fun `RGB prepare passes proxy protocol 1_0 recipient fields and requires their exact echo`(): Unit = runBlocking {
+        val invoice = rgbDecodedInvoice().copy(expirationTimestamp = 1_793_723_445L,
+            publicKey = TEST_RECIPIENT_PUBLIC_KEY, encryption = InvoiceEncryption.OPTIONAL)
+        val echoed = preparedRgbJson().replace("\"assetId\":\"fixture-asset\",",
+            "\"assetId\":\"fixture-asset\",\"recipientPublicKey\":\"$TEST_RECIPIENT_PUBLIC_KEY\"," +
+                "\"recipientExpirationTimestamp\":1793723445,\"recipientEncryption\":\"optional\",")
+        val request = rgbSendRequest()
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, echoed))
+        val backend = testBackend(transport, invoiceDecoder = { invoice })
+        val context = initializedContext(backend)
+        backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(context,
+            request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+        val body = Json.parseToJsonElement(transport.requests[1].bodyUtf8()).jsonObject
+        assertEquals(JsonPrimitive(TEST_RECIPIENT_PUBLIC_KEY), body["recipientPublicKey"])
+        assertEquals(JsonPrimitive(1_793_723_445L), body["recipientExpirationTimestamp"])
+        assertEquals(JsonPrimitive("optional"), body["recipientEncryption"])
+
+        // A gateway that drops, nulls or alters what it passed on is caught before signing.
+        for (altered in listOf(preparedRgbJson(),
+            echoed.replace(TEST_RECIPIENT_PUBLIC_KEY, "b".repeat(64)),
+            echoed.replace("1793723445", "1793723446"),
+            echoed.replace("\"optional\"", "null"))) {
+            val alteredTransport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, altered))
+            val alteredBackend = testBackend(alteredTransport, invoiceDecoder = { invoice })
+            val alteredContext = initializedContext(alteredBackend)
+            assertFailsWith<SdkException.BackendProtocolMismatch> {
+                alteredBackend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(alteredContext,
+                    request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+            }
+        }
+    }
+
+    @Test
+    fun `RGB prepare sends no proxy protocol 1_0 fields for a pre-1_0 invoice`(): Unit = runBlocking {
+        val request = rgbSendRequest()
+        // An older gateway omits the echo keys and a current one returns them as null; both match.
+        val nullEcho = preparedRgbJson().replace("\"assetId\":\"fixture-asset\",",
+            "\"assetId\":\"fixture-asset\",\"recipientPublicKey\":null,\"recipientExpirationTimestamp\":null,\"recipientEncryption\":null,")
+        for (prepared in listOf(preparedRgbJson(), nullEcho)) {
+            val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, prepared))
+            val backend = testBackend(transport, invoiceDecoder = { rgbDecodedInvoice().copy(expirationTimestamp = 2_000_000_000L) })
+            val context = initializedContext(backend)
+            backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(context,
+                request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+            val body = Json.parseToJsonElement(transport.requests[1].bodyUtf8()).jsonObject
+            assertFalse(body.keys.any { it.startsWith("recipient") && it != "recipientId" }, body.keys.toString())
+        }
+        // A key the gateway invents for an invoice that has none is a mismatch.
+        val invented = preparedRgbJson().replace("\"assetId\":\"fixture-asset\",",
+            "\"assetId\":\"fixture-asset\",\"recipientPublicKey\":\"$TEST_RECIPIENT_PUBLIC_KEY\",")
+        val transport = QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, invented))
+        val backend = testBackend(transport, invoiceDecoder = { rgbDecodedInvoice() })
+        val context = initializedContext(backend)
+        assertFailsWith<SdkException.BackendProtocolMismatch> {
+            backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(context,
+                request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
         }
     }
 
@@ -370,6 +431,33 @@ internal class RgbLightningNodeGatewayBackendTest {
     }
 
     @Test
+    fun `BFA assets are listed beside other schemas and may report a zero or no genesis supply`(): Unit = runBlocking {
+        val bfa = """{"assetId":"bfa-asset","schema":"bfa","ticker":"BUSDT","name":"Bridged USDT","details":null,"precision":6,"issuedSupply":0,"timestamp":1,"addedAt":2,"balance":{"settled":10000,"future":10000,"spendable":10000}}"""
+        fun body(asset: String): String = assetsJson().removeSuffix("]}") + ",$asset]}"
+        val backend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body(bfa))))
+        val assets = backend.listAssets(initializedContext(backend))
+        val result = assets.bfa.single()
+        assertEquals(AssetId.of("bfa-asset"), result.assetId)
+        assertEquals("BUSDT", result.ticker)
+        assertEquals(6, result.precision)
+        assertEquals(AssetAmount.of(0), result.issuedSupply)
+        assertEquals(AssetAmount.of(10_000), result.balance.spendable)
+        assertEquals(AssetId.of("nia-asset"), assets.nia.single().assetId)
+        // rgb-lib-bfa bfa.6+ reports no genesis supply for BFA, so the gateway sends null.
+        val unreported = bfa.replace("\"issuedSupply\":0", "\"issuedSupply\":null")
+        val unreportedBackend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body(unreported))))
+        val withoutSupply = unreportedBackend.listAssets(initializedContext(unreportedBackend)).bfa.single()
+        assertNull(withoutSupply.issuedSupply)
+        assertEquals(AssetAmount.of(10_000), withoutSupply.balance.spendable)
+        for (bad in listOf(bfa.replace("\"ticker\":\"BUSDT\"", "\"ticker\":null"),
+            bfa.replace("\"issuedSupply\":0", "\"issuedSupply\":-1"))) {
+            val invalid = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body(bad))))
+            val context = initializedContext(invalid)
+            assertFailsWith<SdkException.BackendProtocolMismatch>(bad) { invalid.listAssets(context) }
+        }
+    }
+
+    @Test
     fun `additive known IFA supplies and existence state are retained rather than discarded`(): Unit = runBlocking {
         val body = assetsJson().replace("\"schema\":\"ifa\"", "\"schema\":\"ifa\",\"initialSupply\":100,\"maxSupply\":200,\"knownCirculatingSupply\":150")
         val backend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(200, body),
@@ -415,15 +503,16 @@ internal class RgbLightningNodeGatewayBackendTest {
             queuedResponse(200, allSchemaAssetsJson()),
             queuedResponse(200, transfersOf(transferRow(3, "nia-asset"))), queuedResponse(200, transfersOf()),
             queuedResponse(200, transfersOf(transferRow(1, "ifa-asset", other))),
-            queuedResponse(200, transfersOf(transferRow(2, "uda-asset", other))))
+            queuedResponse(200, transfersOf(transferRow(2, "uda-asset", other))),
+            queuedResponse(200, transfersOf(transferRow(4, "bfa-asset"))))
         val backend = testBackend(transport)
         val result = backend.listTransfers(initializedContext(backend))
-        assertEquals(listOf(1L, 2L, 3L, 5L), result.map { it.idx })
-        assertEquals(listOf("ifa-asset", "uda-asset", "nia-asset", null), result.map { it.assetId?.value })
+        assertEquals(listOf(1L, 2L, 3L, 4L, 5L), result.map { it.idx })
+        assertEquals(listOf("ifa-asset", "uda-asset", "nia-asset", "bfa-asset", null), result.map { it.assetId?.value })
         assertEquals(TransferStatus.WAITING_COUNTERPARTY, result.last().status)
         assertEquals(listOf("/v1/me", "/v1/wallet/transfers", "/v1/wallet/balances", "/v1/wallet/transfers",
-            "/v1/wallet/transfers", "/v1/wallet/transfers", "/v1/wallet/transfers"), transport.requests.map { it.url.encodedPath })
-        assertEquals(listOf(null, null, null, "nia-asset", "cfa-asset", "ifa-asset", "uda-asset"),
+            "/v1/wallet/transfers", "/v1/wallet/transfers", "/v1/wallet/transfers", "/v1/wallet/transfers"), transport.requests.map { it.url.encodedPath })
+        assertEquals(listOf(null, null, null, "nia-asset", "cfa-asset", "ifa-asset", "uda-asset", "bfa-asset"),
             transport.requests.map { it.url.queryParameter("assetId") })
     }
 
@@ -500,10 +589,10 @@ internal class RgbLightningNodeGatewayBackendTest {
         return """{"btc":{"vanilla":{"settled":0,"future":0,"spendable":0},"colored":{"settled":0,"future":0,"spendable":0}},"assets":[${asset("nia")},${asset("ifa")}]}"""
     }
 
-    /** Gateway order nia, ifa, cfa, uda; the client requests per-asset transfers as nia, cfa, ifa, uda. */
+    /** Gateway order nia, ifa, cfa, uda, bfa; the client requests per-asset transfers as nia, cfa, ifa, uda, bfa. */
     private fun allSchemaAssetsJson(): String {
         fun asset(schema: String, ticker: String, supply: String): String = """{"assetId":"$schema-asset","schema":"$schema","ticker":$ticker,"name":"Fixture","details":null,"precision":0,"issuedSupply":$supply,"timestamp":1,"addedAt":2,"balance":{"settled":0,"future":7,"spendable":0}}"""
-        return assetsJson().removeSuffix("]}") + ",${asset("cfa", "null", "100")},${asset("uda", "\"TEST\"", "null")}]}"
+        return assetsJson().removeSuffix("]}") + ",${asset("cfa", "null", "100")},${asset("uda", "\"TEST\"", "null")},${asset("bfa", "\"TEST\"", "0")}]}"
     }
 
     private fun transfersJson(): String = """{"transfers":[{"idx":1,"batchTransferIdx":null,"assetId":"fixture-asset","amount":99,"assignments":[{"kind":"Fungible","amount":7}],"kind":"Send","status":"Settled","txid":"${TEST_TXID.hex}","recipientId":null,"expiration":null,"createdAt":1,"updatedAt":2}]}"""
@@ -2579,3 +2668,7 @@ private fun Request.bodyUtf8(): String {
     checkNotNull(body).writeTo(buffer)
     return buffer.readUtf8()
 }
+
+/** The recipient key of a proxy protocol 1.0 stage invoice (2026-11-02). */
+private const val TEST_RECIPIENT_PUBLIC_KEY: String =
+    "bd92a92452c9c3fc2b4fa04e5e15fd922608b8e4ab6ba43a3c90c3cc866b791b"

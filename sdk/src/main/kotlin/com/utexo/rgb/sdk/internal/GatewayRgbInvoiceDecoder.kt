@@ -1,5 +1,6 @@
 package com.utexo.rgb.sdk.internal
 
+import com.utexo.rgb.sdk.InvoiceEncryption
 import com.utexo.rgb.sdk.Network
 import com.utexo.rgb.sdk.RgbInvoice
 import com.utexo.rgb.sdk.SdkException
@@ -16,6 +17,10 @@ internal data class GatewayRgbInvoice(
     val recipientId: String,
     val witness: Boolean,
     val transportEndpoints: List<String>,
+    /** Proxy protocol 1.0 recipient fields a sender passes on: the invoice's `expiry`, `pk` and `enc`. */
+    val expirationTimestamp: Long? = null,
+    val publicKey: String? = null,
+    val encryption: InvoiceEncryption = InvoiceEncryption.REQUIRED,
 )
 
 internal object GatewayRgbInvoiceDecoder {
@@ -24,7 +29,8 @@ internal object GatewayRgbInvoiceDecoder {
             NativeRuntime.ensureInitialized()
             val value = decodeRgbInvoice(invoice.value)
             GatewayRgbInvoice(Network.valueOf(value.network.name), value.assetId, value.recipientId,
-                value.recipientType == RgbInvoiceRecipientType.WITNESS, value.transportEndpoints)
+                value.recipientType == RgbInvoiceRecipientType.WITNESS, value.transportEndpoints,
+                value.expirationTimestamp, value.publicKey, value.encryption.toPublic())
         } catch (_: SignerException) {
             throw SdkException.InvalidArgument("invoice", "must be a supported canonical RGB invoice")
         } catch (_: LinkageError) {

@@ -449,6 +449,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
             val ifa = mutableListOf<AssetIfa>()
             val cfa = mutableListOf<AssetCfa>()
             val uda = mutableListOf<AssetUda>()
+            val bfa = mutableListOf<AssetBfa>()
             val seen = mutableSetOf<AssetId>()
             for (element in response.body.requiredArray("assets")) {
                 val item = element.requireObject("asset")
@@ -472,10 +473,12 @@ public class RgbLightningNodeGatewayBackend private constructor(
                     "ifa", "IFA" -> ifa.add(AssetIfa(id, requiredTicker(), name, precision,
                         item.nullableAmount("initialSupply"), item.nullableAmount("maxSupply"),
                         item.nullableAmount("knownCirculatingSupply"), timestamp, addedAt, balance, details))
+                    "bfa", "BFA" -> bfa.add(AssetBfa(id, requiredTicker(), name, precision,
+                        item.nullableAmount("issuedSupply"), timestamp, addedAt, balance, details))
                     else -> throw SdkException.BackendProtocolMismatch("gateway returned an unsupported asset schema")
                 }
             }
-            ListAssets(nia, uda, cfa, ifa)
+            ListAssets(nia, uda, cfa, ifa, bfa)
         }
     }
 
@@ -492,7 +495,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
         val pages = mutableListOf(listTransferPage(context, null))
         val assets = listAssets(context)
         val assetIds = assets.nia.map { it.assetId } + assets.cfa.map { it.assetId } +
-            assets.ifa.map { it.assetId } + assets.uda.map { it.assetId }
+            assets.ifa.map { it.assetId } + assets.uda.map { it.assetId } + assets.bfa.map { it.assetId }
         for (id in assetIds) pages += listTransferPage(context, id)
         return mergeTransferPages(pages)
     }
@@ -812,8 +815,32 @@ public class RgbLightningNodeGatewayBackend private constructor(
         if (invoice.transportEndpoints.size !in 1..4 || invoice.transportEndpoints.distinct().size != invoice.transportEndpoints.size) {
             throw SdkException.Unsupported("gateway requires one to four unique invoice RGB transports")
         }
+        if (invoice.expirationTimestamp?.let { it > MAX_SAFE_JSON_INTEGER_VALUE } == true) {
+            throw SdkException.Unsupported("RGB invoice expirations above the safe JSON integer range")
+        }
         return invoice to asset
     }
+
+    /**
+     * The invoice's proxy protocol 1.0 recipient fields (`pk`, `expiry`, `enc`), which
+     * rgb-node-api needs to encrypt the consignment to the recipient. Null for a pre-1.0
+     * invoice: sending nothing new keeps such invoices working with a gateway that predates
+     * these fields and rejects unknown request fields.
+     */
+    private fun proxyV1Recipient(invoice: GatewayRgbInvoice): ProxyV1Recipient? {
+        if (invoice.publicKey == null && invoice.encryption == InvoiceEncryption.REQUIRED) return null
+        return ProxyV1Recipient(
+            publicKey = invoice.publicKey,
+            expirationTimestamp = invoice.expirationTimestamp,
+            encryption = invoice.encryption.takeIf { it != InvoiceEncryption.REQUIRED }?.wireValue,
+        )
+    }
+
+    private data class ProxyV1Recipient(
+        val publicKey: String?,
+        val expirationTimestamp: Long?,
+        val encryption: String?,
+    )
 
     override suspend fun prepareOnchainSend(request: PrepareOnchainSendRequest): PreparedTransaction {
         requireUnverifiedPsbtProfileEnabled()
@@ -829,6 +856,11 @@ public class RgbLightningNodeGatewayBackend private constructor(
                 put("recipientId", invoice.recipientId)
                 request.request.witnessData?.let { put("witnessAmountSat", it.amountSat.value) }
                 if (invoice.transportEndpoints.isNotEmpty()) put("transportEndpoints", JsonArray(invoice.transportEndpoints.map(::JsonPrimitive)))
+                proxyV1Recipient(invoice)?.let { recipient ->
+                    recipient.publicKey?.let { put("recipientPublicKey", it) }
+                    recipient.expirationTimestamp?.let { put("recipientExpirationTimestamp", it) }
+                    recipient.encryption?.let { put("recipientEncryption", it) }
+                }
                 put("donation", request.request.donation)
                 put("minConfirmations", request.request.minConfirmations.value)
                 put("feeRateSatPerVb", requireWholeGatewayFeeRate(request.request.feeRate))
@@ -892,6 +924,14 @@ public class RgbLightningNodeGatewayBackend private constructor(
         val asset = intent.requiredObject("asset")
         val endpoints = asset.requiredArray("transportEndpoints").map { element ->
             JsonObject(mapOf("endpoint" to element)).requiredString("endpoint", 2_048)
+        }
+        // The gateway echoes the proxy protocol 1.0 recipient fields it passed on. A gateway
+        // predating them omits the keys, which matches only when none were sent.
+        val sent = proxyV1Recipient(invoice)
+        if (asset.nullableString("recipientPublicKey", 64) != sent?.publicKey ||
+            asset.nullableLong("recipientExpirationTimestamp") != sent?.expirationTimestamp ||
+            asset.nullableString("recipientEncryption", 16) != sent?.encryption) {
+            throw SdkException.BackendProtocolMismatch("gateway RGB intent differs from the recipient invoice")
         }
         if (intent.requiredString("kind", 32) != "send_asset" ||
             intent.requiredLong("feeRateSatPerVb", 1, MAX_GATEWAY_FEE_RATE) != requireWholeGatewayFeeRate(request.feeRate) ||
@@ -1534,6 +1574,7 @@ public class RgbLightningNodeGatewayBackend private constructor(
         "INSUFFICIENT_FUNDS" -> "The wallet has insufficient funds for this operation"
         "INVALID_ADDRESS" -> "The destination address was rejected by the gateway"
         "WALLET_REQUEST_REJECTED" -> "The gateway wallet rejected the request"
+        "INVALID_RECIPIENT_PUBLIC_KEY" -> "The gateway wallet rejected the recipient invoice's public key"
         "PSBT_REJECTED", "PSBT_MISMATCH" -> "The gateway rejected the locally signed transaction"
         "OP_NOT_FOUND" -> "The prepared gateway operation was not found"
         else -> "The gateway rejected the request"
@@ -1852,6 +1893,9 @@ private inline fun <T> gatewayModel(correlationId: String?, block: () -> T): T =
 private fun JsonObject.nullableLong(field: String): Long? =
     if (!containsKey(field) || get(field) == JsonNull) null
     else requiredLong(field, 0, MAX_SAFE_JSON_INTEGER_VALUE)
+
+private fun JsonObject.nullableString(field: String, maximumBytes: Int): String? =
+    if (!containsKey(field) || get(field) == JsonNull) null else requiredString(field, maximumBytes)
 
 private fun JsonObject.nullableBoolean(field: String): Boolean? =
     if (!containsKey(field) || get(field) == JsonNull) null else requiredBoolean(field)

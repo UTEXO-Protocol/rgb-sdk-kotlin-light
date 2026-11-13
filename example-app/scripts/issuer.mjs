@@ -57,6 +57,24 @@ function die(message) {
   process.exit(1);
 }
 
+/**
+ * The invoice's RGB proxy protocol 1.0 recipient fields, which the client SDK's
+ * invoice decoder skips. rgb-node-api needs `pk` to encrypt the consignment to
+ * the recipient. A pre-1.0 invoice has none of them.
+ */
+function proxyV1Recipient(invoiceText, expiryTimestamp) {
+  const query = new URLSearchParams(invoiceText.split('?')[1] ?? '');
+  const publicKey = query.get('pk');
+  const enc = query.get('enc');
+  if (publicKey === null && enc === null) return {};
+  const encryption = enc === null ? null : ({ 0: 'Unsupported', 1: 'Optional' }[enc] ?? die(`invalid enc: ${enc}`));
+  return {
+    ...(publicKey === null ? {} : { public_key: publicKey }),
+    ...(expiryTimestamp === null ? {} : { expiration_timestamp: expiryTimestamp }),
+    ...(encryption === null ? {} : { encryption }),
+  };
+}
+
 const gatewayPackage = join(GATEWAY_REPO, 'packages', 'gateway', 'package.json');
 const clientSdk = join(GATEWAY_REPO, 'packages', 'client-sdk', 'dist', 'index.js');
 if (!existsSync(gatewayPackage) || !existsSync(clientSdk)) {
@@ -211,13 +229,19 @@ switch (command) {
                 : null,
             amount: Number(amount),
             transport_endpoints: invoice.transportEndpoints,
+            ...proxyV1Recipient(invoiceText, invoice.expiryTimestamp),
           },
         ],
       },
       donation: false,
       fee_rate: FEE_RATE,
       min_confirmations: 1,
-      expiration_timestamp: invoice.expiryTimestamp ?? Math.floor(Date.now() / 1000) + 3_600,
+      // Proxy protocol 1.0: the operation must expire at least 600 s before the
+      // invoice, so its TX is only released while the recipient still waits for it.
+      expiration_timestamp: Math.min(
+        Math.floor(Date.now() / 1000) + 3_600,
+        (invoice.expiryTimestamp ?? Infinity) - 600,
+      ),
     });
     console.log('txid', sent.txid);
     break;

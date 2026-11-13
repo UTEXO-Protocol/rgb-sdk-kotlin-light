@@ -258,6 +258,30 @@ public data class AssetIfa(
     }
 }
 
+public data class AssetBfa(
+    public val assetId: AssetId,
+    public val ticker: String,
+    public val name: String,
+    public val precision: Int,
+    /**
+     * Genesis supply, or null when the wallet service reports none. rgb-lib-bfa from bfa.6 has no
+     * genesis supply for BFA: its known circulating supply is the amount locked on the bridge
+     * contract, a different quantity, so it is never reported here. Never inferred from the balance.
+     */
+    public val issuedSupply: AssetAmount?,
+    public val timestamp: UnixSeconds,
+    public val addedAt: UnixSeconds,
+    public val balance: AssetBalance,
+    public val details: String? = null,
+    public val media: Media? = null,
+    public val rejectListUrl: String? = null,
+) {
+    init {
+        validateAssetMetadata(ticker, name, precision, details)
+        rejectListUrl?.let { requireCanonicalText("rejectListUrl", it, 2_048) }
+    }
+}
+
 public data class AssetCfa(
     public val assetId: AssetId,
     public val name: String,
@@ -290,6 +314,7 @@ public data class ListAssets(
     public val uda: List<AssetUda> = emptyList(),
     public val cfa: List<AssetCfa> = emptyList(),
     public val ifa: List<AssetIfa> = emptyList(),
+    public val bfa: List<AssetBfa> = emptyList(),
 )
 
 public data class InvoiceReceiveData(
@@ -316,14 +341,30 @@ public data class InvoiceData(
     public val assignmentName: String? = null,
     public val expirationTimestamp: UnixSeconds? = null,
     public val transportEndpoints: List<String> = emptyList(),
+    /** Recipient's Ed25519 key (64 lowercase hex), the proxy protocol 1.0 `pk` parameter. */
+    public val publicKey: String? = null,
+    /** The proxy protocol 1.0 `enc` parameter; an invoice without it requires encryption. */
+    public val encryption: InvoiceEncryption = InvoiceEncryption.REQUIRED,
 ) {
     init {
         requireCanonicalText("recipientId", recipientId, 1_024)
         assetSchema?.let { requireCanonicalText("assetSchema", it, 128) }
         assignmentName?.let { requireCanonicalText("assignmentName", it, 256) }
         transportEndpoints.forEach { requireCanonicalText("transportEndpoint", it, 2_048) }
+        if (publicKey != null && !INVOICE_PUBLIC_KEY.matches(publicKey)) {
+            throw SdkException.InvalidArgument("publicKey", "must be 64 lowercase hexadecimal characters")
+        }
     }
 }
+
+/** Consignment encryption preference of an RGB invoice recipient (proxy protocol 1.0). */
+public enum class InvoiceEncryption(public val wireValue: String) {
+    REQUIRED("required"),
+    OPTIONAL("optional"),
+    UNSUPPORTED("unsupported"),
+}
+
+private val INVOICE_PUBLIC_KEY = Regex("^[0-9a-f]{64}$")
 
 private fun validateAssetMetadata(ticker: String?, name: String, precision: Int, details: String?): Unit {
     ticker?.let { requireCanonicalText("ticker", it, 16) }

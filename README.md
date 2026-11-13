@@ -210,11 +210,11 @@ WalletChainContext(
 The observation must match the requested network, be at most 300 seconds old,
 and be no more than 30 seconds in the future. Fetch from your trusted node/indexer;
 do not copy a height from a PSBT or assign a new timestamp to an old observation.
-The tip must come from the chain your gateway actually runs on. UTEXO's signet
-environment is UTEXO's own signet, not Bitcoin's public signet, even though its
-invoices use the `sb` signet tag; read its tip from that environment's indexer
-(`https://esplora-api.utexo.com/blocks/tip/height`). A public-signet tip is far
-behind that chain, and the signer then rejects every new spend.
+The tip must come from the chain your gateway actually runs on. UTEXO's stage
+gateway runs on Bitcoin's public signet; read its tip from a public-signet
+indexer such as `https://mempool.space/signet/api/blocks/tip/height`. A tip from
+another chain is far off the gateway's height, and the signer then rejects every
+new spend.
 The SDK refreshes this context before sensitive signing/submission transitions.
 The gateway's `syncWallet()` result does not supply a trusted tip for this purpose.
 
@@ -324,11 +324,15 @@ operation result, not a confirmation or settlement guarantee.
 ## Receive and send RGB assets
 
 Use an asset contract ID and schema supported by your gateway. The current asset
-models/parser cover NIA, CFA, UDA, and IFA; the on-chain send path supports
+models/parser cover NIA, CFA, UDA, IFA, and BFA; the on-chain send path supports
 fungible owner payments only. UDA recognition does not enable non-fungible sends.
-BFA assets are not supported by this build. Current
-[Mint-issued USDT](https://docs.utexo.com/getting-started/rgb-concepts) uses BFA;
-confirm a token's schema and SDK compatibility with UTEXO before integrating it.
+
+Current [Mint-issued USDT](https://docs.utexo.com/getting-started/rgb-concepts)
+uses BFA. If your gateway's wallet service has BFA enabled, a wallet can request
+it with or without its asset ID, and `listAssets()` returns it in `bfa`. The local
+signer recognizes the BFA schema ID that `rgb-lib-bfa` `bfa.5` emits and rejects an
+invoice naming any other. Sending BFA hasn't been tested. Confirm a token's schema
+and SDK compatibility with UTEXO before integrating it.
 
 Create a witness receive invoice and share its encoded value with the sender:
 
