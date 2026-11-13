@@ -28,6 +28,12 @@ public data class LocalSigningPolicy(
     public val maximumOutputs: Int = 256,
     public val maximumChildIndex: Int = 1_000_000,
     public val rbf: RbfPolicy = RbfPolicy.REQUIRED,
+    /**
+     * Signs an RGB send that arrives without RGB send evidence, which leaves its RGB
+     * transitions unverified (blind signing). Only for backends that do not return the
+     * evidence yet. Evidence that is supplied is always verified, whatever this says.
+     */
+    public val allowUnverifiedRgbSends: Boolean = false,
 ) {
     init {
         if (maximumPsbtBytes !in 100..1_000_000) {

@@ -122,6 +122,40 @@ internal class RgbLightningNodeGatewayBackendTest {
     }
 
     @Test
+    fun `RGB prepare carries gateway send evidence to the local verifier and rejects malformed evidence`(): Unit = runBlocking {
+        suspend fun prepare(body: String): PreparedTransaction {
+            val backend = testBackend(QueueInterceptor(queuedResponse(200, TEST_ME_JSON), queuedResponse(201, body)),
+                invoiceDecoder = { rgbDecodedInvoice() })
+            val request = rgbSendRequest()
+            return backend.prepareOnchainSend(PrepareOnchainSendRequest(OperationRequestContext(initializedContext(backend),
+                request.idempotencyKey, RequestHasher.onchainSend(Network.SIGNET, request)), request))
+        }
+        fun withEvidence(evidence: String): String = preparedRgbJson().removeSuffix("}") + ",\"rgbEvidence\":$evidence}"
+        val fascia = "ZmFzY2lhLWJ5dGVzLWZvci10ZXN0cw=="
+        val proof = """{"transaction":"02000000","vout":1,"derivationIndex":7}"""
+        val evidence = """{"fascia":"$fascia","mpcEntropy":"18446744073709551615","existingOutputProofs":[$proof]}"""
+        assertEquals(RgbSendEvidence(fascia, ULong.MAX_VALUE, listOf(RgbExistingOutputProof("02000000", 1, 7))),
+            prepare(withEvidence(evidence)).rgbSendEvidence)
+        // Absent evidence is not a verdict: the local signer decides what an evidence-free send means.
+        assertEquals(null, prepare(preparedRgbJson()).rgbSendEvidence)
+        assertEquals(null, prepare(withEvidence("null")).rgbSendEvidence)
+        for (malformed in listOf("[]", "{}",
+            evidence.replace("18446744073709551615", "18446744073709551616"),
+            evidence.replace("18446744073709551615", "007"),
+            evidence.replace("\"18446744073709551615\"", "42"),
+            evidence.replace(fascia, "ZmFzY2lhLWJ5dGVzLWZvci10ZXN0cw"),
+            evidence.replace("\"vout\":1", "\"vout\":-1"),
+            evidence.replace("02000000", "020000ZZ"),
+            evidence.replace("02000000", "0200000"),
+            evidence.replace(",\"existingOutputProofs\":[$proof]", ""),
+            evidence.replace("\"derivationIndex\":7", "\"derivationIndex\":7,\"script\":\"51\""),
+            evidence.replace("[$proof]", "[" + List(RgbSendEvidence.MAX_EXISTING_OUTPUT_PROOFS + 1) { proof }.joinToString(",") + "]"),
+        )) {
+            assertFailsWith<SdkException.BackendProtocolMismatch>(malformed) { prepare(withEvidence(malformed)) }
+        }
+    }
+
+    @Test
     fun `RGB prepare refuses witness data that contradicts the invoice recipient mode`(): Unit = runBlocking {
         // rgb-lib rejects a witness beneficiary without sats and a blind one with
         // them; the mismatch is caught locally rather than at the gateway.

@@ -34,7 +34,7 @@ still work, but every new spend fails.
 
 - **An API key.**
 - **The wallet gateway URL** for your account. It's an origin only: scheme, host
-  and optional port, with no path. A plain RLN, Cloud API or Swap API URL won't
+  and optional port, with no path. An rgb-node-api, Cloud API or Swap API URL won't
   work in its place.
 - **The network** your gateway runs. The SDK accepts `Network.MAINNET`,
   `TESTNET`, `SIGNET` and `REGTEST`. UTEXO's stage gateway runs on Bitcoin's

@@ -159,7 +159,7 @@ public class RgbLightningNodeGatewayConfiguration(
 }
 
 /**
- * HTTP adapter for the watch-only gateway introduced by rgb-lightning-node PR #174.
+ * HTTP adapter for lightsdk-gateway, the watch-only wallet gateway in front of rgb-node-api.
  *
  * This is deliberately an infrastructure implementation. [UTEXOWallet]
  * remains the application-facing API and continues to validate and sign a
@@ -880,7 +880,42 @@ public class RgbLightningNodeGatewayBackend private constructor(
         }
         return PreparedTransaction(id, request.context.idempotencyKey, request.context.requestHash,
             configuration.expectedNetwork, OperationKind.ONCHAIN_SEND, psbt, UnixSeconds.of(expiry / 1_000),
-            correlationId = response.correlationId)
+            correlationId = response.correlationId,
+            rgbSendEvidence = rgbSendEvidence(response.body, id, response.correlationId))
+    }
+
+    /**
+     * Optional until the gateway returns it. Its absence is not trusted either: the local
+     * signer refuses an RGB send without evidence unless the signing policy opts out.
+     */
+    private fun rgbSendEvidence(body: JsonObject, operationId: OperationId, correlationId: String?): RgbSendEvidence? {
+        val element = body["rgbEvidence"] ?: return null
+        if (element === JsonNull) return null
+        fun malformed(): Nothing = throw SdkException.BackendProtocolMismatch(
+            "gateway RGB send evidence is malformed", operationId, correlationId,
+        )
+        val evidence = element as? JsonObject ?: malformed()
+        if (evidence.keys != setOf("fascia", "mpcEntropy", "existingOutputProofs")) malformed()
+        val fascia = evidence.requiredString("fascia", MAX_RGB_FASCIA_CHARACTERS)
+        requireCanonicalBase64(fascia, "RGB fascia", operationId, correlationId)
+        // A u64 exceeds the JSON safe-integer range, so the gateway sends it as decimal text.
+        val entropy = evidence.requiredString("mpcEntropy", 20).takeIf { CANONICAL_DECIMAL.matches(it) }
+            ?.toULongOrNull() ?: malformed()
+        val proofs = evidence.requiredArray("existingOutputProofs")
+        if (proofs.size > RgbSendEvidence.MAX_EXISTING_OUTPUT_PROOFS) malformed()
+        return try {
+            RgbSendEvidence(fascia, entropy, proofs.map { item ->
+                val proof = item as? JsonObject ?: malformed()
+                if (proof.keys != setOf("transaction", "vout", "derivationIndex")) malformed()
+                RgbExistingOutputProof(
+                    transactionHex = proof.requiredString("transaction", MAX_RGB_PROOF_TRANSACTION_CHARACTERS),
+                    vout = proof.requiredLong("vout", 0, Int.MAX_VALUE.toLong()).toInt(),
+                    derivationIndex = proof.requiredLong("derivationIndex", 0, Int.MAX_VALUE.toLong()).toInt(),
+                )
+            })
+        } catch (_: SdkException.InvalidArgument) {
+            malformed()
+        }
     }
 
     private fun validateRgbIntent(response: GatewayJsonResponse, request: OnchainSendRequest,
@@ -1642,6 +1677,9 @@ public class RgbLightningNodeGatewayBackend private constructor(
         val JSON_MEDIA_TYPE_VALUE: String = "application/json"
         val GATEWAY_REQUEST_BODY_LIMIT_BYTES: Int = 64 * 1_024
         val MAX_PREPARED_PSBT_CHARACTERS: Int = 48 * 1_024
+        val MAX_RGB_FASCIA_CHARACTERS: Int = 512 * 1_024
+        val MAX_RGB_PROOF_TRANSACTION_CHARACTERS: Int = 200_000
+        val CANONICAL_DECIMAL = Regex("^(0|[1-9][0-9]*)$")
         val MAX_RESPONSE_BYTES: Int = 1_500_000
         val MAX_GATEWAY_FEE_RATE: Long = 1_000L
         val MIN_PSBT_BASE64_CHARACTERS: Int = 20

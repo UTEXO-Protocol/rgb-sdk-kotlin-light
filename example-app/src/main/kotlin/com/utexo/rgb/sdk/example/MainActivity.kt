@@ -20,6 +20,7 @@ import com.utexo.rgb.sdk.BitcoinAddress
 import com.utexo.rgb.sdk.CreateUtxosRequest
 import com.utexo.rgb.sdk.FeeRate
 import com.utexo.rgb.sdk.InvoiceRequest
+import com.utexo.rgb.sdk.LocalSigningPolicy
 import com.utexo.rgb.sdk.Network
 import com.utexo.rgb.sdk.OnchainSendRequest
 import com.utexo.rgb.sdk.RgbInvoice
@@ -173,7 +174,14 @@ class MainActivity : Activity() {
 
         val open = UTEXOWallet.create(
             context = applicationContext,
-            configuration = WalletConfiguration(walletId = walletId, network = network),
+            configuration = WalletConfiguration(
+                walletId = walletId,
+                network = network,
+                // The gateway does not return RGB send evidence yet, so RGB sends are
+                // signed without RGB verification. Remove once it does: evidence that
+                // arrives is always verified, and a send without it is then refused.
+                signingPolicy = LocalSigningPolicy(allowUnverifiedRgbSends = true),
+            ),
             service = WalletServiceConfiguration(
                 baseUrl = urlField.text.toString().trim(),
                 apiKeyProvider = keyProvider,

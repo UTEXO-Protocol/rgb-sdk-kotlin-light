@@ -292,6 +292,76 @@ public data class CreateUtxosOutputPlan(public val outputs: List<ExpectedWalletO
     }
 }
 
+/**
+ * An existing colored UTXO that an RGB send assigns state to (rgb-lib's change seal when
+ * the send has no Bitcoin change output), with the transaction that created it. The
+ * verifier re-derives the output's script from the wallet's keys; nothing here is trusted.
+ */
+@WalletInfrastructureApi
+public data class RgbExistingOutputProof(
+    public val transactionHex: String,
+    public val vout: Int,
+    public val derivationIndex: Int,
+) {
+    init {
+        if (transactionHex.isEmpty() || transactionHex.length > MAX_TRANSACTION_HEX_CHARACTERS ||
+            transactionHex.length % 2 != 0 || transactionHex.any { it !in '0'..'9' && it !in 'a'..'f' }) {
+            throw SdkException.InvalidArgument("transactionHex", "must be bounded lowercase hex")
+        }
+        if (vout < 0) throw SdkException.InvalidArgument("vout", "must not be negative")
+        if (derivationIndex < 0) throw SdkException.InvalidArgument("derivationIndex", "must not be negative")
+    }
+
+    override fun toString(): String =
+        "RgbExistingOutputProof(transaction=[REDACTED], vout=$vout, derivationIndex=$derivationIndex)"
+
+    public companion object {
+        public const val MAX_TRANSACTION_HEX_CHARACTERS: Int = 400_000
+    }
+}
+
+/**
+ * What the device needs to verify an RGB send before signing it: rgb-lib's fascia (the
+ * strict-encoded bundles the transaction commits to), the MPC entropy of that commitment,
+ * and ownership proofs for existing UTXOs used as seals. All of it comes from the backend
+ * and is checked by `utexo-rgb-verifier`, never trusted.
+ */
+@WalletInfrastructureApi
+public class RgbSendEvidence(
+    public val fasciaBase64: String,
+    public val mpcEntropy: ULong,
+    existingOutputProofs: List<RgbExistingOutputProof> = emptyList(),
+) {
+    /** An immutable snapshot, as for [PreparedTransaction.createUtxosOutputPlan]. */
+    public val existingOutputProofs: List<RgbExistingOutputProof> =
+        java.util.Collections.unmodifiableList(ArrayList(existingOutputProofs))
+
+    init {
+        requireCanonicalText("fascia", fasciaBase64, MAX_FASCIA_BASE64_CHARACTERS)
+        if (this.existingOutputProofs.size > MAX_EXISTING_OUTPUT_PROOFS) {
+            throw SdkException.InvalidArgument(
+                "existingOutputProofs",
+                "must contain at most $MAX_EXISTING_OUTPUT_PROOFS proofs",
+            )
+        }
+    }
+
+    override fun equals(other: Any?): Boolean = other is RgbSendEvidence &&
+        fasciaBase64 == other.fasciaBase64 && mpcEntropy == other.mpcEntropy &&
+        existingOutputProofs == other.existingOutputProofs
+
+    override fun hashCode(): Int =
+        (fasciaBase64.hashCode() * 31 + mpcEntropy.hashCode()) * 31 + existingOutputProofs.hashCode()
+
+    override fun toString(): String =
+        "RgbSendEvidence(fascia=[REDACTED], existingOutputProofs=${existingOutputProofs.size})"
+
+    public companion object {
+        public const val MAX_FASCIA_BASE64_CHARACTERS: Int = 4_000_000
+        public const val MAX_EXISTING_OUTPUT_PROOFS: Int = 8
+    }
+}
+
 /** Backend-only carrier. Its string form deliberately redacts the transaction. */
 @WalletInfrastructureApi
 public class PreparedTransaction(
@@ -304,6 +374,8 @@ public class PreparedTransaction(
     public val expiresAt: UnixSeconds,
     createUtxosOutputPlan: CreateUtxosOutputPlan? = null,
     public val correlationId: String? = null,
+    /** Present only for an RGB send whose backend supplies what the device needs to verify it. */
+    public val rgbSendEvidence: RgbSendEvidence? = null,
 ) {
     /** An immutable snapshot: external SPI lists cannot change retained signing intent. */
     public val createUtxosOutputPlan: CreateUtxosOutputPlan? = createUtxosOutputPlan?.let {
@@ -325,6 +397,9 @@ public class PreparedTransaction(
                 "createUtxosOutputPlan",
                 "must be present only for createUtxos operations",
             )
+        }
+        if (rgbSendEvidence != null && operation != OperationKind.ONCHAIN_SEND) {
+            throw SdkException.InvalidArgument("rgbSendEvidence", "must be present only for RGB sends")
         }
     }
 

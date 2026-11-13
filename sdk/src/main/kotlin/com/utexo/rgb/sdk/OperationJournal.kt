@@ -310,7 +310,8 @@ private fun samePreparedTransaction(
         left.psbtBase64 == right.psbtBase64 &&
         left.expiresAt == right.expiresAt &&
         left.createUtxosOutputPlan == right.createUtxosOutputPlan &&
-        left.correlationId == right.correlationId
+        left.correlationId == right.correlationId &&
+        left.rgbSendEvidence == right.rgbSendEvidence
 }
 
 private fun sameSignedPayload(

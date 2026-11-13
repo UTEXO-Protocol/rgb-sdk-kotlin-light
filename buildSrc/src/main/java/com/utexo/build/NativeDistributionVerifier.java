@@ -22,7 +22,12 @@ public final class NativeDistributionVerifier {
         "sdk/src/main/jniLibs/arm64-v8a/libutexo_local_signer.so",
         "sdk/src/main/jniLibs/armeabi-v7a/libutexo_local_signer.so",
         "sdk/src/main/jniLibs/x86_64/libutexo_local_signer.so",
-        "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt"
+        "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt",
+        "NativeSource/utexo-rgb-verifier-source.tar.gz",
+        "sdk/src/main/jniLibs/arm64-v8a/libutexo_rgb_verifier.so",
+        "sdk/src/main/jniLibs/armeabi-v7a/libutexo_rgb_verifier.so",
+        "sdk/src/main/jniLibs/x86_64/libutexo_rgb_verifier.so",
+        "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/verifier/utexo_rgb_verifier.kt"
     );
 
     public static void verify(Path repository, Path checksumFile, Set<Path> actualInputs)

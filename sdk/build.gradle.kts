@@ -24,7 +24,8 @@ val verifyNativeDistributionInputs by tasks.registering(VerifyNativeDistribution
     repositoryDirectory.set(rootProject.layout.projectDirectory)
     checksums.set(nativeEvidenceDirectory.file("SHA256SUMS"))
     nativeInputs.from(rootProject.fileTree("NativeSource"), fileTree("src/main/jniLibs"),
-        file("src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt"))
+        file("src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt"),
+        file("src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/verifier/utexo_rgb_verifier.kt"))
 }
 val stageNativeNotices by tasks.registering(NativeNoticeAssetsTask::class) {
     dependsOn(verifyNativeDistributionInputs)
@@ -41,11 +42,17 @@ val nativeEvidenceZip by tasks.registering(Zip::class) {
 }
 
 val preparedUniFfiDirectory = layout.buildDirectory.dir("generated/sources/uniffiPrepared/kotlin")
-val originalUniFfiSource = file("src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt")
+// The local signer and the pre-sign RGB verifier are separate UniFFI libraries
+// in separate packages; both bindings get the same visibility rewrite.
+val originalUniFfiSources = listOf(
+    file("src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt"),
+    file("src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/verifier/utexo_rgb_verifier.kt"),
+)
+val preparedUniFfiNames = originalUniFfiSources.map { "${it.nameWithoutExtension}_prepared.kt" }
 val prepareUniFfiBinding by tasks.registering(Copy::class) {
-    from(originalUniFfiSource)
+    from(originalUniFfiSources)
     into(preparedUniFfiDirectory)
-    rename { "utexo_local_signer_prepared.kt" }
+    rename { "${it.removeSuffix(".kt")}_prepared.kt" }
     inputs.property("visibilityRewriteVersion", 6)
     filter { line: String ->
         var rewritten = if (line == "@file:Suppress(\"NAME_SHADOWING\")") {
@@ -81,31 +88,32 @@ val prepareUniFfiBinding by tasks.registering(Copy::class) {
 
 val verifyUniFfiVisibility by tasks.registering {
     dependsOn(prepareUniFfiBinding)
-    val prepared = preparedUniFfiDirectory.map { it.file("utexo_local_signer_prepared.kt") }
-    inputs.file(prepared)
+    val prepared = preparedUniFfiNames.map { name -> preparedUniFfiDirectory.map { it.file(name) } }
+    inputs.files(prepared)
     doLast {
-        val source = prepared.get().asFile.readText()
-        val exposedType = Regex(
-            "(?m)^(?:public\\s+)?(?:(?:open|abstract|sealed|data|enum)\\s+)?" +
-                "(?:class|interface|object)\\b",
-        ).find(source)
-        val exposedFunction = Regex("(?m)^public fun\\s+").find(source)
-        val exposedThrowingFunction = Regex(
-            "(?m)^[ \\t]*@Throws\\([^)]*\\)[ \\t]+" +
-                "(?!override[ \\t]+|internal[ \\t]+)fun[ \\t]+",
-        ).find(source)
-        val exposedCommentTailFunction = Regex(
-            "(?m)^[ \\t]*\\*/[ \\t]+(?!internal[ \\t]+)fun[ \\t]+",
-        ).find(source)
-        val exposedInlineFunction = Regex("(?m)^inline[ \\t]+fun[ \\t]+").find(source)
-        check(
-            exposedType == null &&
-                exposedFunction == null &&
-                exposedThrowingFunction == null &&
-                exposedCommentTailFunction == null &&
-                exposedInlineFunction == null
-        ) {
-            "Generated UniFFI declarations must remain Kotlin-internal"
+        for (source in prepared.map { it.get().asFile.readText() }) {
+            val exposedType = Regex(
+                "(?m)^(?:public\\s+)?(?:(?:open|abstract|sealed|data|enum)\\s+)?" +
+                    "(?:class|interface|object)\\b",
+            ).find(source)
+            val exposedFunction = Regex("(?m)^public fun\\s+").find(source)
+            val exposedThrowingFunction = Regex(
+                "(?m)^[ \\t]*@Throws\\([^)]*\\)[ \\t]+" +
+                    "(?!override[ \\t]+|internal[ \\t]+)fun[ \\t]+",
+            ).find(source)
+            val exposedCommentTailFunction = Regex(
+                "(?m)^[ \\t]*\\*/[ \\t]+(?!internal[ \\t]+)fun[ \\t]+",
+            ).find(source)
+            val exposedInlineFunction = Regex("(?m)^inline[ \\t]+fun[ \\t]+").find(source)
+            check(
+                exposedType == null &&
+                    exposedFunction == null &&
+                    exposedThrowingFunction == null &&
+                    exposedCommentTailFunction == null &&
+                    exposedInlineFunction == null
+            ) {
+                "Generated UniFFI declarations must remain Kotlin-internal"
+            }
         }
     }
 }
@@ -186,6 +194,7 @@ dependencyLocking {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     dependsOn(prepareUniFfiBinding)
     exclude("**/internal/ffi/utexo_local_signer.kt")
+    exclude("**/internal/ffi/verifier/utexo_rgb_verifier.kt")
     source(preparedUniFfiDirectory)
 }
 
@@ -253,6 +262,7 @@ tasks.withType<Jar>().configureEach {
         // source surface. Public wrappers remain fully represented in this jar.
         exclude("**/internal/ffi/**")
         exclude("**/utexo_local_signer_prepared.kt")
+        exclude("**/utexo_rgb_verifier_prepared.kt")
     }
 }
 
@@ -280,19 +290,18 @@ tasks.register("verifyReleaseNativeAbis") {
     inputs.file(layout.buildDirectory.file("outputs/aar/sdk-release.aar"))
     doLast {
         val archive = inputs.files.singleFile
-        val expected = setOf(
-            "jni/arm64-v8a/libutexo_local_signer.so",
-            "jni/armeabi-v7a/libutexo_local_signer.so",
-            "jni/x86_64/libutexo_local_signer.so",
-        )
+        val libraries = listOf("libutexo_local_signer.so", "libutexo_rgb_verifier.so")
+        val expected = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            .flatMap { abi -> libraries.map { "jni/$abi/$it" } }
+            .toSet()
         val actual = ZipFile(archive).use { zip ->
             zip.entries().asSequence()
                 .map { it.name }
-                .filter { it.endsWith("/libutexo_local_signer.so") }
+                .filter { name -> libraries.any { name.endsWith("/$it") } }
                 .toSet()
         }
         check(actual == expected) {
-            "Release AAR signer ABIs differ: expected=$expected actual=$actual"
+            "Release AAR native ABIs differ: expected=$expected actual=$actual"
         }
     }
 }

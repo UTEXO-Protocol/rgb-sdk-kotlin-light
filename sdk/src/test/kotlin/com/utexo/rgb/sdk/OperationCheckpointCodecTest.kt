@@ -1,5 +1,7 @@
 package com.utexo.rgb.sdk
 
+import java.nio.ByteBuffer
+import java.security.MessageDigest
 import java.util.Base64
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -142,6 +144,34 @@ internal class OperationCheckpointCodecTest {
                 ByteArray(OperationCheckpointCodec.MAX_ENCODED_BYTES + 1),
             )
         }
+    }
+
+    @Test
+    fun `RGB send evidence survives a restart in schema v3 while evidence-free preparations stay v1`(): Unit {
+        val evidence = RgbSendEvidence("ZmFzY2lhLWJ5dGVzLWZvci10ZXN0cw==", ULong.MAX_VALUE,
+            listOf(RgbExistingOutputProof("02000000", 1, 7), RgbExistingOutputProof("0300", 0, 0)))
+        val encoded = OperationCheckpointCodec.encode(preparedRgbCheckpoint(evidence))
+        assertEquals(3, ByteBuffer.wrap(encoded, 8, Int.SIZE_BYTES).int)
+        val decoded = OperationCheckpointCodec.decode(encoded)
+        assertEquals(evidence, decoded.preparedTransaction?.rgbSendEvidence)
+        assertContentEquals(encoded, OperationCheckpointCodec.encode(decoded))
+
+        val blind = OperationCheckpointCodec.encode(preparedRgbCheckpoint(null))
+        assertEquals(1, ByteBuffer.wrap(blind, 8, Int.SIZE_BYTES).int)
+        assertEquals(null, OperationCheckpointCodec.decode(blind).preparedTransaction?.rgbSendEvidence)
+        // A v3 header on a body without evidence is not a canonical encoding.
+        val body = blind.copyOf(blind.size - 32).also { ByteBuffer.wrap(it, 8, Int.SIZE_BYTES).putInt(3) }
+        assertFailsWith<SdkException.OperationJournalUnavailable> {
+            OperationCheckpointCodec.decode(body + MessageDigest.getInstance("SHA-256").digest(body))
+        }
+    }
+
+    private fun preparedRgbCheckpoint(evidence: RgbSendEvidence?): OperationCheckpoint {
+        val prepared = PreparedTransaction(TEST_OPERATION_ID, TEST_IDEMPOTENCY_KEY, RequestHash.ofLowercaseHex("d".repeat(64)),
+            Network.SIGNET, OperationKind.ONCHAIN_SEND, "prepared-psbt", UnixSeconds.of(TEST_NOW + 1_000),
+            rgbSendEvidence = evidence)
+        return OperationCheckpoint(testConfiguration().walletId, TEST_IDEMPOTENCY_KEY, prepared.requestHash,
+            OperationKind.ONCHAIN_SEND, OperationPhase.PREPARED, TEST_OPERATION_ID, prepared)
     }
 
     private fun signedCheckpoint(outcome: OperationTerminalOutcome): OperationCheckpoint {

@@ -13,6 +13,7 @@ import com.utexo.rgb.sdk.Keychain
 import com.utexo.rgb.sdk.LocalSigningPolicy
 import com.utexo.rgb.sdk.LocalValidationReport
 import com.utexo.rgb.sdk.Network
+import com.utexo.rgb.sdk.OnchainSendRequest
 import com.utexo.rgb.sdk.OperationKind
 import com.utexo.rgb.sdk.PreparedTransaction
 import com.utexo.rgb.sdk.RbfPolicy
@@ -48,6 +49,7 @@ import com.utexo.rgb.sdk.internal.ffi.gatewaySigningPolicy as ffiGatewaySigningP
 import com.utexo.rgb.sdk.internal.ffi.rgbInvoiceWitnessRecipient as ffiRgbInvoiceWitnessRecipient
 import com.utexo.rgb.sdk.internal.ffi.SigningPolicy as FfiSigningPolicy
 import com.utexo.rgb.sdk.internal.ffi.ValidationReport as FfiValidationReport
+import com.utexo.rgb.sdk.internal.ffi.verifier.WalletAccounts as FfiVerifierWalletAccounts
 import java.util.Arrays
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
@@ -101,6 +103,8 @@ internal class UniFfiLocalSigningEngine(
         localTransactionValidation = true,
         localTransactionSigning = gatewayContext?.canSign ?: true,
         localRgbInvoiceParsing = true,
+        // RGB sends are checked by utexo-rgb-verifier before signing (RgbSendVerification),
+        // but RGB history is not validated locally, so this stays false.
         localRgbValidation = false,
         // The additive profile authorizes Bitcoin intent, not RGB transitions.
         // Backend gates are independent; this is not gateway readiness.
@@ -188,7 +192,10 @@ internal class UniFfiLocalSigningEngine(
         val context = gatewayContext?.validated()
         return nativeCall {
             if (context != null) {
-                val result = signer.signGatewayPsbt(prepared.psbtBase64, gatewayIntent(prepared, intent, context))
+                val gateway = gatewayIntent(prepared, intent, context)
+                val verified = verifyRgbSend(prepared, intent)
+                val result = signer.signGatewayPsbt(prepared.psbtBase64, gateway)
+                requireVerifiedTransaction(verified, result.validation)
                 LocalSigningResult(result.signedPsbtBase64, result.validation.toPublic())
             } else when (intent) {
                 is LocalOperationIntent.SendBtc -> signSendBtc(prepared, intent)
@@ -220,7 +227,10 @@ internal class UniFfiLocalSigningEngine(
         val context = gatewayContext?.validated()
         return nativeCall {
             if (context != null) {
-                signer.validateGatewayPsbt(prepared.psbtBase64, gatewayIntent(prepared, intent, context)).toPublic()
+                val gateway = gatewayIntent(prepared, intent, context)
+                val verified = verifyRgbSend(prepared, intent)
+                signer.validateGatewayPsbt(prepared.psbtBase64, gateway)
+                    .also { requireVerifiedTransaction(verified, it) }.toPublic()
             } else when (intent) {
                 is LocalOperationIntent.SendBtc -> signer.validatePsbt(
                     prepared.psbtBase64, sendBtcIntent(prepared, intent),
@@ -290,11 +300,9 @@ internal class UniFfiLocalSigningEngine(
             )
         }
         val rgb = (intent as? LocalOperationIntent.OnchainSend)?.let {
-            val asset = it.request.assetId?.value ?: ffiDecodeRgbInvoice(it.request.invoice.value).assetId
-                ?: throw SdkException.PolicyRejected("RGB send requires an explicit asset in the request or invoice")
             FfiRgbBitcoinAuthorization(
                 invoice = it.request.invoice.value,
-                assetId = asset,
+                assetId = rgbAsset(it.request),
                 amount = it.request.amount.decimal.toULong(),
                 witnessAmountSats = it.request.witnessData?.amountSat?.value?.toULong(),
                 witnessBlinding = it.request.witnessData?.blinding?.toULong(),
@@ -338,6 +346,36 @@ internal class UniFfiLocalSigningEngine(
             createUtxos = create,
             rgb = rgb,
         )
+    }
+
+    private fun rgbAsset(request: OnchainSendRequest): String =
+        request.assetId?.value ?: ffiDecodeRgbInvoice(request.invoice.value).assetId
+            ?: throw SdkException.PolicyRejected("RGB send requires an explicit asset in the request or invoice")
+
+    /**
+     * Runs after the preparation is bound to the caller's request and before any signature
+     * or revalidation. Null for non-RGB operations and for a blind send the policy allows.
+     */
+    private fun verifyRgbSend(prepared: PreparedTransaction, intent: LocalOperationIntent): TransactionId? {
+        if (intent !is LocalOperationIntent.OnchainSend) return null
+        val evidence = RgbSendVerification.requireEvidence(prepared, intent.policy) ?: return null
+        val identity = signer.identity()
+        return RgbSendVerification.verify(
+            network = intent.network,
+            accounts = FfiVerifierWalletAccounts(identity.masterFingerprint,
+                identity.accountXpubVanilla, identity.accountXpubColored),
+            prepared = prepared,
+            evidence = evidence,
+            request = intent.request,
+            assetId = rgbAsset(intent.request),
+            policy = intent.policy,
+        )
+    }
+
+    private fun requireVerifiedTransaction(verified: TransactionId?, validation: FfiValidationReport): Unit {
+        if (verified != null && verified != TransactionId.of(validation.unsignedTxid)) {
+            throw SdkException.InternalInvariantViolation("RGB verification and Bitcoin signing saw different transactions")
+        }
     }
 
     private fun sendBtcIntent(
