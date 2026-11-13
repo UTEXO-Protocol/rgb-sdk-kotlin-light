@@ -456,7 +456,7 @@ class MainActivity : Activity() {
                 setText(value)
                 inputType = type
             }
-        urlField = field("gateway base URL", GATEWAY_URL, InputType.TYPE_TEXT_VARIATION_URI)
+        urlField = field(GATEWAY_URL_HINT, type = InputType.TYPE_TEXT_VARIATION_URI)
         tokenField = field("bearer token (utxg_…)")
         walletField = field("wallet ID", WALLET_ID)
         tipField = field("trusted chain tip URL", CHAIN_TIP_URL, InputType.TYPE_TEXT_VARIATION_URI)
@@ -490,17 +490,18 @@ class MainActivity : Activity() {
 
     private companion object {
         /**
-         * UTEXO's stage gateway, on Bitcoin's public signet. For a gateway on this
-         * machine use `http://10.0.2.2:<port>`; `10.0.2.2` is the emulator's host.
+         * Shown as the gateway field's hint; the field starts empty. Enter the
+         * gateway URL UTEXO provisioned for you. For a gateway on this machine use
+         * `http://10.0.2.2:<port>`; `10.0.2.2` is the emulator's host.
          */
-        const val GATEWAY_URL: String = "https://stage.gateway.lightsdk.utexo.com"
+        const val GATEWAY_URL_HINT: String = "gateway base URL, e.g. https://your-gateway.example"
         val NETWORK: Network = Network.SIGNET
         const val WALLET_ID: String = "example"
         const val LOG_TAG: String = "UtexoExample"
 
         /**
          * An HTTP `/blocks/tip/height` for the chain the gateway runs on; it
-         * must not be the gateway. The stage gateway runs on Bitcoin's public
+         * must not be the gateway. UTEXO's signet gateway runs on Bitcoin's public
          * signet. A tip from another chain is far off the gateway's height, and
          * the signer then refuses every transaction. On regtest,
          * `scripts/tip.mjs` serves one.

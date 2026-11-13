@@ -193,18 +193,20 @@ kill %1 %2                         # the gateway and tip.mjs started above
 
 ## Deployed signet run
 
-The app's defaults target UTEXO's stage gateway,
-`https://stage.gateway.lightsdk.utexo.com`, which runs on **Bitcoin's public
-signet** (`Network.SIGNET`, invoices tagged `sb`). The trusted tip comes from
-`https://mempool.space/signet/api/blocks/tip/height`; look transactions up at
-`https://mempool.space/signet/tx/<txid>`.
+UTEXO's signet gateway runs on **Bitcoin's public signet** (`Network.SIGNET`,
+invoices tagged `sb`), which the app's defaults match. Use the gateway URL UTEXO
+gave you; the examples below write it as `https://your-gateway.example`. The
+trusted tip comes from `https://mempool.space/signet/api/blocks/tip/height`; look
+transactions up at `https://mempool.space/signet/tx/<txid>`.
 
 Create the users with the deployment's operator token. Then use the same `drive`
-helper without the local flags:
+helper without the local flags. `drive.py` reads the gateway URL from
+`UTEXO_GATEWAY_URL`:
 
 ```sh
+export UTEXO_GATEWAY_URL=https://your-gateway.example
 for u in a b; do
-    curl -s -X POST https://stage.gateway.lightsdk.utexo.com/v1/users \
+    curl -s -X POST "$UTEXO_GATEWAY_URL"/v1/users \
         -H "x-operator-token: $GATEWAY_OPERATOR_TOKEN" > "$W/signet-user-$u.json"
 done
 RUN=$(date +%s)
@@ -221,7 +223,7 @@ Steps 4–6 work the same way, except:
   local run mines one;
 - fund A from a public signet faucet (BTC to `drive a address`). 20,000 sats
   covers steps 4–6 with small amounts;
-- the stage proxy, `rpcs://stage.rgb-proxy.utexo.com/json-rpc`, speaks RGB
+- the gateway's RGB proxy, the `endpoints=` value in its invoices, speaks RGB
   proxy protocol 1.0: invoices carry the recipient's Ed25519 key as `pk=…`, and
   a sender encrypts the consignment to it. `rgbsend` and `issuer.mjs send-rgb`
   pass the invoice's `pk`, `expiry` and `enc` on. The receiver ACKs with that
@@ -233,7 +235,8 @@ To act as the sender yourself once A has BTC, run your own rgb-node-api (main)
 on that chain and drive an issuer wallet on it with `issuer.mjs`. RLN cannot be
 the issuer: its rgb-lib speaks proxy protocol 0.2. rgb-node-api has no
 authentication, so keep it on localhost. A configuration like this works; the
-`btc_rpc_*` settings are required but rgb-node-api does not use them:
+`btc_rpc_*` settings are required but rgb-node-api does not use them, and
+`proxy_address` is the proxy from your gateway's invoices (`endpoints=`):
 
 ```toml
 [api]
@@ -247,7 +250,7 @@ btc_rpc_address = "unused:0"
 btc_rpc_user = "unused"
 btc_rpc_password = "unused"
 indexer_address = "https://mempool.space/signet/api"
-proxy_address = ["rpcs://stage.rgb-proxy.utexo.com/json-rpc"]
+proxy_address = ["rpcs://your-proxy.example/json-rpc"]
 ```
 
 Start it from an rgb-node-api checkout with `cargo run -- -c <that file>` (its
@@ -273,8 +276,8 @@ wallet.
 **A spend fails with `policy.rejected`.** The trusted chain tip is from a chain
 other than the gateway's, or older than 300 seconds. A tip from another chain is
 far off the gateway's height, and the signer rejects the prepared transaction.
-For the stage gateway use the public-signet tip above; on regtest, check that
-`tip.mjs` is running.
+For UTEXO's signet gateway use the public-signet tip above; on regtest, check
+that `tip.mjs` is running.
 
 **`witnessinvoice`, `blindinvoice` or `rgbsend` fails with
 `validation.invalid_argument: Invalid rgbInvoice`.** The SDK build predates proxy
@@ -325,8 +328,9 @@ accepted a consignment. Work through these:
    (`docker compose -f "$LIGHTSDK_GATEWAY_REPO"/regtest/compose.yaml logs rgb-node-api`)
    records refreshes that failed outright.
 
-A protocol 1.0 proxy, such as stage's, stores only ACKs signed with the
-invoice's `pk`, so an ACK there means the receiver accepted the transfer.
+A protocol 1.0 proxy, such as the one UTEXO's signet gateway uses, stores only
+ACKs signed with the invoice's `pk`, so an ACK there means the receiver accepted
+the transfer.
 
 To debug a deployed environment's receive path, run rgb-node-api locally with
 that environment's network, indexer (`indexer_address`) and proxy
@@ -337,7 +341,7 @@ wallet ID:
 ```sh
 GATEWAY_PORT=8491 GATEWAY_DATA_DIR="$W/mirror" GATEWAY_BITCOIN_NETWORK=Signet \
 RGB_NODE_API_URL=http://127.0.0.1:<its port> \
-RGB_PROXY_URL=rpcs://stage.rgb-proxy.utexo.com/json-rpc \
+RGB_PROXY_URL=rpcs://your-proxy.example/json-rpc \
     example-app/scripts/gateway.sh --debug > "$W/mirror.log" 2>&1 &
 ```
 

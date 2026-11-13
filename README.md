@@ -210,7 +210,7 @@ WalletChainContext(
 The observation must match the requested network, be at most 300 seconds old,
 and be no more than 30 seconds in the future. Fetch from your trusted node/indexer;
 do not copy a height from a PSBT or assign a new timestamp to an old observation.
-The tip must come from the chain your gateway actually runs on. UTEXO's stage
+The tip must come from the chain your gateway actually runs on. UTEXO's signet
 gateway runs on Bitcoin's public signet; read its tip from a public-signet
 indexer such as `https://mempool.space/signet/api/blocks/tip/height`. A tip from
 another chain is far off the gateway's height, and the signer then rejects every

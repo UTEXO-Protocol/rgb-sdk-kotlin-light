@@ -15,10 +15,9 @@ production.
 ./gradlew :example-app:installDebug
 ```
 
-Then launch it, paste a gateway URL and a bearer token, and press **Connect**.
-The defaults target UTEXO's stage gateway,
-`https://stage.gateway.lightsdk.utexo.com`, on Bitcoin's public signet:
-`Network.SIGNET`, with the trusted chain tip read from
+Then launch it, paste the gateway URL UTEXO gave you and a bearer token, and
+press **Connect**. The other defaults suit UTEXO's signet gateway, which runs on
+Bitcoin's public signet: `Network.SIGNET`, with the trusted chain tip read from
 `https://mempool.space/signet/api/blocks/tip/height`.
 
 A token is minted once per user by the operator:
@@ -99,8 +98,8 @@ the example logs the code, the `correlationId` an operator can grep for, and
 
 **Spending needs a trusted chain tip.** `chainContextProvider` must read the tip
 height from an indexer for the chain the gateway runs on, never from the gateway.
-The stage gateway runs on Bitcoin's public signet. A tip from another chain is
-far off the gateway's height, and the signer rejects every spend.
+UTEXO's signet gateway runs on Bitcoin's public signet. A tip from another chain
+is far off the gateway's height, and the signer rejects every spend.
 
 **RGB payments take three turns.** The receiver syncs to fetch, validate and
 ACK the consignment. The sender then syncs to see the ACK and broadcast. After a
