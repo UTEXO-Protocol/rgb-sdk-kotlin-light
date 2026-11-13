@@ -2,9 +2,9 @@
   "schema": "utexo.native-local-build.v1",
   "platform": "android",
   "assurance": "Locally observed build of possibly uncommitted source. Not a signed release, independent reproduction, or proof against a compromised compiler/dependency cache.",
-  "startedAt": "2026-09-21T14:12:22.218Z",
+  "startedAt": "2026-11-06T13:14:34.422Z",
   "tools": {
-    "rust": "rustc 1.88.0 (6b00bc388 2025-06-23)\nbinary: rustc\ncommit-hash: 6b00bc3880198600130e1cf62b8f8a93494488cc\ncommit-date: 2025-06-23\nhost: aarch64-apple-darwin\nrelease: 1.88.0\nLLVM version: 20.1.5",
+    "rust": "rustc 1.88.0 (6b00bc388 2025-06-23)\nbinary: rustc\ncommit-hash: 6b00bc3880198600130e1cf62b8f8a93494488cc\ncommit-date: 2025-06-23\nhost: x86_64-unknown-linux-gnu\nrelease: 1.88.0\nLLVM version: 20.1.5",
     "cargo": "cargo 1.88.0 (873a06493 2025-05-10)",
     "cargoNdk": "cargo-ndk 4.1.2",
     "ndk": "28.2.13676358",
@@ -185,8 +185,8 @@
       },
       {
         "path": "src/invoice.rs",
-        "bytes": 53984,
-        "sha256": "86e6a58b573effd8cd1e911672302958f94c434e472863a1c8fd3d8683f86234"
+        "bytes": 64131,
+        "sha256": "fc2f029654aeaf97cd00162d6ab76e2147c9ecc22f704248ff631ad590d6cb2a"
       },
       {
         "path": "src/keys.rs",
@@ -195,13 +195,13 @@
       },
       {
         "path": "src/lib.rs",
-        "bytes": 21339,
-        "sha256": "412578a03d52ea6391fe128499c33cc424003dc67584b521a35e18b007477761"
+        "bytes": 21361,
+        "sha256": "b70ebe66136a18bf038aa9f74762bd0cba10cbdee97dae212375d54962449356"
       },
       {
         "path": "src/model.rs",
-        "bytes": 13512,
-        "sha256": "b6b4844ca861a2895b9461cc90f32f9541c361a2117c08701700341b73899453"
+        "bytes": 14100,
+        "sha256": "4488a35e2aabcb47974b3fbbb7ddc683a9a63af0609c633fdbcbc3cb79025328"
       },
       {
         "path": "src/policy.rs",
@@ -227,27 +227,27 @@
     "binding": [
       {
         "path": "sdk/src/main/kotlin/com/utexo/rgb/sdk/internal/ffi/utexo_local_signer.kt",
-        "bytes": 138115,
-        "sha256": "39c4d4212c488ab573d1f0a8257f249152ef9b8e3c11785ad88989010ebbbf57"
+        "bytes": 139684,
+        "sha256": "29331dc7fa2c0b769ee4ac9e614490a0631b4ed76e8b3520a15f176a4b5e7aeb"
       }
     ]
   },
   "outputs": [
     {
       "path": "jniLibs/arm64-v8a/libutexo_local_signer.so",
-      "bytes": 2420472,
-      "sha256": "dd4e03e1de0e59dd091b8910df8f0ad65664e67e45869c1a7bd0679d690c708c"
+      "bytes": 2426272,
+      "sha256": "e42849aaf80b1635243ac3b0e4cadfdd7df529bbe044a5de0257b5ec5796e16f"
     },
     {
       "path": "jniLibs/armeabi-v7a/libutexo_local_signer.so",
-      "bytes": 2003964,
-      "sha256": "e20bf2313e0bd029aba4d047e116edac1c49e290c25bedef9d8968434cf0a792"
+      "bytes": 2006980,
+      "sha256": "d18935e5c7e68d138fff34fb12911ae30612ab5df74332749eaa465e2cae6f65"
     },
     {
       "path": "jniLibs/x86_64/libutexo_local_signer.so",
-      "bytes": 2588048,
-      "sha256": "1c3b578beab6bd092495868d02ae172a88d905b255fd0b3ee84859aad823e859"
+      "bytes": 2592608,
+      "sha256": "7d83a2dba9ef04fd8bf228109657154ae8a3278d3dfb024afb127fb1a0bf3b61"
     }
   ],
-  "finishedAt": "2026-09-21T14:12:22.679Z"
+  "finishedAt": "2026-11-06T13:14:34.746Z"
 }

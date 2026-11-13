@@ -8,6 +8,7 @@ import com.utexo.rgb.sdk.AssignmentType
 import com.utexo.rgb.sdk.BitcoinAddress
 import com.utexo.rgb.sdk.FeeRate
 import com.utexo.rgb.sdk.InvoiceData
+import com.utexo.rgb.sdk.InvoiceEncryption
 import com.utexo.rgb.sdk.Keychain
 import com.utexo.rgb.sdk.LocalSigningPolicy
 import com.utexo.rgb.sdk.LocalValidationReport
@@ -28,6 +29,7 @@ import com.utexo.rgb.sdk.internal.ffi.decodeRgbInvoice as ffiDecodeRgbInvoice
 import com.utexo.rgb.sdk.internal.ffi.RgbInvoiceRecipientType as FfiInvoiceRecipientType
 import com.utexo.rgb.sdk.internal.ffi.RgbInvoiceAssignmentKind as FfiInvoiceAssignmentKind
 import com.utexo.rgb.sdk.internal.ffi.RgbInvoiceEncodedStateKind as FfiInvoiceEncodedStateKind
+import com.utexo.rgb.sdk.internal.ffi.RgbInvoiceEncryption as FfiInvoiceEncryption
 import com.utexo.rgb.sdk.internal.ffi.AccountKind as FfiAccountKind
 import com.utexo.rgb.sdk.internal.ffi.KeyScope as FfiKeyScope
 import com.utexo.rgb.sdk.internal.ffi.Keychain as FfiKeychain
@@ -163,6 +165,8 @@ internal class UniFfiLocalSigningEngine(
                 assignmentName = decoded.assignmentName,
                 expirationTimestamp = decoded.expirationTimestamp?.let(UnixSeconds::of),
                 transportEndpoints = decoded.transportEndpoints,
+                publicKey = decoded.publicKey,
+                encryption = decoded.encryption.toPublic(),
             ),
             witness = when (decoded.recipientType) {
                 FfiInvoiceRecipientType.BLIND -> false
@@ -471,6 +475,12 @@ private fun FfiNetwork.toPublic(): Network = when (this) {
     FfiNetwork.SIGNET -> Network.SIGNET
     FfiNetwork.REGTEST -> Network.REGTEST
     FfiNetwork.UTEXO -> Network.UTEXO
+}
+
+internal fun FfiInvoiceEncryption.toPublic(): InvoiceEncryption = when (this) {
+    FfiInvoiceEncryption.REQUIRED -> InvoiceEncryption.REQUIRED
+    FfiInvoiceEncryption.OPTIONAL -> InvoiceEncryption.OPTIONAL
+    FfiInvoiceEncryption.UNSUPPORTED -> InvoiceEncryption.UNSUPPORTED
 }
 
 private fun AccountKind.toFfi(): FfiAccountKind = when (this) {

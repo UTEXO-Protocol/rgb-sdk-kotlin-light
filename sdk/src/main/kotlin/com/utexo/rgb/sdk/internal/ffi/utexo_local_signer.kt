@@ -1899,6 +1899,14 @@ data class DecodedRgbInvoice (
     var `expirationTimestamp`: kotlin.Long?
     , 
     var `transportEndpoints`: List<kotlin.String>
+    , 
+    /**
+     * Recipient's Ed25519 public key (64 lowercase hex characters), the
+     * proxy protocol 1.0 `pk` parameter a sender encrypts the consignment to.
+     */
+    var `publicKey`: kotlin.String?
+    , 
+    var `encryption`: RgbInvoiceEncryption
     
 ){
     
@@ -1925,6 +1933,8 @@ public object FfiConverterTypeDecodedRgbInvoice: FfiConverterRustBuffer<DecodedR
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalLong.read(buf),
             FfiConverterSequenceString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterTypeRgbInvoiceEncryption.read(buf),
         )
     }
 
@@ -1938,7 +1948,9 @@ public object FfiConverterTypeDecodedRgbInvoice: FfiConverterRustBuffer<DecodedR
             FfiConverterTypeRgbInvoiceEncodedState.allocationSize(value.`encodedState`) +
             FfiConverterOptionalString.allocationSize(value.`assignmentName`) +
             FfiConverterOptionalLong.allocationSize(value.`expirationTimestamp`) +
-            FfiConverterSequenceString.allocationSize(value.`transportEndpoints`)
+            FfiConverterSequenceString.allocationSize(value.`transportEndpoints`) +
+            FfiConverterOptionalString.allocationSize(value.`publicKey`) +
+            FfiConverterTypeRgbInvoiceEncryption.allocationSize(value.`encryption`)
     )
 
     override fun write(value: DecodedRgbInvoice, buf: ByteBuffer) {
@@ -1952,6 +1964,8 @@ public object FfiConverterTypeDecodedRgbInvoice: FfiConverterRustBuffer<DecodedR
             FfiConverterOptionalString.write(value.`assignmentName`, buf)
             FfiConverterOptionalLong.write(value.`expirationTimestamp`, buf)
             FfiConverterSequenceString.write(value.`transportEndpoints`, buf)
+            FfiConverterOptionalString.write(value.`publicKey`, buf)
+            FfiConverterTypeRgbInvoiceEncryption.write(value.`encryption`, buf)
     }
 }
 
@@ -3035,6 +3049,46 @@ public object FfiConverterTypeRgbInvoiceEncodedStateKind: FfiConverterRustBuffer
     override fun allocationSize(value: RgbInvoiceEncodedStateKind) = 4UL
 
     override fun write(value: RgbInvoiceEncodedStateKind, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * Consignment and media encryption preference of an invoice recipient, the
+ * proxy protocol 1.0 `enc` parameter. An invoice without `enc` requires
+ * encryption; `enc=1` makes it optional and `enc=0` refuses it.
+ */
+
+enum class RgbInvoiceEncryption {
+    
+    REQUIRED,
+    OPTIONAL,
+    UNSUPPORTED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRgbInvoiceEncryption: FfiConverterRustBuffer<RgbInvoiceEncryption> {
+    override fun read(buf: ByteBuffer) = try {
+        RgbInvoiceEncryption.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: RgbInvoiceEncryption) = 4UL
+
+    override fun write(value: RgbInvoiceEncryption, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
     }
 }

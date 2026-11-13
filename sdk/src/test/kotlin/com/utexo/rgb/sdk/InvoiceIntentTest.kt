@@ -24,6 +24,17 @@ internal class InvoiceIntentTest {
         InvoiceReceiveData(invoice, "recipient-fixture", expiration, 7)
 
     @Test
+    fun `decoded invoice keeps a canonical proxy protocol 1_0 key and rejects any other form`() {
+        val key = "bd92a92452c9c3fc2b4fa04e5e15fd922608b8e4ab6ba43a3c90c3cc866b791b"
+        val withKey = decoded().copy(publicKey = key, encryption = InvoiceEncryption.OPTIONAL)
+        assertEquals(key, withKey.publicKey)
+        assertEquals(InvoiceEncryption.REQUIRED, decoded().encryption)
+        for (invalid in listOf(key.uppercase(), key.dropLast(1), key + "0", "g" + key.drop(1), "")) {
+            assertFailsWith<SdkException.InvalidArgument> { decoded().copy(publicKey = invalid) }
+        }
+    }
+
+    @Test
     fun `blind and witness receive accept a null gateway expiry but reject a different one`(): Unit = runBlocking {
         for (witness in listOf(false, true)) {
             for (expiration in listOf(null, UnixSeconds.of(TEST_NOW + 600), UnixSeconds.of(TEST_NOW + 601))) {

@@ -29,6 +29,7 @@ public class NativeBindingSmokeTest {
         val recipient = "bcrt:utxob:tjVmHbI2-U0_umHn-bU4cmP6-l3VW00H-ewoi2uz-XZG6O3i-wUFBW"
         val nia = "RWhwUfTMpuP2Zfx1~j4nswCANGeJrYOqDcKelaMV4zU"
         val ifa = "IpjJhFLz3oywYKQxO3KmFgR0Aa415nlTNrNyEFqMZCE"
+        val bfa = "HbLJ6SjvzVw~XTu6e~Iau6wIcxYsVTlSM7dRUn0DDo4"
         SecretSeed.fromBytes(ByteArray(64) { 31 }).use { seed ->
             UniFfiLocalSigningEngineFactory.open(Network.REGTEST, seed).use { signer ->
                 check(signer.capabilities.localRgbInvoiceParsing && !signer.capabilities.localRgbValidation)
@@ -45,6 +46,9 @@ public class NativeBindingSmokeTest {
                 val maximum = signer.decodeRgbInvoice(RgbInvoice.of("rgb:~/$ifa/ZZZZZZZZZZZZY/$recipient?assignment_name=inflationAllowance"))
                 assertEquals(AssetAmount.parse(AssetAmount.MAX_VALUE), maximum.data.assignment.amount)
                 assertEquals(maximum.data.assignment.amount, maximum.encodedAmount)
+                val bridged = signer.decodeRgbInvoice(RgbInvoice.of("rgb:~/$bfa/BF/$recipient?assignment_name=assetOwner"))
+                assertEquals("Bfa", bridged.data.assetSchema)
+                assertEquals(Assignment(AssignmentType.FUNGIBLE, AssetAmount.of(100)), bridged.data.assignment)
                 val valid = "rgb:~/~/~/$recipient"
                 for (malformed in listOf(
                     valid.replace("rgb:", "RGB:"), valid.replace("bcrt:", "tb:"), valid.dropLast(1) + "A",

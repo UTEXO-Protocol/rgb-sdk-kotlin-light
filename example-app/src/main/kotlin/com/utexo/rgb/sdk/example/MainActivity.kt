@@ -48,7 +48,7 @@ import kotlinx.coroutines.withContext
 
 /**
  * A minimal, readable integration of the UTEXO mobile SDK against a
- * `minimal-gateway` deployment. One screen, no architecture, no DI — the point
+ * lightsdk gateway (`rln-gateway`) deployment. One screen, no architecture, no DI — the point
  * is that every SDK call is visible in one file.
  *
  * It covers the lifecycle an app actually has to get right:
@@ -200,7 +200,7 @@ class MainActivity : Activity() {
     /**
      * The signer bounds every prepared transaction against this tip, so it
      * must come from a source the app trusts *independently of the gateway* —
-     * here an esplora-compatible `/blocks/tip/height` for [network]. Never copy
+     * here an HTTP `/blocks/tip/height` for [network]. Never copy
      * a height out of a PSBT, and never restamp an old observation: the SDK
      * rejects a tip older than 300 seconds.
      */
@@ -318,11 +318,12 @@ class MainActivity : Activity() {
             "  $schema ${id.value}  $label  settled=${balance.settled?.decimal ?: "-"} " +
                 "spendable=${balance.spendable?.decimal ?: "-"} future=${balance.future?.decimal ?: "-"}",
         )
-        line("${assets.nia.size + assets.cfa.size + assets.ifa.size + assets.uda.size} asset(s)")
+        line("${assets.nia.size + assets.cfa.size + assets.ifa.size + assets.uda.size + assets.bfa.size} asset(s)")
         assets.nia.forEach { show("NIA", it.assetId, it.ticker, it.balance) }
         assets.ifa.forEach { show("IFA", it.assetId, it.ticker, it.balance) }
         assets.cfa.forEach { show("CFA", it.assetId, it.name, it.balance) }
         assets.uda.forEach { show("UDA", it.assetId, it.ticker, it.balance) }
+        assets.bfa.forEach { show("BFA", it.assetId, it.ticker, it.balance) }
     }
 
     private suspend fun onTransfers(open: UTEXOWallet) {
@@ -480,20 +481,23 @@ class MainActivity : Activity() {
     }
 
     private companion object {
-        /** Point this at your deployment; `10.0.2.2` is the emulator's host. */
-        const val GATEWAY_URL: String = "http://10.0.2.2:8480"
+        /**
+         * UTEXO's stage gateway, on Bitcoin's public signet. For a gateway on this
+         * machine use `http://10.0.2.2:<port>`; `10.0.2.2` is the emulator's host.
+         */
+        const val GATEWAY_URL: String = "https://stage.gateway.lightsdk.utexo.com"
         val NETWORK: Network = Network.SIGNET
         const val WALLET_ID: String = "example"
         const val LOG_TAG: String = "UtexoExample"
 
         /**
-         * An esplora `/blocks/tip/height` for the chain the gateway runs on; it
-         * must not be the gateway. UTEXO's gateways run on UTEXO's own signet,
-         * which is NOT Bitcoin's public signet even though its invoices say `sb`:
-         * a public-signet tip is hundreds of thousands of blocks behind it, and
-         * the signer then refuses every transaction.
+         * An HTTP `/blocks/tip/height` for the chain the gateway runs on; it
+         * must not be the gateway. The stage gateway runs on Bitcoin's public
+         * signet. A tip from another chain is far off the gateway's height, and
+         * the signer then refuses every transaction. On regtest,
+         * `scripts/tip.mjs` serves one.
          */
-        const val CHAIN_TIP_URL: String = "https://esplora-api.utexo.com/blocks/tip/height"
+        const val CHAIN_TIP_URL: String = "https://mempool.space/signet/api/blocks/tip/height"
 
         /** Explicit, because a gateway whose indexer has no fee data cannot estimate one. */
         val FEE_RATE: FeeRate = FeeRate.satPerVbyte("2")
