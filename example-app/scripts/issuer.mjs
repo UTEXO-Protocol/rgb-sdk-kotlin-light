@@ -227,7 +227,8 @@ switch (command) {
               invoice.beneficiaryKind === 'witness'
                 ? { amount_sat: WITNESS_SATS, blinding: null }
                 : null,
-            amount: Number(amount),
+            // rgb-node-api states what a recipient gets as an assignment.
+            assignment: { Fungible: Number(amount) },
             transport_endpoints: invoice.transportEndpoints,
             ...proxyV1Recipient(invoiceText, invoice.expiryTimestamp),
           },

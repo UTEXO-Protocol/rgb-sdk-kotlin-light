@@ -166,6 +166,24 @@ internal class OperationCheckpointCodecTest {
         }
     }
 
+    @Test
+    fun `prepared RGB send with evidence matches the cross-platform v3 golden vector`(): Unit {
+        val golden = "VVRYT1BDSEsAAAADAAAACHdhbGxldC0xAAAADWlkZW1wb3RlbmN5LTEAAABAZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZAAAAAtvbmNoYWluU2VuZAAAAAhwcmVwYXJlZAEAAAALb3BlcmF0aW9uLTEBAAAAC29wZXJhdGlvbi0xAAAADWlkZW1wb3RlbmN5LTEAAABAZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZAAAAAZzaWduZXQAAAALb25jaGFpblNlbmQAAAANcHJlcGFyZWQtcHNidAAAAAAAAAfQAAEAAAANY29ycmVsYXRpb24tMQEAAAAgWm1GelkybGhMV0o1ZEdWekxXWnZjaTEwWlhOMGN3PT3//////////wAAAAIAAAAIMDIwMDAwMDAAAAABAAAABwAAAAQwMzAwAAAAAAAAAAAAALEF8Xqk/evs6Zx4PxchSET4Egk42GQc2hO4MH3lMBle"
+        val prepared = PreparedTransaction(OperationId.of("operation-1"), IdempotencyKey.of("idempotency-1"),
+            RequestHash.ofLowercaseHex("d".repeat(64)), Network.SIGNET, OperationKind.ONCHAIN_SEND, "prepared-psbt",
+            UnixSeconds.of(2_000), correlationId = "correlation-1",
+            rgbSendEvidence = RgbSendEvidence("ZmFzY2lhLWJ5dGVzLWZvci10ZXN0cw==", ULong.MAX_VALUE,
+                listOf(RgbExistingOutputProof("02000000", 1, 7), RgbExistingOutputProof("0300", 0, 0))))
+        val checkpoint = OperationCheckpoint(WalletId.of("wallet-1"), prepared.idempotencyKey, prepared.requestHash,
+            OperationKind.ONCHAIN_SEND, OperationPhase.PREPARED, prepared.operationId, prepared)
+        assertEquals(golden, Base64.getEncoder().encodeToString(OperationCheckpointCodec.encode(checkpoint)))
+        // PreparedTransaction has identity equality, so compare what the golden decodes to field by field.
+        val decoded = OperationCheckpointCodec.decode(Base64.getDecoder().decode(golden))
+        assertEquals(prepared.rgbSendEvidence, decoded.preparedTransaction?.rgbSendEvidence)
+        assertEquals("correlation-1", decoded.preparedTransaction?.correlationId)
+        assertContentEquals(Base64.getDecoder().decode(golden), OperationCheckpointCodec.encode(decoded))
+    }
+
     private fun preparedRgbCheckpoint(evidence: RgbSendEvidence?): OperationCheckpoint {
         val prepared = PreparedTransaction(TEST_OPERATION_ID, TEST_IDEMPOTENCY_KEY, RequestHash.ofLowercaseHex("d".repeat(64)),
             Network.SIGNET, OperationKind.ONCHAIN_SEND, "prepared-psbt", UnixSeconds.of(TEST_NOW + 1_000),
