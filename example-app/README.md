@@ -53,6 +53,10 @@ adb logcat -s UtexoExample:I
 spaces through reliably. Quote an RGB invoice passed as `recipient`: it contains
 `?` and `&`.
 
+The app signs RGB sends without RGB verification when the gateway returns no
+send evidence. Pass `-e requireRgbEvidence true` (`requireRgbEvidence=true` with
+`drive.py`) to refuse such a send instead, against a gateway that returns it.
+
 ## What the actions show
 
 | Action           | What it demonstrates                                                         |

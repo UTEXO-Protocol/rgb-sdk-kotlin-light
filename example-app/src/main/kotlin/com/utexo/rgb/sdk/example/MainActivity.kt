@@ -101,7 +101,7 @@ class MainActivity : Activity() {
         //     [-e walletId example] [-e network regtest] [-e tipUrl https://…/blocks/tip/height] \
         //     [-e recipient …] [-e amount …] [-e assetId …] \
         //     [-e provisionedMnemonic word_word_…] [-e autoConnect true] \
-        //     [-e run sync,balance,…]
+        //     [-e requireRgbEvidence true] [-e run sync,balance,…]
         // `provisionedMnemonic` is underscore-separated because `am start -e`
         // does not carry spaces through reliably. `run` connects, then runs
         // the named actions in order; see `actions` for the names.
@@ -180,7 +180,11 @@ class MainActivity : Activity() {
                 // The gateway does not return RGB send evidence yet, so RGB sends are
                 // signed without RGB verification. Remove once it does: evidence that
                 // arrives is always verified, and a send without it is then refused.
-                signingPolicy = LocalSigningPolicy(allowUnverifiedRgbSends = true),
+                // `-e requireRgbEvidence true` refuses it already, for testing against
+                // a gateway that does return the evidence.
+                signingPolicy = LocalSigningPolicy(
+                    allowUnverifiedRgbSends = intent?.getStringExtra("requireRgbEvidence") != "true",
+                ),
             ),
             service = WalletServiceConfiguration(
                 baseUrl = urlField.text.toString().trim(),
